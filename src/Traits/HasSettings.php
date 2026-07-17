@@ -1,6 +1,6 @@
 <?php
 
-namespace Posio\AdminKit\Traits;
+namespace Posio\CabinetKit\Traits;
 
 /**
  * Thin, friendlier vocabulary over HasCustomFields (getSetting/setSetting

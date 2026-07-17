@@ -1,24 +1,24 @@
 <template>
 
-	<Head :title="$t ? $t(page_name || 'Admin') : (page_name || 'Admin')"/>
+	<Head :title="$t ? $t(page_name || 'Cabinet') : (page_name || 'Cabinet')"/>
 
-	<div class="ak-page-wrapper flex flex-row h-full overflow-y-hidden">
+	<div class="ck-page-wrapper flex flex-row h-full overflow-y-hidden">
 
-		<SideMenu class="ak-page-menu max-h-[100dvh] h-[100dvh]"
-			:in_data="$page.props.adminKitMenu"
+		<SideMenu class="ck-page-menu max-h-[100dvh] h-[100dvh]"
+			:in_data="$page.props.cabinetKitMenu"
 			:current_id="current_id"
 			:active_account_id="$page.props.account?.id"
 			/>
 
-		<div class="ak-page-layout relative grow min-w-0 flex flex-col">
+		<div class="ck-page-layout relative grow min-w-0 flex flex-col">
 
-			<AdminHeader class="min-h-0 px-3 sm:px-5" :page_name="page_name">
+			<CabinetHeader class="min-h-0 px-3 sm:px-5" :page_name="page_name">
 				<template #header-actions>
 					<slot name="header-actions"/>
 				</template>
-			</AdminHeader>
+			</CabinetHeader>
 
-			<div class="ak-page-content p-2 lg:p-4 flex flex-col overflow-hidden" :class="['space-y-'+space_y]">
+			<div class="ck-page-content p-2 lg:p-4 flex flex-col overflow-hidden" :class="['space-y-'+space_y]">
 				<div class="grow overflow-y-auto flex flex-col">
 					<slot/>
 				</div>
@@ -33,13 +33,13 @@
 <script>
 	import { Head } from '@inertiajs/vue3';
 
-	import AdminHeader from './AdminHeader.vue';
+	import CabinetHeader from './CabinetHeader.vue';
 	import SideMenu from './SideMenu.vue';
 
 	export default {
-		name: 'AdminLayout',
+		name: 'CabinetLayout',
 		inheritAttrs: false,
-		components: { Head, AdminHeader, SideMenu },
+		components: { Head, CabinetHeader, SideMenu },
 		props: {
 			page_name: {
 				type: String,
@@ -59,7 +59,7 @@
 </script>
 
 <style lang="scss">
-	.ak-page-content {
+	.ck-page-content {
 		height: 100%;
 	}
 </style>

@@ -1,11 +1,11 @@
 <?php
 
-namespace Posio\AdminKit\Http\Controllers;
+namespace Posio\CabinetKit\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Posio\AdminKit\Models\Account;
-use Posio\AdminKit\Services\AccountService;
+use Posio\CabinetKit\Models\Account;
+use Posio\CabinetKit\Services\AccountService;
 
 class AccountController extends Controller
 {
@@ -32,11 +32,11 @@ class AccountController extends Controller
         $this->authorize('manage-account');
 
         $validated = $request->validate([
-            'user_id' => 'required|integer|exists:'.config('admin-kit.users_table', 'users').',id',
+            'user_id' => 'required|integer|exists:'.config('cabinet-kit.users_table', 'users').',id',
             'role' => 'nullable|string',
         ]);
 
-        $userModel = config('admin-kit.user_model');
+        $userModel = config('cabinet-kit.user_model');
         $member = $userModel::findOrFail($validated['user_id']);
 
         $this->accountService->inviteMember($member, $request->user()->currentAccount(), $validated['role'] ?? null);
@@ -53,7 +53,7 @@ class AccountController extends Controller
             'role' => 'required|string',
         ]);
 
-        $userModel = config('admin-kit.user_model');
+        $userModel = config('cabinet-kit.user_model');
         $member = $userModel::findOrFail($validated['user_id']);
 
         $this->accountService->setMemberRole($member, $request->user()->currentAccount(), $validated['role']);
@@ -67,7 +67,7 @@ class AccountController extends Controller
 
         $validated = $request->validate(['user_id' => 'required|integer']);
 
-        $userModel = config('admin-kit.user_model');
+        $userModel = config('cabinet-kit.user_model');
         $member = $userModel::findOrFail($validated['user_id']);
 
         $this->accountService->removeMember($member, $request->user()->currentAccount());

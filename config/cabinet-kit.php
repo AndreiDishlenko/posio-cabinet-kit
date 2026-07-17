@@ -2,8 +2,7 @@
 
 return [
 
-    // Host project's user model/table. AdminKit never assumes it owns auth —
-    // it attaches accounts/roles on top of whatever User model already exists.
+    // Host project's user model/table.
     'user_model' => \App\Models\User::class,
     'users_table' => 'users',
     // Column on the users table used by HasSettings for per-user preferences
@@ -12,16 +11,23 @@ return [
     // host project already has one.
     'user_settings_column' => 'settings',
 
-    // Route prefix + name prefix for every AdminKit route (routes/admin.php).
-    'route_prefix' => 'admin',
-    'route_name_prefix' => 'admin-kit.',
+    // Route prefix + name prefix for every CabinetKit route (routes/cabinet.php).
+    // The bundled auth routes (login/register/logout/password reset/email
+    // verification) live under the same URL prefix but keep Laravel's own
+    // unprefixed route names (login, register, ...) so framework internals
+    // (auth middleware redirects, signed verification links) resolve them.
+    'route_prefix' => 'cabinet',
+    'route_name_prefix' => 'cabinet-kit.',
 
-    // Middleware stack applied to the whole AdminKit route group, in order.
-    // 'auth' must resolve against the host's own guard.
+    // Middleware stack applied to the authenticated CabinetKit route group,
+    // in order. 'auth' must resolve against the host's own guard.
     'middleware' => ['web', 'auth'],
 
+    // Named route to redirect to after a successful login or registration.
+    'login_redirect_route' => 'cabinet-kit.dashboard',
+
     // Per-account roles (Spatie Permission teams, team_id = account_id).
-    // Keep in sync with database/seeders/AdminKitRolesSeeder.php.
+    // Keep in sync with database/seeders/CabinetKitRolesSeeder.php.
     'roles' => [
         'owner_role' => 'Account owner',
         'default_member_role' => 'Administrator',
@@ -43,13 +49,13 @@ return [
         [
             'label' => 'Overview',
             'children' => [
-                ['id' => 'dashboard', 'label' => 'Dashboard', 'icon' => 'mdi:view-dashboard-outline', 'route' => 'admin-kit.dashboard', 'permission' => null],
+                ['id' => 'dashboard', 'label' => 'Dashboard', 'icon' => 'mdi:view-dashboard-outline', 'route' => 'cabinet-kit.dashboard', 'permission' => null],
             ],
         ],
         [
             'label' => 'Administration',
             'children' => [
-                ['id' => 'settings', 'label' => 'Settings', 'icon' => 'proicons:settings', 'route' => 'admin-kit.settings', 'permission' => null],
+                ['id' => 'settings', 'label' => 'Settings', 'icon' => 'proicons:settings', 'route' => 'cabinet-kit.settings', 'permission' => null],
             ],
         ],
     ],

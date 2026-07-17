@@ -1,30 +1,30 @@
 <?php
 
-namespace Posio\AdminKit;
+namespace Posio\CabinetKit;
 
 use Illuminate\Support\ServiceProvider;
-use Posio\AdminKit\Console\Commands\InstallCommand;
-use Posio\AdminKit\Console\Commands\SyncConfigCommand;
+use Posio\CabinetKit\Console\Commands\InstallCommand;
+use Posio\CabinetKit\Console\Commands\SyncConfigCommand;
 
-class AdminKitServiceProvider extends ServiceProvider
+class CabinetKitServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__.'/../config/admin-kit.php', 'admin-kit');
+        $this->mergeConfigFrom(__DIR__.'/../config/cabinet-kit.php', 'cabinet-kit');
     }
 
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
-        $this->loadRoutesFrom(__DIR__.'/../routes/admin.php');
+        $this->loadRoutesFrom(__DIR__.'/../routes/cabinet.php');
 
         $this->publishes([
-            __DIR__.'/../config/admin-kit.php' => config_path('admin-kit.php'),
-        ], 'admin-kit-config');
+            __DIR__.'/../config/cabinet-kit.php' => config_path('cabinet-kit.php'),
+        ], 'cabinet-kit-config');
 
         $this->publishes([
             __DIR__.'/../database/migrations' => database_path('migrations'),
-        ], 'admin-kit-migrations');
+        ], 'cabinet-kit-migrations');
 
         if ($this->app->runningInConsole()) {
             $this->commands([

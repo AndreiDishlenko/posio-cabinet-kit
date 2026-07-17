@@ -1,18 +1,18 @@
 <?php
 
-namespace Posio\AdminKit\Console\Commands;
+namespace Posio\CabinetKit\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 
 class InstallCommand extends Command
 {
-    protected $signature = 'admin-kit:install';
+    protected $signature = 'cabinet-kit:install';
     protected $description = 'One-time setup: publish config, run migrations, seed roles, scaffold the overrides folder.';
 
     public function handle(): int
     {
-        $this->call('vendor:publish', ['--tag' => 'admin-kit-config']);
+        $this->call('vendor:publish', ['--tag' => 'cabinet-kit-config']);
 
         $this->info('Running migrations (accounts, user_has_accounts, users.settings)...');
         $this->call('migrate');
@@ -30,7 +30,7 @@ class InstallCommand extends Command
             return;
         }
 
-        (new \Posio\AdminKit\Database\Seeders\AdminKitRolesSeeder())->run();
+        (new \Posio\CabinetKit\Database\Seeders\CabinetKitRolesSeeder())->run();
         $this->info('Roles and permissions seeded.');
     }
 
@@ -46,14 +46,14 @@ class InstallCommand extends Command
         File::ensureDirectoryExists($overridesPath.'/layouts');
 
         File::put($overridesPath.'/README.md', <<<MD
-        # AdminKit overrides
+        # CabinetKit overrides
 
         Drop a file here with the same relative path as its counterpart in
-        `vendor/posio/admin-kit/resources/js/...` to replace it — the page
+        `vendor/posio/cabinet-kit/resources/js/...` to replace it — the page
         resolver (`resolvePage.js`) checks this folder first, and falls back to
         the package version if nothing matches. This is the escape hatch for
         deep customization; for menu items, settings tabs, and permissions,
-        prefer editing `config/admin-kit.php` instead — it survives `composer
+        prefer editing `config/cabinet-kit.php` instead — it survives `composer
         update` with zero effort.
 
         Example: `overrides/pages/Settings/UsersTab.vue` replaces the package's
@@ -66,24 +66,34 @@ class InstallCommand extends Command
     protected function printNextSteps(): void
     {
         $this->newLine();
-        $this->line('<fg=green>AdminKit installed.</> Remaining manual steps:');
+        $this->line('<fg=green>CabinetKit installed.</> Remaining manual steps:');
         $this->line('');
         $this->line('1. If spatie/laravel-permission migrations are not published yet:');
         $this->line('     php artisan vendor:publish --provider="Spatie\\Permission\\PermissionServiceProvider"');
         $this->line('   ...and set \'teams\' => true in config/permission.php BEFORE running them.');
         $this->line('');
         $this->line('2. Add HasAccount + HasSettings + HasCustomFields traits to your User model:');
-        $this->line('     use Posio\\AdminKit\\Traits\\HasAccount;');
-        $this->line('     use Posio\\AdminKit\\Traits\\HasSettings;');
-        $this->line('     use Posio\\AdminKit\\Traits\\HasCustomFields;');
+        $this->line('     use Posio\\CabinetKit\\Traits\\HasAccount;');
+        $this->line('     use Posio\\CabinetKit\\Traits\\HasSettings;');
+        $this->line('     use Posio\\CabinetKit\\Traits\\HasCustomFields;');
         $this->line('');
-        $this->line('3. Add the AdminKit Vite alias + fs.allow entry to vite.config.js (see docs/ARCHITECTURE.md):');
-        $this->line("     resolve: { alias: { '@admin-kit': path.resolve(__dirname, 'vendor/posio/admin-kit/resources/js') } }");
-        $this->line("     server: { fs: { allow: ['vendor/posio/admin-kit'] } }");
+        $this->line('3. (Optional) implement MustVerifyEmail on your User model if you want email');
+        $this->line('   verification enforced — the verify/resend routes work regardless, but');
+        $this->line('   nothing blocks unverified users unless you add the `verified` middleware');
+        $this->line('   yourself and your User implements it:');
+        $this->line('     use Illuminate\\Contracts\\Auth\\MustVerifyEmail;');
+        $this->line('     use Illuminate\\Auth\\MustVerifyEmail as MustVerifyEmailTrait;');
         $this->line('');
-        $this->line('4. Wire up admin.js using the resolvePage() helper — see stubs/admin-entry.js.stub.');
+        $this->line('4. Add the CabinetKit Vite alias + fs.allow entry to vite.config.js (see docs/ARCHITECTURE.md):');
+        $this->line("     resolve: { alias: { '@cabinet-kit': path.resolve(__dirname, 'vendor/posio/cabinet-kit/resources/js') } }");
+        $this->line("     server: { fs: { allow: ['vendor/posio/cabinet-kit'] } }");
         $this->line('');
-        $this->line('5. Create your own account: php artisan tinker, then');
-        $this->line('     app(Posio\\AdminKit\\Services\\AccountService::class)->createAccount(\'My company\', $user);');
+        $this->line('5. Wire up admin.js using the resolvePage() helper — see stubs/cabinet-entry.js.stub.');
+        $this->line('');
+        $this->line('6. Login/register/logout/password-reset/email-verification are bundled — visit');
+        $this->line('   /'.config('cabinet-kit.route_prefix', 'cabinet').'/register to create your first');
+        $this->line('   user + account. To create an account for an existing user instead:');
+        $this->line('     php artisan tinker');
+        $this->line('     app(Posio\\CabinetKit\\Services\\AccountService::class)->createAccount(\'My company\', $user);');
     }
 }

@@ -1,15 +1,15 @@
 <template>
 
-	<div class="ak-card">
-		<h3 class="ak-card-title">{{ $t ? $t('Account') : 'Account' }}</h3>
+	<div class="ck-card">
+		<h3 class="ck-card-title">{{ $t ? $t('Account') : 'Account' }}</h3>
 
-		<div class="ak-field-row">
-			<span class="ak-field-label">{{ $t ? $t('Name') : 'Name' }}</span>
+		<div class="ck-field-row">
+			<span class="ck-field-label">{{ $t ? $t('Name') : 'Name' }}</span>
 			<span>{{ account?.name }}</span>
 		</div>
 
-		<div class="ak-field-row">
-			<span class="ak-field-label">{{ $t ? $t('Expire') : 'Expire' }}</span>
+		<div class="ck-field-row">
+			<span class="ck-field-label">{{ $t ? $t('Expire') : 'Expire' }}</span>
 			<span>{{ account?.expire || '—' }}</span>
 		</div>
 	</div>

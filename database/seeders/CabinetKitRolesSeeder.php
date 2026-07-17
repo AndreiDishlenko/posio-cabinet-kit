@@ -1,6 +1,6 @@
 <?php
 
-namespace Posio\AdminKit\Database\Seeders;
+namespace Posio\CabinetKit\Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
@@ -11,7 +11,7 @@ use Spatie\Permission\PermissionRegistrar;
  * Role definitions are global (team_id NULL) — only assignments are
  * per-account. Safe to re-run: guard clauses on every firstOrCreate.
  */
-class AdminKitRolesSeeder extends Seeder
+class CabinetKitRolesSeeder extends Seeder
 {
     public function run(): void
     {

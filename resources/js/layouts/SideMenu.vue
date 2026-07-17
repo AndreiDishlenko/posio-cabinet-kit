@@ -7,37 +7,37 @@
 		no per-account persisted expand state (host can add that back via an
 		override if it needs the extra polish).
 	-->
-	<div class="ak-shell" :class="{ 'is-pinned': !isFolded, 'is-pullout': isPullout, 'is-expanded': isExpanded }">
+	<div class="ck-shell" :class="{ 'is-pinned': !isFolded, 'is-pullout': isPullout, 'is-expanded': isExpanded }">
 
-		<div ref="panel" class="ak-panel">
+		<div ref="panel" class="ck-panel">
 
-			<div class="ak-header">
+			<div class="ck-header">
 				<slot name="brand">
-					<span class="ak-brand-fallback">{{ $t ? $t('Admin') : 'Admin' }}</span>
+					<span class="ck-brand-fallback">{{ $t ? $t('Cabinet') : 'Cabinet' }}</span>
 				</slot>
 
-				<button type="button" class="ak-toggle" @click="togglePinned">
-					<Icon icon="material-symbols:left-panel-close-outline-rounded" class="ak-icon"/>
+				<button type="button" class="ck-toggle" @click="togglePinned">
+					<Icon icon="material-symbols:left-panel-close-outline-rounded" class="ck-icon"/>
 				</button>
 			</div>
 
-			<nav class="ak-nav">
-				<div v-for="(group, groupIndex) in in_data" :key="groupIndex" class="ak-group">
+			<nav class="ck-nav">
+				<div v-for="(group, groupIndex) in in_data" :key="groupIndex" class="ck-group">
 
-					<div class="ak-group-label">{{ $t ? $t(group.label) : group.label }}</div>
+					<div class="ck-group-label">{{ $t ? $t(group.label) : group.label }}</div>
 
-					<ul class="ak-group-list">
+					<ul class="ck-group-list">
 						<li v-for="item in group.children" :key="item.id"
-							class="ak-item"
+							class="ck-item"
 							:class="{ 'is-active': item.id === current_id }"
 							>
-							<Link v-if="item.route" class="ak-link" :href="route(item.route)">
-								<Icon :icon="item.icon" class="ak-icon"/>
-								<span class="ak-label">{{ $t ? $t(item.label) : item.label }}</span>
+							<Link v-if="item.route" class="ck-link" :href="route(item.route)">
+								<Icon :icon="item.icon" class="ck-icon"/>
+								<span class="ck-label">{{ $t ? $t(item.label) : item.label }}</span>
 							</Link>
-							<a v-else-if="item.link" class="ak-link" :href="item.link">
-								<Icon :icon="item.icon" class="ak-icon"/>
-								<span class="ak-label">{{ $t ? $t(item.label) : item.label }}</span>
+							<a v-else-if="item.link" class="ck-link" :href="item.link">
+								<Icon :icon="item.icon" class="ck-icon"/>
+								<span class="ck-label">{{ $t ? $t(item.label) : item.label }}</span>
 							</a>
 						</li>
 					</ul>
@@ -80,14 +80,14 @@
 			},
 		},
 		created() {
-			const saved = localStorage.getItem('adminKitSideMenuState');
+			const saved = localStorage.getItem('cabinetKitSideMenuState');
 			if (saved === 'false') this.isFolded = false;
 			if (saved === 'true') this.isFolded = true;
 
-			this.$emitter?.on('ak_burger_click', this.onBurger);
+			this.$emitter?.on('ck_burger_click', this.onBurger);
 		},
 		beforeUnmount() {
-			this.$emitter?.off('ak_burger_click', this.onBurger);
+			this.$emitter?.off('ck_burger_click', this.onBurger);
 		},
 		methods: {
 			onBurger() {
@@ -99,71 +99,71 @@
 			},
 			togglePinned() {
 				this.isFolded = !this.isFolded;
-				localStorage.setItem('adminKitSideMenuState', this.isFolded);
+				localStorage.setItem('cabinetKitSideMenuState', this.isFolded);
 			},
 		},
 	}
 </script>
 
 <style lang="scss" scoped>
-	.ak-shell {
+	.ck-shell {
 		position: relative;
 		flex-shrink: 0;
 		height: 100%;
-		width: var(--ak-rail-width, 64px);
+		width: var(--ck-rail-width, 64px);
 		z-index: 40;
 		transition: width .2s ease;
 	}
 
-	.ak-shell.is-pinned {
-		width: var(--ak-expanded-width, 240px);
+	.ck-shell.is-pinned {
+		width: var(--ck-expanded-width, 240px);
 	}
 
 	@media (max-width: 1023.98px) {
-		.ak-shell, .ak-shell.is-pinned {
+		.ck-shell, .ck-shell.is-pinned {
 			width: 0;
 		}
 	}
 
-	.ak-panel {
+	.ck-panel {
 		position: absolute;
 		inset-inline-start: 0;
 		top: 0;
 		height: 100%;
-		width: var(--ak-rail-width, 64px);
+		width: var(--ck-rail-width, 64px);
 		display: flex;
 		flex-direction: column;
-		background: var(--ak-sidemenu-bg, #f0f4f9);
+		background: var(--ck-sidemenu-bg, #f0f4f9);
 		overflow-x: hidden;
 		overflow-y: auto;
 		transition: width .2s ease, transform .2s ease;
 	}
 
-	.ak-shell.is-pinned .ak-panel {
-		width: var(--ak-expanded-width, 240px);
+	.ck-shell.is-pinned .ck-panel {
+		width: var(--ck-expanded-width, 240px);
 	}
 
 	@media (max-width: 1023.98px) {
-		.ak-panel {
-			width: var(--ak-expanded-width, 240px);
+		.ck-panel {
+			width: var(--ck-expanded-width, 240px);
 			transform: translateX(-100%);
 			z-index: 10000;
 		}
-		.ak-shell.is-pullout .ak-panel {
+		.ck-shell.is-pullout .ck-panel {
 			transform: translateX(0);
 			box-shadow: 0 8px 24px rgba(0, 0, 0, .18);
 		}
 	}
 
-	.ak-header {
-		height: var(--ak-header-height, 60px);
+	.ck-header {
+		height: var(--ck-header-height, 60px);
 		display: flex;
 		align-items: center;
 		padding-inline: .5rem;
 		flex-shrink: 0;
 	}
 
-	.ak-toggle {
+	.ck-toggle {
 		margin-inline-start: auto;
 		opacity: 0;
 		pointer-events: none;
@@ -175,38 +175,38 @@
 		border-radius: .35rem;
 	}
 
-	.ak-shell.is-expanded .ak-toggle {
+	.ck-shell.is-expanded .ck-toggle {
 		opacity: 1;
 		pointer-events: auto;
 	}
 
-	.ak-toggle:hover {
-		background: var(--ak-item-hover-bg, #e1e3e6);
+	.ck-toggle:hover {
+		background: var(--ck-item-hover-bg, #e1e3e6);
 	}
 
-	.ak-nav {
+	.ck-nav {
 		padding: .25rem .5rem .75rem;
 		flex: 1 1 auto;
 	}
 
-	.ak-group {
+	.ck-group {
 		margin-top: .5rem;
 	}
 
-	.ak-group-label {
+	.ck-group-label {
 		font-size: .7rem;
 		font-weight: 500;
 		opacity: 0;
 		padding: .3rem .5rem;
-		color: var(--ak-group-label-color, #5f6368);
+		color: var(--ck-group-label-color, #5f6368);
 		transition: opacity .2s ease;
 	}
 
-	.ak-shell.is-expanded .ak-group-label {
+	.ck-shell.is-expanded .ck-group-label {
 		opacity: 1;
 	}
 
-	.ak-group-list {
+	.ck-group-list {
 		list-style: none;
 		margin: 0;
 		padding: 0;
@@ -215,41 +215,41 @@
 		gap: .1rem;
 	}
 
-	.ak-link {
+	.ck-link {
 		display: flex;
 		align-items: center;
 		height: 40px;
 		border-radius: .5rem;
-		color: var(--ak-item-color, #444746);
+		color: var(--ck-item-color, #444746);
 		text-decoration: none;
 		overflow: hidden;
 		padding-inline: .6rem;
 		transition: background-color .2s ease, color .2s ease;
 	}
 
-	.ak-icon {
+	.ck-icon {
 		width: 20px;
 		height: 20px;
 		flex: 0 0 auto;
 	}
 
-	.ak-label {
+	.ck-label {
 		margin-inline-start: .6rem;
 		white-space: nowrap;
 		opacity: 0;
 		transition: opacity .2s ease;
 	}
 
-	.ak-shell.is-expanded .ak-label {
+	.ck-shell.is-expanded .ck-label {
 		opacity: 1;
 	}
 
-	.ak-link:hover {
-		background: var(--ak-item-hover-bg, #e1e3e6);
+	.ck-link:hover {
+		background: var(--ck-item-hover-bg, #e1e3e6);
 	}
 
-	.ak-item.is-active .ak-link {
-		background: var(--ak-item-active-bg, #d3e3fd);
-		color: var(--ak-item-active-color, #0842a0);
+	.ck-item.is-active .ck-link {
+		background: var(--ck-item-active-bg, #d3e3fd);
+		color: var(--ck-item-active-color, #0842a0);
 	}
 </style>

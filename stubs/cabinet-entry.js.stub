@@ -5,15 +5,15 @@
 
 import { createApp, h } from 'vue';
 import { createInertiaApp } from '@inertiajs/vue3';
-import { resolveAdminKitPage } from '@admin-kit/resolvePage.js';
+import { resolveCabinetKitPage } from '@cabinet-kit/resolvePage.js';
 
-import '../../../vendor/posio/admin-kit/resources/scss/admin-kit.scss';
+import '../../../vendor/posio/cabinet-kit/resources/scss/cabinet-kit.scss';
 
 createInertiaApp({
-	resolve: (name) => resolveAdminKitPage(
+	resolve: (name) => resolveCabinetKitPage(
 		name,
 		import.meta.glob('./overrides/**/*.vue', { eager: true }),
-		import.meta.glob('@admin-kit/pages/**/*.vue', { eager: true }),
+		import.meta.glob('@cabinet-kit/pages/**/*.vue', { eager: true }),
 	),
 	setup({ el, App, props, plugin }) {
 		createApp({ render: () => h(App, props) })

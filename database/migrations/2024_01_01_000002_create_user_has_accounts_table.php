@@ -16,7 +16,7 @@ return new class extends Migration
     {
         Schema::create('user_has_accounts', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained(config('admin-kit.users_table', 'users'))->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained(config('cabinet-kit.users_table', 'users'))->cascadeOnDelete();
             $table->foreignId('account_id')->constrained('accounts')->cascadeOnDelete();
             $table->timestamps();
 

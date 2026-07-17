@@ -1,19 +1,19 @@
 <template>
 
-	<div class="ak-card-template">
+	<div class="ck-card-template">
 
-		<div class="ak-card-header flex flex-row items-center justify-between">
-			<h3 class="ak-card-title">{{ $t ? $t(title) : title }}</h3>
-			<button type="button" class="ak-card-close" @click="$emit('close')">
-				<Icon icon="mdi:close" class="ak-icon"/>
+		<div class="ck-card-header flex flex-row items-center justify-between">
+			<h3 class="ck-card-title">{{ $t ? $t(title) : title }}</h3>
+			<button type="button" class="ck-card-close" @click="$emit('close')">
+				<Icon icon="mdi:close" class="ck-icon"/>
 			</button>
 		</div>
 
-		<div class="ak-card-body">
+		<div class="ck-card-body">
 			<slot/>
 		</div>
 
-		<div v-if="$slots.footer" class="ak-card-footer">
+		<div v-if="$slots.footer" class="ck-card-footer">
 			<slot name="footer"/>
 		</div>
 
@@ -38,20 +38,20 @@
 </script>
 
 <style lang="scss" scoped>
-	.ak-card-template {
+	.ck-card-template {
 		min-width: 320px;
 	}
 
-	.ak-card-header {
+	.ck-card-header {
 		margin-bottom: 1rem;
 	}
 
-	.ak-card-title {
+	.ck-card-title {
 		font-size: 1.1rem;
 		font-weight: 600;
 	}
 
-	.ak-card-close {
+	.ck-card-close {
 		opacity: .6;
 
 		&:hover {
@@ -59,7 +59,7 @@
 		}
 	}
 
-	.ak-card-footer {
+	.ck-card-footer {
 		margin-top: 1.25rem;
 		display: flex;
 		justify-content: flex-end;

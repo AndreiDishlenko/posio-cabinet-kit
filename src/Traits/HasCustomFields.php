@@ -1,6 +1,6 @@
 <?php
 
-namespace Posio\AdminKit\Traits;
+namespace Posio\CabinetKit\Traits;
 
 use stdClass;
 
@@ -9,7 +9,7 @@ use stdClass;
  * ('{}' never '[]') so `$model->settings->foo` never throws on an empty bag.
  *
  * The accessor/mutator names are fixed to `settings` — a host renaming the
- * underlying column (config('admin-kit.user_settings_column')) only changes
+ * underlying column (config('cabinet-kit.user_settings_column')) only changes
  * what the bundled migration creates; it must also add its own
  * getSettingsAttribute/setSettingsAttribute proxy if the real column is
  * named differently.

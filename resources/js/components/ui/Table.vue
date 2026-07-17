@@ -1,11 +1,11 @@
 <template>
 
-	<div class="ak-table-wrapper">
+	<div class="ck-table-wrapper">
 
-		<table class="ak-table">
+		<table class="ck-table">
 			<thead>
 				<tr>
-					<th v-if="selectable" class="ak-th-select"></th>
+					<th v-if="selectable" class="ck-th-select"></th>
 					<th v-for="column in columns" :key="column.key"
 						:class="{ 'is-sortable': column.sortable }"
 						@click="column.sortable && toggleSort(column.key)"
@@ -13,17 +13,17 @@
 						{{ $t ? $t(column.label) : column.label }}
 						<Icon v-if="column.sortable && sort_key === column.key"
 							:icon="sort_dir === 'asc' ? 'mdi:arrow-up' : 'mdi:arrow-down'"
-							class="ak-icon-sm"/>
+							class="ck-icon-sm"/>
 					</th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr v-for="row in sortedRows" :key="row[row_key]"
-					class="ak-row"
+					class="ck-row"
 					:class="{ 'is-selected': isSelected(row) }"
 					@click="selectRow(row)"
 					>
-					<td v-if="selectable" class="ak-td-select">
+					<td v-if="selectable" class="ck-td-select">
 						<input type="checkbox" :checked="isSelected(row)" @click.stop="selectRow(row)"/>
 					</td>
 					<td v-for="column in columns" :key="column.key">
@@ -33,7 +33,7 @@
 					</td>
 				</tr>
 				<tr v-if="!rows.length">
-					<td :colspan="columns.length + (selectable ? 1 : 0)" class="ak-empty">
+					<td :colspan="columns.length + (selectable ? 1 : 0)" class="ck-empty">
 						{{ $t ? $t('No data') : 'No data' }}
 					</td>
 				</tr>
@@ -128,7 +128,7 @@
 </script>
 
 <style lang="scss" scoped>
-	.ak-table {
+	.ck-table {
 		width: 100%;
 		border-collapse: collapse;
 
@@ -137,8 +137,8 @@
 			font-size: .8rem;
 			font-weight: 600;
 			padding: .5rem .6rem;
-			background: var(--ak-table-header-bg, #f6f7f9);
-			border-bottom: 1px solid var(--ak-table-border-color, #e5e7eb);
+			background: var(--ck-table-header-bg, #f6f7f9);
+			border-bottom: 1px solid var(--ck-table-border-color, #e5e7eb);
 
 			&.is-sortable {
 				cursor: pointer;
@@ -147,23 +147,23 @@
 
 		td {
 			padding: .5rem .6rem;
-			border-bottom: 1px solid var(--ak-table-border-color, #ececef);
+			border-bottom: 1px solid var(--ck-table-border-color, #ececef);
 		}
 	}
 
-	.ak-row {
+	.ck-row {
 		cursor: pointer;
 
 		&:hover {
-			background: var(--ak-table-hover-bg, #f6f7f9);
+			background: var(--ck-table-hover-bg, #f6f7f9);
 		}
 
 		&.is-selected {
-			background: var(--ak-table-selection-bg, #eaf1fd);
+			background: var(--ck-table-selection-bg, #eaf1fd);
 		}
 	}
 
-	.ak-empty {
+	.ck-empty {
 		text-align: center;
 		opacity: .5;
 		padding: 1.5rem;

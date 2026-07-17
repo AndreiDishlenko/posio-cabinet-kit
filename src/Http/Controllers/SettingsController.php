@@ -1,11 +1,11 @@
 <?php
 
-namespace Posio\AdminKit\Http\Controllers;
+namespace Posio\CabinetKit\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Inertia\Inertia;
-use Posio\AdminKit\Services\MenuService;
+use Posio\CabinetKit\Services\MenuService;
 
 class SettingsController extends Controller
 {

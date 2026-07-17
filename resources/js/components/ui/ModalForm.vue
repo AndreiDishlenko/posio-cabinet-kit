@@ -1,8 +1,8 @@
 <template>
 
 	<Teleport to="body">
-		<div v-if="isOpen" class="ak-modal-overlay" @mousedown.self="onOverlayClick">
-			<div class="ak-modal-content" :class="cardclasses">
+		<div v-if="isOpen" class="ck-modal-overlay" @mousedown.self="onOverlayClick">
+			<div class="ck-modal-content" :class="cardclasses">
 				<slot/>
 			</div>
 		</div>
@@ -59,7 +59,7 @@
 </script>
 
 <style lang="scss">
-	.ak-modal-overlay {
+	.ck-modal-overlay {
 		position: fixed;
 		inset: 0;
 		z-index: 10001;
@@ -69,14 +69,14 @@
 		justify-content: center;
 	}
 
-	.ak-modal-content {
+	.ck-modal-content {
 		position: relative;
 		z-index: 10002;
 		min-width: 300px;
 		max-width: 95dvw;
 		max-height: 95dvh;
 		overflow: auto;
-		background: var(--ak-card-bg, #fff);
+		background: var(--ck-card-bg, #fff);
 		border-radius: .5rem;
 		padding: 1.25rem;
 	}

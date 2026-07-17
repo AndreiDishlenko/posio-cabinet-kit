@@ -1,6 +1,6 @@
 {
-    "name": "posio/admin-kit",
-    "description": "Base admin panel scaffolding extracted from posio.cabinet: multi-tenant accounts, per-account roles/permissions, settings shell, Inertia+Vue layout and UI kit.",
+    "name": "posio/cabinet-kit",
+    "description": "Base admin panel scaffolding extracted from posio.cabinet: multi-tenant accounts, per-account roles/permissions, bundled auth, settings shell, Inertia+Vue layout and UI kit.",
     "type": "library",
     "license": "proprietary",
     "require": {
@@ -11,14 +11,14 @@
     },
     "autoload": {
         "psr-4": {
-            "Posio\\AdminKit\\": "src/",
-            "Posio\\AdminKit\\Database\\Seeders\\": "database/seeders/"
+            "Posio\\CabinetKit\\": "src/",
+            "Posio\\CabinetKit\\Database\\Seeders\\": "database/seeders/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Posio\\AdminKit\\AdminKitServiceProvider"
+                "Posio\\CabinetKit\\CabinetKitServiceProvider"
             ]
         }
     },

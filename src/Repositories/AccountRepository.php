@@ -1,9 +1,9 @@
 <?php
 
-namespace Posio\AdminKit\Repositories;
+namespace Posio\CabinetKit\Repositories;
 
 use Illuminate\Support\Collection;
-use Posio\AdminKit\Models\Account;
+use Posio\CabinetKit\Models\Account;
 
 class AccountRepository
 {

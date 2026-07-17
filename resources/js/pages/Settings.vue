@@ -1,11 +1,11 @@
 <template>
 
-	<AdminLayout :page_name="activeTabLabel">
+	<CabinetLayout :page_name="activeTabLabel">
 
-		<div class="ak-tabs flex flex-row gap-2 border-b mb-4">
+		<div class="ck-tabs flex flex-row gap-2 border-b mb-4">
 			<button v-for="tab in tabs" :key="tab.id"
 				type="button"
-				class="ak-tab"
+				class="ck-tab"
 				:class="{ 'is-active': tab.id === activeTab }"
 				@click="activeTab = tab.id"
 				>
@@ -19,12 +19,12 @@
 			:can_manage_account="can_manage_account"
 			/>
 
-	</AdminLayout>
+	</CabinetLayout>
 
 </template>
 
 <script>
-	import AdminLayout from '../layouts/AdminLayout.vue';
+	import CabinetLayout from '../layouts/CabinetLayout.vue';
 
 	import AccountTab from './Settings/AccountTab.vue';
 	import UsersTab from './Settings/UsersTab.vue';
@@ -34,7 +34,7 @@
 
 	export default {
 		name: 'Settings',
-		components: { AdminLayout },
+		components: { CabinetLayout },
 		props: {
 			tabs: {
 				type: Array,
@@ -71,7 +71,7 @@
 </script>
 
 <style lang="scss" scoped>
-	.ak-tab {
+	.ck-tab {
 		padding: .5rem .75rem;
 		font-size: .9rem;
 		opacity: .6;
@@ -79,7 +79,7 @@
 
 		&.is-active {
 			opacity: 1;
-			border-color: var(--ak-brand-bg, #3961E9);
+			border-color: var(--ck-brand-bg, #3961E9);
 			font-weight: 600;
 		}
 	}

@@ -1,13 +1,13 @@
 <?php
 
-namespace Posio\AdminKit\Services;
+namespace Posio\CabinetKit\Services;
 
 class MenuService
 {
     /** Side menu filtered to what the authenticated user can actually see. */
     public function menuFor($user): array
     {
-        $groups = config('admin-kit.menu', []);
+        $groups = config('cabinet-kit.menu', []);
 
         $visibleGroups = [];
         foreach ($groups as $group) {
@@ -28,7 +28,7 @@ class MenuService
     public function settingsTabsFor($user): array
     {
         return array_values(array_filter(
-            config('admin-kit.settings_tabs', []),
+            config('cabinet-kit.settings_tabs', []),
             fn ($tab) => empty($tab['permission']) || $user->can($tab['permission']),
         ));
     }

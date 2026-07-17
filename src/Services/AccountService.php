@@ -1,9 +1,9 @@
 <?php
 
-namespace Posio\AdminKit\Services;
+namespace Posio\CabinetKit\Services;
 
 use Illuminate\Support\Facades\DB;
-use Posio\AdminKit\Models\Account;
+use Posio\CabinetKit\Models\Account;
 use Spatie\Permission\PermissionRegistrar;
 
 class AccountService
@@ -22,7 +22,7 @@ class AccountService
         ]);
 
         $this->scopeRolesToAccount($account->id);
-        $owner->assignRole(config('admin-kit.roles.owner_role'));
+        $owner->assignRole(config('cabinet-kit.roles.owner_role'));
 
         return $account;
     }
@@ -35,7 +35,7 @@ class AccountService
         );
 
         $this->scopeRolesToAccount($account->id);
-        $user->assignRole($role ?? config('admin-kit.roles.default_member_role'));
+        $user->assignRole($role ?? config('cabinet-kit.roles.default_member_role'));
     }
 
     public function setMemberRole($member, Account $account, string $role): void
@@ -44,7 +44,7 @@ class AccountService
             abort(422, 'The account owner role cannot be changed.');
         }
 
-        if (! in_array($role, config('admin-kit.roles.assignable_roles'), true)) {
+        if (! in_array($role, config('cabinet-kit.roles.assignable_roles'), true)) {
             abort(422, "Role {$role} is not assignable.");
         }
 

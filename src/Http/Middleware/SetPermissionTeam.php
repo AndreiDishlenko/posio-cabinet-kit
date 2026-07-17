@@ -1,6 +1,6 @@
 <?php
 
-namespace Posio\AdminKit\Http\Middleware;
+namespace Posio\CabinetKit\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;

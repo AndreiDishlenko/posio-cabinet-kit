@@ -1,9 +1,9 @@
 <template>
 
-	<div class="ak-card">
-		<h3 class="ak-card-title">{{ $t ? $t('Users') : 'Users' }}</h3>
+	<div class="ck-card">
+		<h3 class="ck-card-title">{{ $t ? $t('Users') : 'Users' }}</h3>
 
-		<table class="ak-simple-table">
+		<table class="ck-simple-table">
 			<thead>
 				<tr>
 					<th>{{ $t ? $t('Name') : 'Name' }}</th>
@@ -13,7 +13,7 @@
 			</thead>
 			<tbody>
 				<tr v-for="member in members" :key="member.id">
-					<td>{{ member.name }} <span v-if="member.is_owner" class="ak-badge">{{ $t ? $t('Owner') : 'Owner' }}</span></td>
+					<td>{{ member.name }} <span v-if="member.is_owner" class="ck-badge">{{ $t ? $t('Owner') : 'Owner' }}</span></td>
 					<td>{{ member.email }}</td>
 					<td v-if="can_manage_account">
 						<button v-if="!member.is_owner" type="button" class="button ghost-button button-sm" @click="removeMember(member)">
@@ -44,25 +44,25 @@
 		},
 		methods: {
 			removeMember(member) {
-				router.post(route('admin-kit.account.member.remove'), { user_id: member.id }, { preserveScroll: true });
+				router.post(route('cabinet-kit.account.member.remove'), { user_id: member.id }, { preserveScroll: true });
 			},
 		},
 	}
 </script>
 
 <style lang="scss" scoped>
-	.ak-simple-table {
+	.ck-simple-table {
 		width: 100%;
 		border-collapse: collapse;
 
 		th, td {
 			text-align: start;
 			padding: .5rem;
-			border-bottom: 1px solid var(--ak-border-color, #e5e7eb);
+			border-bottom: 1px solid var(--ck-border-color, #e5e7eb);
 		}
 	}
 
-	.ak-badge {
+	.ck-badge {
 		font-size: .7rem;
 		opacity: .6;
 		margin-inline-start: .35rem;

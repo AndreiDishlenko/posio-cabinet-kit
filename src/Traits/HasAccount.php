@@ -1,11 +1,11 @@
 <?php
 
-namespace Posio\AdminKit\Traits;
+namespace Posio\CabinetKit\Traits;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Posio\AdminKit\Models\Account;
-use Posio\AdminKit\Repositories\AccountRepository;
+use Posio\CabinetKit\Models\Account;
+use Posio\CabinetKit\Repositories\AccountRepository;
 
 /**
  * Attach to the host's User model. Gives it accounts()/currentAccount() the

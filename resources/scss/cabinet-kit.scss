@@ -1,0 +1,158 @@
+// CabinetKit design tokens — all --ck-* prefixed to never collide with the
+// host app's own CSS variables. Import this once from the host's main admin
+// scss entry: @import '../../../vendor/posio/cabinet-kit/resources/scss/cabinet-kit.scss';
+
+:root {
+	--ck-header-height: 60px;
+	--ck-rail-width: 64px;
+	--ck-expanded-width: 240px;
+}
+
+html.light {
+	--ck-text-color: #1c1c1c;
+	--ck-background-color: #f6f7f9;
+	--ck-header-bg: #ffffff;
+	--ck-card-bg: #ffffff;
+	--ck-border-color: #e5e7eb;
+
+	--ck-brand-bg: #3961E9;
+	--ck-brand-color: #ffffff;
+
+	--ck-button-bg: #f0f1f3;
+	--ck-button-hover-bg: #e4e6ea;
+
+	--ck-sidemenu-bg: #f0f4f9;
+	--ck-item-color: #444746;
+	--ck-item-hover-bg: #e1e3e6;
+	--ck-item-active-bg: #d3e3fd;
+	--ck-item-active-color: #0842a0;
+	--ck-group-label-color: #5f6368;
+
+	--ck-table-header-bg: #f6f7f9;
+	--ck-table-border-color: #e5e7eb;
+	--ck-table-hover-bg: #f6f7f9;
+	--ck-table-selection-bg: #eaf1fd;
+}
+
+html.dark {
+	--ck-text-color: #dfdfd6;
+	--ck-background-color: #181818;
+	--ck-header-bg: #1c1c1c;
+	--ck-card-bg: #212121;
+	--ck-border-color: #292929;
+
+	--ck-brand-bg: #3961E9;
+	--ck-brand-color: #ffffff;
+
+	--ck-button-bg: #2c2c2c;
+	--ck-button-hover-bg: #353535;
+
+	--ck-sidemenu-bg: #161616;
+	--ck-item-color: #e3e3e3;
+	--ck-item-hover-bg: #2a2a2a;
+	--ck-item-active-bg: #37383b;
+	--ck-item-active-color: #ffffff;
+	--ck-group-label-color: #9e9e9e;
+
+	--ck-table-header-bg: #222222;
+	--ck-table-border-color: #292929;
+	--ck-table-hover-bg: #222222;
+	--ck-table-selection-bg: #213a52;
+}
+
+.ck-card {
+	background: var(--ck-card-bg);
+	border: 1px solid var(--ck-border-color);
+	border-radius: .5rem;
+	padding: 1.25rem;
+}
+
+.ck-card-title {
+	font-size: 1rem;
+	font-weight: 600;
+	margin-bottom: 1rem;
+}
+
+.ck-field-row {
+	display: flex;
+	justify-content: space-between;
+	padding: .4rem 0;
+	border-bottom: 1px solid var(--ck-border-color);
+
+	&:last-child {
+		border-bottom: none;
+	}
+}
+
+.ck-field-label {
+	opacity: .6;
+}
+
+.ck-form-row {
+	display: flex;
+	flex-direction: column;
+	gap: .3rem;
+	margin-bottom: .9rem;
+}
+
+.ck-input {
+	border: 1px solid var(--ck-border-color, #e5e7eb);
+	border-radius: .4rem;
+	padding: .45rem .6rem;
+	font-size: .9rem;
+	background: var(--ck-card-bg, #fff);
+	color: var(--ck-text-color, #1c1c1c);
+
+	&.is-invalid {
+		border-color: #dc2626;
+	}
+}
+
+.ck-error {
+	font-size: .75rem;
+	color: #dc2626;
+}
+
+// Base button — additive to the host's own .button classes if it has them;
+// otherwise this is a complete, standalone button style.
+.button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: .35rem;
+	border-radius: .4rem;
+	padding: .45rem .9rem;
+	font-size: .9rem;
+	background: var(--ck-button-bg);
+	color: var(--ck-text-color);
+	cursor: pointer;
+	transition: background-color .15s ease;
+
+	&:hover {
+		background: var(--ck-button-hover-bg);
+	}
+}
+
+.primary-button {
+	background: var(--ck-brand-bg);
+	color: var(--ck-brand-color);
+
+	&:hover {
+		filter: brightness(1.1);
+	}
+}
+
+.ghost-button {
+	background: transparent;
+	box-shadow: none;
+}
+
+.button-sm {
+	font-size: .8rem;
+	padding: .3rem .6rem;
+}
+
+.button-lg {
+	font-size: 1rem;
+	padding: .6rem 1.1rem;
+}
