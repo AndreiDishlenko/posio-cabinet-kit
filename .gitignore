@@ -1,4 +1,5 @@
 /vendor/
 /.phpunit.cache/
+/.claude/
+CLAUDE.md
 .DS_Store
-.claude
