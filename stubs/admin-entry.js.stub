@@ -1,0 +1,23 @@
+// Example resources/_admin/js/admin.js for a greenfield project.
+// If the host already has an admin.js, merge the resolve() call in — the
+// rest (createApp/createInertiaApp scaffolding) is standard Laravel/Inertia
+// boilerplate and can stay as-is.
+
+import { createApp, h } from 'vue';
+import { createInertiaApp } from '@inertiajs/vue3';
+import { resolveAdminKitPage } from '@admin-kit/resolvePage.js';
+
+import '../../../vendor/posio/admin-kit/resources/scss/admin-kit.scss';
+
+createInertiaApp({
+	resolve: (name) => resolveAdminKitPage(
+		name,
+		import.meta.glob('./overrides/**/*.vue', { eager: true }),
+		import.meta.glob('@admin-kit/pages/**/*.vue', { eager: true }),
+	),
+	setup({ el, App, props, plugin }) {
+		createApp({ render: () => h(App, props) })
+			.use(plugin)
+			.mount(el);
+	},
+});

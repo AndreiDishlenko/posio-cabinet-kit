@@ -1,0 +1,27 @@
+{
+    "name": "posio/admin-kit",
+    "description": "Base admin panel scaffolding extracted from posio.cabinet: multi-tenant accounts, per-account roles/permissions, settings shell, Inertia+Vue layout and UI kit.",
+    "type": "library",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^11.0|^12.0",
+        "inertiajs/inertia-laravel": "^1.0|^2.0",
+        "spatie/laravel-permission": "^6.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Posio\\AdminKit\\": "src/",
+            "Posio\\AdminKit\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Posio\\AdminKit\\AdminKitServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
