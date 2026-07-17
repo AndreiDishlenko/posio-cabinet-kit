@@ -20,7 +20,7 @@ return new class extends Migration
 
         if (! Schema::hasColumn($table, $column)) {
             Schema::table($table, function (Blueprint $blueprint) use ($column) {
-                $blueprint->json($column)->default('{}');
+                $blueprint->json($column)->nullable(); // MySQL forbids defaults on JSON; HasCustomFields treats null as '{}'
             });
         }
     }
