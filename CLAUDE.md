@@ -1,4 +1,4 @@
-# CLAUDE.md — posio/cabinet-kit
+# CLAUDE.md — posio/cabinet-kit 
 
 Guidance for Claude Code (or any AI assistant) working directly in this
 repository — the standalone package, not a project that consumes it.
