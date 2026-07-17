@@ -11,8 +11,9 @@ use Posio\CabinetKit\Http\Controllers\ProfileController;
 use Posio\CabinetKit\Http\Controllers\SettingsController;
 use Posio\CabinetKit\Http\Middleware\SetPermissionTeam;
 use Posio\CabinetKit\Http\Middleware\ShareCabinetKitData;
+use Posio\CabinetKit\Http\Middleware\UseCabinetKitRootView;
 
-Route::middleware('web')
+Route::middleware(['web', UseCabinetKitRootView::class])
     ->prefix(config('cabinet-kit.route_prefix', 'cabinet'))
     ->group(function () {
 

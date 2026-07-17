@@ -5,6 +5,14 @@
 // import path from 'path';
 //
 // export default defineConfig({
+//     plugins: [
+//         laravel({
+//             // The cabinet gets its own entry next to the host's main one —
+//             // the package's cabinet-kit::app blade view loads it.
+//             input: ['resources/_main/js/main.js', 'resources/_admin/js/admin.js'],
+//             refresh: true,
+//         }),
+//     ],
 //     resolve: {
 //         alias: {
 //             '@cabinet-kit': path.resolve(__dirname, 'vendor/posio/cabinet-kit/resources/js'),
@@ -18,3 +26,10 @@
 //         },
 //     },
 // });
+//
+// And in tailwind.config.js, let the scanner see package templates:
+//
+// content: [
+//     ...,
+//     './vendor/posio/cabinet-kit/resources/js/**/*.vue',
+// ],

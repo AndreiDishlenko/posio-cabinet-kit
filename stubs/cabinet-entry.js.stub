@@ -1,10 +1,16 @@
 // Example resources/_admin/js/admin.js for a greenfield project.
+// cabinet-kit:install copies this file there if it doesn't exist yet.
 // If the host already has an admin.js, merge the resolve() call in — the
 // rest (createApp/createInertiaApp scaffolding) is standard Laravel/Inertia
 // boilerplate and can stay as-is.
+//
+// npm deps this entry expects (all standard in a Laravel+Inertia+Vue host):
+//   vue  @inertiajs/vue3  ziggy-js  @iconify/vue  mitt
 
 import { createApp, h } from 'vue';
 import { createInertiaApp } from '@inertiajs/vue3';
+import { ZiggyVue } from 'ziggy-js';
+import mitt from 'mitt';
 import { resolveCabinetKitPage } from '@cabinet-kit/resolvePage.js';
 
 import '../../../vendor/posio/cabinet-kit/resources/scss/cabinet-kit.scss';
@@ -16,8 +22,15 @@ createInertiaApp({
 		import.meta.glob('@cabinet-kit/pages/**/*.vue', { eager: true }),
 	),
 	setup({ el, App, props, plugin }) {
-		createApp({ render: () => h(App, props) })
-			.use(plugin)
-			.mount(el);
+		const app = createApp({ render: () => h(App, props) });
+
+		app.use(plugin);
+		// route() helper in CabinetKit templates (needs @routes in the blade view —
+		// the bundled cabinet-kit::app view already prints it).
+		app.use(ZiggyVue);
+		// Event bus the burger button ⇄ side menu pair communicates through.
+		app.config.globalProperties.$emitter = mitt();
+
+		app.mount(el);
 	},
 });

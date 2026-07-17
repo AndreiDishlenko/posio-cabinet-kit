@@ -14,6 +14,8 @@ Not a finished product — a **shell** you extend per project. See
 - Laravel 11/12, PHP 8.2+
 - Inertia.js (Laravel adapter) + Vue 3, Options API
 - `spatie/laravel-permission` (pulled in automatically)
+- `tightenco/ziggy` (composer) + npm: `ziggy-js`, `@iconify/vue`, `mitt` —
+  package pages resolve URLs through `route()` and use Iconify icons
 - A `User` model with `password`/`email_verified_at` columns (Laravel's
   default `users` migration already has both)
 
@@ -26,12 +28,17 @@ php artisan cabinet-kit:install
 ```
 
 The install command publishes `config/cabinet-kit.php`, runs migrations,
-optionally seeds base roles, and scaffolds
-`resources/_admin/overrides/` (with a README explaining the override
-mechanism). It then prints the remaining manual steps: adding the `HasAccount`
-/ `HasSettings` / `HasCustomFields` traits to your `User` model, wiring the
-Vite alias (`stubs/vite-alias-snippet.js`), and wiring `admin.js`
-(`stubs/cabinet-entry.js.stub`).
+optionally seeds base roles, scaffolds `resources/_admin/overrides/` (with a
+README explaining the override mechanism) and the cabinet Vite entry
+`resources/_admin/js/admin.js` (from `stubs/cabinet-entry.js.stub`). It then
+prints the remaining manual steps: adding the `HasAccount` / `HasSettings` /
+`HasCustomFields` traits to your `User` model, and wiring vite.config.js
+(alias + `fs.allow` + `input` entry) and the Tailwind `content` glob per
+`stubs/vite-alias-snippet.js`.
+
+Every CabinetKit page renders into the package's own Blade root view
+(`cabinet-kit::app`) with its own Vite entry — the host's main app view and
+entry are untouched.
 
 Visit `/cabinet/register` afterwards to create your first user + account —
 registration bundles account creation (a "Company name" field), so there's

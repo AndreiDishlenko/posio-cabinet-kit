@@ -83,6 +83,21 @@ middleware's redirect-to-login, `EmailVerificationRequest`) look those exact
 names up. Only the *authenticated* dashboard/settings/account route group
 uses the `cabinet-kit.` name prefix.
 
+## Rendering pipeline (who owns which layer)
+
+- **Blade root view** — the package's own `cabinet-kit::app`
+  (`resources/views/app.blade.php`), applied to every CabinetKit route by
+  `UseCabinetKitRootView` middleware. It prints `@routes` (Ziggy),
+  `@vite(config('cabinet-kit.vite_entry'))` and `@inertia`. Swap the whole
+  view via `config('cabinet-kit.root_view')` if the host needs its own
+  HTML shell.
+- **Inertia server-side page paths** — the service provider appends the
+  package `resources/js` and the host `resources/_admin/overrides` to
+  `inertia.pages.paths` (v3) / `inertia.testing.page_paths` (v1/v2), so
+  `ensure_pages_exist => true` and `assertInertia` both see package pages.
+- **Client-side resolver** — `resolveCabinetKitPage()` in the host's
+  cabinet entry: overrides glob first, package glob second.
+
 ## Host integration contract
 
 CabinetKit provides its own auth (see above). It still expects:
@@ -93,11 +108,22 @@ CabinetKit provides its own auth (see above). It still expects:
    migration already creates.
 2. `spatie/laravel-permission` installed with `'teams' => true` in
    `config/permission.php` *before* its migrations run.
-3. Vite alias `@cabinet-kit` → `vendor/posio/cabinet-kit/resources/js` (see
-   `stubs/vite-alias-snippet.js`).
-4. `resources/_admin/js/admin.js` wired through `resolveCabinetKitPage()`
-   (see `stubs/cabinet-entry.js.stub`).
-5. (Optional) `implements MustVerifyEmail` on the host's `User` model if
+3. `tightenco/ziggy` installed (composer) + `ziggy-js` (npm) — every URL in
+   CabinetKit Vue pages goes through `route()`.
+4. Vite: alias `@cabinet-kit` → `vendor/posio/cabinet-kit/resources/js`,
+   `server.fs.allow` for `vendor/posio/cabinet-kit`, and the cabinet entry
+   (`config('cabinet-kit.vite_entry')`, default
+   `resources/_admin/js/admin.js`) added to the laravel-vite-plugin `input`
+   array (see `stubs/vite-alias-snippet.js`).
+5. `resources/_admin/js/admin.js` wired through `resolveCabinetKitPage()` —
+   `cabinet-kit:install` scaffolds it from `stubs/cabinet-entry.js.stub`
+   when missing. The stub also registers `ZiggyVue` and a `mitt` bus as
+   `$emitter` (mobile burger ⇄ SideMenu events). npm deps: `vue`,
+   `@inertiajs/vue3`, `ziggy-js`, `@iconify/vue`, `mitt`.
+6. Tailwind `content` glob covering
+   `./vendor/posio/cabinet-kit/resources/js/**/*.vue` — package templates
+   use utility classes (flex/gap/p-*), which otherwise never get generated.
+7. (Optional) `implements MustVerifyEmail` on the host's `User` model if
    email verification should actually be enforced elsewhere — the
    verify/resend routes work regardless, they just don't block anything on
    their own.

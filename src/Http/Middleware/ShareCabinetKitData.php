@@ -25,8 +25,33 @@ class ShareCabinetKitData
                 'accounts' => fn () => $user->accessibleAccounts()->map->only(['id', 'name', 'owner_id']),
                 'cabinetKitMenu' => fn () => app(MenuService::class)->menuFor($user),
             ]);
+
+            // SideMenu highlights the item whose id matches currentPage.id.
+            // Only fill it in when the host doesn't share its own descriptor.
+            if (! Inertia::getShared('currentPage')) {
+                Inertia::share('currentPage', fn () => $this->currentPageDescriptor($request));
+            }
         }
 
         return $next($request);
+    }
+
+    protected function currentPageDescriptor(Request $request): ?array
+    {
+        $routeName = $request->route()?->getName();
+
+        if (! $routeName) {
+            return null;
+        }
+
+        foreach (config('cabinet-kit.menu', []) as $group) {
+            foreach ($group['children'] ?? [] as $item) {
+                if (($item['route'] ?? null) === $routeName) {
+                    return ['id' => $item['id']];
+                }
+            }
+        }
+
+        return null;
     }
 }

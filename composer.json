@@ -9,6 +9,9 @@
         "inertiajs/inertia-laravel": "^1.0|^2.0|^3.0",
         "spatie/laravel-permission": "^6.0"
     },
+    "suggest": {
+        "tightenco/ziggy": "Required in practice: CabinetKit Vue pages resolve every URL through route(), and the bundled root view prints @routes."
+    },
     "autoload": {
         "psr-4": {
             "Posio\\CabinetKit\\": "src/",

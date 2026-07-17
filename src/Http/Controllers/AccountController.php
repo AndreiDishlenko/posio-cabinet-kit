@@ -2,13 +2,15 @@
 
 namespace Posio\CabinetKit\Http\Controllers;
 
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Posio\CabinetKit\Models\Account;
 use Posio\CabinetKit\Services\AccountService;
 
 class AccountController extends Controller
 {
+    use AuthorizesRequests;
+
     public function __construct(protected AccountService $accountService)
     {
     }

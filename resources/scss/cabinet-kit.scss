@@ -8,7 +8,9 @@
 	--ck-expanded-width: 240px;
 }
 
-html.light {
+// Light tokens double as :root defaults so the kit renders correctly even
+// when the host never toggles an html.light/html.dark class.
+:root, html.light {
 	--ck-text-color: #1c1c1c;
 	--ck-background-color: #f6f7f9;
 	--ck-header-bg: #ffffff;

@@ -19,6 +19,7 @@ class InstallCommand extends Command
 
         $this->seedRolesAndPermissions();
         $this->scaffoldOverridesFolder();
+        $this->scaffoldViteEntry();
         $this->printNextSteps();
 
         return self::SUCCESS;
@@ -63,6 +64,21 @@ class InstallCommand extends Command
         $this->info('Created resources/_admin/overrides/ (see its README.md).');
     }
 
+    protected function scaffoldViteEntry(): void
+    {
+        $entry = config('cabinet-kit.vite_entry', 'resources/_admin/js/admin.js');
+        $entryPath = base_path($entry);
+
+        if (File::exists($entryPath)) {
+            return;
+        }
+
+        File::ensureDirectoryExists(dirname($entryPath));
+        File::copy(__DIR__.'/../../../stubs/cabinet-entry.js.stub', $entryPath);
+
+        $this->info("Created {$entry} (Inertia entry for the cabinet — wired through resolveCabinetKitPage).");
+    }
+
     protected function printNextSteps(): void
     {
         $this->newLine();
@@ -84,11 +100,14 @@ class InstallCommand extends Command
         $this->line('     use Illuminate\\Contracts\\Auth\\MustVerifyEmail;');
         $this->line('     use Illuminate\\Auth\\MustVerifyEmail as MustVerifyEmailTrait;');
         $this->line('');
-        $this->line('4. Add the CabinetKit Vite alias + fs.allow entry to vite.config.js (see docs/ARCHITECTURE.md):');
+        $this->line('4. Add the CabinetKit Vite alias + fs.allow + cabinet entry to vite.config.js (see docs/ARCHITECTURE.md):');
+        $this->line("     laravel({ input: [..., '".config('cabinet-kit.vite_entry', 'resources/_admin/js/admin.js')."'] })");
         $this->line("     resolve: { alias: { '@cabinet-kit': path.resolve(__dirname, 'vendor/posio/cabinet-kit/resources/js') } }");
-        $this->line("     server: { fs: { allow: ['vendor/posio/cabinet-kit'] } }");
+        $this->line("     server: { fs: { allow: ['.', 'vendor/posio/cabinet-kit'] } }");
         $this->line('');
-        $this->line('5. Wire up admin.js using the resolvePage() helper — see stubs/cabinet-entry.js.stub.');
+        $this->line('5. Frontend deps the cabinet entry uses: ziggy-js, @iconify/vue, mitt (npm i if missing).');
+        $this->line('   If Tailwind utilities should apply inside CabinetKit components, add to tailwind.config content:');
+        $this->line("     './vendor/posio/cabinet-kit/resources/js/**/*.vue'");
         $this->line('');
         $this->line('6. Login/register/logout/password-reset/email-verification are bundled — visit');
         $this->line('   /'.config('cabinet-kit.route_prefix', 'cabinet').'/register to create your first');

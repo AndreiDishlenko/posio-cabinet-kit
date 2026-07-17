@@ -26,6 +26,16 @@ return [
     // Named route to redirect to after a successful login or registration.
     'login_redirect_route' => 'cabinet-kit.dashboard',
 
+    // Blade root view every CabinetKit Inertia page renders into. The bundled
+    // view (resources/views/app.blade.php in the package) prints @routes,
+    // @vite(vite_entry) and @inertia. Point this at your own view to take
+    // full control of the cabinet's HTML shell.
+    'root_view' => 'cabinet-kit::app',
+
+    // Vite entry the bundled root view loads. Must also be listed in the
+    // host vite.config.js `input` array. cabinet-kit:install scaffolds it.
+    'vite_entry' => 'resources/_admin/js/admin.js',
+
     // Per-account roles (Spatie Permission teams, team_id = account_id).
     // Keep in sync with database/seeders/CabinetKitRolesSeeder.php.
     'roles' => [

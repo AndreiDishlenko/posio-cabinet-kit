@@ -42,9 +42,10 @@ class Account extends Model
     public function guestUsers(): Collection
     {
         $userModel = config('cabinet-kit.user_model');
+        $usersTable = config('cabinet-kit.users_table', 'users');
 
         return $this->belongsToMany($userModel, 'user_has_accounts')
-            ->select(['users.id', 'name', 'email'])
+            ->select(["{$usersTable}.id", 'name', 'email'])
             ->get()
             ->makeHidden('pivot');
     }
