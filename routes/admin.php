@@ -14,8 +14,8 @@ Route::middleware(array_merge(
     ->prefix(config('admin-kit.route_prefix', 'admin'))
     ->name(config('admin-kit.route_name_prefix', 'admin-kit.'))
     ->group(function () {
-        Route::get('/', DashboardController::class)->name('dashboard');
-        Route::get('/settings', SettingsController::class)->name('settings');
+        Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
 
         Route::post('/account/set', [AccountController::class, 'set'])->name('account.set');
         Route::post('/account/member/invite', [AccountController::class, 'inviteMember'])->name('account.member.invite');
