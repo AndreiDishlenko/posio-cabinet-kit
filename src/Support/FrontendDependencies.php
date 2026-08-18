@@ -12,6 +12,6 @@ final class FrontendDependencies
         'vee-validate' => '^4.15.0',
         'vue-final-modal' => '^4.5.5',
         'vue-i18n' => '^9.14.2',
-        'ziggy-js' => '^2.4.2',
+        'ziggy-js' => '^2.4.2', 
     ];
 }
