@@ -124,7 +124,7 @@
 
                 <!-- Настройки → выпадающее меню с табами страницы настроек.
                      Список берётся из общего settingsTabs.js → совпадает со
-                     страницей CabinetSettings автоматически. -->
+                     страницей настроек автоматически. -->
                 <Dropdown class="gm-footer-settings"
                     align="left"
                     direction="up"
@@ -169,7 +169,7 @@
     import Avatar           from '@/js/Elements/Avatar.vue';
     import Dropdown         from '@/js/Elements/Dropdown.vue';
 
-    import { buildSettingsTabs } from '@/_admin/js/pages/Settings/settingsTabs.js';
+    import { buildSettingsTabs } from '@/js/pages/Settings/settingsTabs.js';
 
     export default {
         components: { Link, Icon, Avatar, Dropdown },
@@ -220,16 +220,16 @@
             userAvatar() {
                 return this.$page.props.user?.avatar;
             },
-            // Табы настроек — тот же состав, что и на странице CabinetSettings
-            // (общий settingsTabs.js). Право manage-members шарится глобально.
+            // Табы настроек — тот же состав, что и на странице настроек
+            // (общий settingsTabs.js).
             settingsTabs() {
-                return buildSettingsTabs(this.$page.props.user?.can_manage_members);
+                return buildSettingsTabs(this.$page.props.user?.can_manage_account);
             },
             // Клик по пользователю ведёт именно в профиль (таб settings),
             // поэтому таб задаётся явно через query — иначе восстановится
             // последний открытый.
             profileHref() {
-                return this.settingsHref('settings');
+                return this.settingsHref('profile');
             },
         },
         watch: {
@@ -344,7 +344,7 @@
             // storage-key группы табов на странице ('settings'), см. Tabs.vue →
             // applyQueryTab(). Ziggy кладёт неизвестный маршруту параметр в query.
             settingsHref(tabId) {
-                return route('cabinet.settings', { settings: tabId });
+                return route('cabinet.settings', { tab: tabId });
             },
 
             // ── Группы-дропдауны ───────────────────────────────────────────

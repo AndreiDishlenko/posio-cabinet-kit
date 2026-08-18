@@ -124,7 +124,7 @@
 
                 <!-- Настройки → выпадающее меню с табами страницы настроек.
                      Список берётся из общего settingsTabs.js → совпадает со
-                     страницей CabinetSettings автоматически. -->
+                     страницей настроек автоматически. -->
                 <Dropdown class="gm-footer-settings"
                     align="left"
                     direction="up"
@@ -220,8 +220,8 @@
             userAvatar() {
                 return this.$page.props.user?.avatar;
             },
-            // Табы настроек — тот же состав, что и на странице CabinetSettings
-            // (общий settingsTabs.js). Право manage-members шарится глобально.
+            // Табы настроек — тот же состав, что и на странице настроек
+            // (общий settingsTabs.js).
             settingsTabs() {
                 return buildSettingsTabs(this.$page.props.user?.can_manage_account);
             },

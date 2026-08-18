@@ -207,6 +207,62 @@
       "mode": "package_only",
       "target": "resources/js/resolvePage.js",
       "notes": "Override-aware page resolver used by consumer Vite entry."
+    },
+    {
+      "id": "custom-notifications",
+      "mode": "manual",
+      "source": "resources/js/Custom/_Notifications.vue",
+      "target": "resources/js/Custom/_Notifications.vue",
+      "notes": "Package adds guards absent from source: skip notification_channel without a logged-in user, skip Echo subscription when window.Echo/broadcasting is unavailable, and wrap the mark-as-read request in try/catch (route may not exist on a host without the queue/broadcast setup)."
+    },
+    {
+      "id": "elements-dropdown",
+      "mode": "manual",
+      "source": "resources/js/Elements/Dropdown.vue",
+      "target": "resources/js/Elements/Dropdown.vue",
+      "notes": "Package keeps a slightly older/simpler open() implementation. Diff before syncing dropdown positioning changes."
+    },
+    {
+      "id": "elements-table",
+      "mode": "manual",
+      "source": "resources/js/Elements/Table.vue",
+      "target": "resources/js/Elements/Table.vue",
+      "notes": "Generic table shell shared with posio.cabinet; source has product-specific filter tweaks (counterparty filters) not ported. Not the same file as components/ui/Table.vue (see ui-table entry), which is a separate minimal table."
+    },
+    {
+      "id": "dict-card-user",
+      "mode": "manual",
+      "source": "resources/_admin/js/components/cards/DictCards/UserCard.vue",
+      "target": "resources/_admin/js/components/cards/DictCards/UserCard.vue",
+      "notes": "Package version is intentionally smaller: no licenses, guest accounts, or POS/retail configuration fields."
+    },
+    {
+      "id": "bottom-tab-bar-sets",
+      "mode": "manual",
+      "source": "resources/_admin/js/components/ui/Elements/BottomTabBarSets.js",
+      "target": "resources/_admin/js/components/ui/Elements/BottomTabBarSets.js",
+      "notes": "Package version drops the retail/orders/kitchen configuration matrix (Posio-specific business formats); kept minimal, role-based only."
+    },
+    {
+      "id": "admin-cabinet-header",
+      "mode": "manual",
+      "source": "resources/_admin/js/layouts/CabinetHeader.vue",
+      "target": "resources/_admin/js/layouts/CabinetHeader.vue",
+      "notes": "Package's own _admin-section header (used by Permissions/UsersAdmin pages), distinct from the generalized top-level copy tracked as layout-cabinet-header. Strips AiChatWidget/TelegramAssistantButton and other Posio-specific widgets."
+    },
+    {
+      "id": "admin-cabinet-layout",
+      "mode": "manual",
+      "source": "resources/_admin/js/layouts/CabinetLayout.vue",
+      "target": "resources/_admin/js/layouts/CabinetLayout.vue",
+      "notes": "Package's own _admin-section layout (used by Permissions/UsersAdmin pages), distinct from the generalized top-level copy tracked as layout-cabinet-layout. Strips ProductTour/FirstStepsChecklist/SpotlightHints."
+    },
+    {
+      "id": "admin-side-menu",
+      "mode": "manual",
+      "source": "resources/_admin/js/layouts/SideMenu.vue",
+      "target": "resources/_admin/js/layouts/SideMenu.vue",
+      "notes": "Package's own _admin-section side menu (used by Permissions/UsersAdmin pages), distinct from the generalized top-level copy tracked as layout-side-menu. Settings dropdown reuses resources/js/pages/Settings/settingsTabs.js and links via route('cabinet.settings', { tab }) — keep in sync with resources/js/layouts/SideMenu.vue if the settings tab contract changes."
     }
   ]
 }

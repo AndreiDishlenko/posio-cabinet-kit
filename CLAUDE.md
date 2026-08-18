@@ -5,13 +5,47 @@ repository — the standalone package, not a project that consumes it.
 
 ## What this is
 
-A Composer package (`posio/cabinet-kit`) providing the generic admin-panel
-shell extracted from `posio.cabinet`: multi-tenant accounts, per-account
-roles/permissions, bundled auth (login/register/logout/password
-reset/email verification), a Settings shell, a collapsible side-menu
-layout, a small UI kit. See `docs/ARCHITECTURE.md` for the full picture and
-`docs/EXTENDING.md` for the intended extension points — **read both before
-making structural changes.**
+A Composer package (`posio/cabinet-kit`) that adds a generic admin panel
+("cabinet") to other Laravel + Inertia + Vue 3 web projects: shell +
+backend + DB + seed data, meant to be installed once and updated via
+`composer update`, not copy-pasted per project.
+
+Intended module scope (some already shipped, some not yet started —
+check `docs/CHANGELOG.md` for what actually landed before assuming a
+module exists):
+- **Users** — account membership, invite/remove — shipped.
+- **Roles & permissions** — Spatie teams, per-account role assignment —
+  shipped.
+- **Settings** — config-driven tabs shell (Account/Users/Profile) —
+  shipped.
+- **Auth** — login/register/logout/password reset/email verification —
+  shipped (v0.2.0+).
+- **Logs** — not yet built.
+- **Localization** — i18n plumbing exists (`i18n.config.js`,
+  `localeSync.js`) but there's no dedicated locale-management module yet.
+- **Notifications** — not yet built.
+
+See `docs/ARCHITECTURE.md` for the full picture and `docs/EXTENDING.md`
+for the intended extension points — **read both before making
+structural changes.**
+
+## Origin & extraction method
+
+This package is not written from scratch — it's extracted from the
+actively-developed `posio.cabinet` project (`F:\OpenServer\home\posio.cabinet`).
+The working method: pull the relevant original files/components from
+`posio.cabinet`, lay them out under the *same relative structure* here
+(`resources/_admin/...` → `resources/js/...`, `app/Models/...` →
+`src/Models/...`, etc.), then generalize/wrap them — strip anything
+Posio-specific (product tour, AI widgets, product business logic),
+rename to the package's own prefixes (`cabinet-kit.*`, `--ck-*`).
+
+The mapping between original and package files, plus which files are
+safe to mechanically re-sync vs. need hand-review, lives in
+`tools/sync-manifest.json` and is applied by
+`tools/Sync-CabinetKitFromPosio.ps1` — see `CABINET_KIT_MAINTENANCE.md`
+for the full update workflow. Don't re-derive this process from scratch;
+read that file first.
 
 ## Hard scope boundary
 
