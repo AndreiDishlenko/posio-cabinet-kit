@@ -78,6 +78,44 @@ Then swap the import inside your own overridden `pages/*.vue` (CabinetLayout
 itself isn't a page, so to change what layout a page uses, override that
 page and import your own layout there instead of `@cabinet-kit/layouts/CabinetLayout.vue`).
 
+## Customizing styles
+
+**Don't edit anything under `vendor/posio/cabinet-kit/resources/scss/`.** Those
+files are kept a 1:1 mirror of the upstream posio project on purpose, so
+`composer update` stays a clean fast-forward — a local edit there would be
+overwritten (and would make every future update a manual merge).
+
+Instead, write your changes in `resources/_admin/scss/cabinet-kit-overrides.scss`
+(scaffolded by `cabinet-kit:install`). The cabinet Vite entry imports it
+*after* the package stylesheet, so anything in it wins through normal CSS
+cascade. This is the styling counterpart to the `overrides/` page folder.
+
+Two levels:
+
+1. **Redefine a `--ck-*` token** — reskins the whole kit at once, including
+   scoped components (SideMenu, header, tables), because CSS custom properties
+   pierce Vue's scoped styles. The color tokens are in
+   `colors_cabinet-kit.scss`, the layout tokens in `cabinet-kit.scss`.
+
+   ```scss
+   :root, html.light { --ck-brand-bg: #16a34a; --ck-sidemenu-bg: #fff; }
+   html.dark          { --ck-brand-bg: #22c55e; }
+   :root              { --ck-expanded-width: 280px; }
+   ```
+
+2. **Re-declare an element's class** — for anything not behind a token
+   (radius, spacing, shadow, transforms). Same specificity, loaded later, so
+   it wins:
+
+   ```scss
+   .ck-card { border-radius: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+   .button.primary-button { text-transform: uppercase; }
+   ```
+
+If a host installed before this file existed, create it by hand at that path
+and add `import '../scss/cabinet-kit-overrides.scss';` after the package scss
+import in `resources/_admin/js/admin.js` — that's all the wiring there is.
+
 ## Adding a new permission / role
 
 1. Add the permission/role in your own seeder (don't edit

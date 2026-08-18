@@ -1,0 +1,28 @@
+// Cards — the base surface used by Dashboard, Settings tabs and modal content.
+.ck-card {
+	background: var(--ck-card-bg);
+	border: 1px solid var(--ck-border-color);
+	border-radius: .5rem;
+	padding: 1.25rem;
+}
+
+.ck-card-title {
+	font-size: 1rem;
+	font-weight: 600;
+	margin-bottom: 1rem;
+}
+
+.ck-field-row {
+	display: flex;
+	justify-content: space-between;
+	padding: .4rem 0;
+	border-bottom: 1px solid var(--ck-border-color);
+
+	&:last-child {
+		border-bottom: none;
+	}
+}
+
+.ck-field-label {
+	opacity: .6;
+}

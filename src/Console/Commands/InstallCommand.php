@@ -19,6 +19,7 @@ class InstallCommand extends Command
 
         $this->seedRolesAndPermissions();
         $this->scaffoldOverridesFolder();
+        $this->scaffoldStyleOverrides();
         $this->scaffoldViteEntry();
         $this->printNextSteps();
 
@@ -62,6 +63,20 @@ class InstallCommand extends Command
         MD);
 
         $this->info('Created resources/_admin/overrides/ (see its README.md).');
+    }
+
+    protected function scaffoldStyleOverrides(): void
+    {
+        $overridePath = resource_path('_admin/scss/cabinet-kit-overrides.scss');
+
+        if (File::exists($overridePath)) {
+            return;
+        }
+
+        File::ensureDirectoryExists(dirname($overridePath));
+        File::copy(__DIR__.'/../../../stubs/cabinet-kit-overrides.scss.stub', $overridePath);
+
+        $this->info('Created resources/_admin/scss/cabinet-kit-overrides.scss — write style overrides there (loaded after the kit, survives composer update).');
     }
 
     protected function scaffoldViteEntry(): void

@@ -29,14 +29,14 @@ class ShareCabinetKitData
             // SideMenu highlights the item whose id matches currentPage.id.
             // Only fill it in when the host doesn't share its own descriptor.
             if (! Inertia::getShared('currentPage')) {
-                Inertia::share('currentPage', fn () => $this->currentPageDescriptor($request));
+                Inertia::share('currentPage', fn () => $this->currentPageDescriptor($request, $user));
             }
         }
 
         return $next($request);
     }
 
-    protected function currentPageDescriptor(Request $request): ?array
+    protected function currentPageDescriptor(Request $request, $user): ?array
     {
         $routeName = $request->route()?->getName();
 
@@ -44,10 +44,14 @@ class ShareCabinetKitData
             return null;
         }
 
-        foreach (config('cabinet-kit.menu', []) as $group) {
+        foreach (app(MenuService::class)->menuFor($user) as $group) {
             foreach ($group['children'] ?? [] as $item) {
                 if (($item['route'] ?? null) === $routeName) {
-                    return ['id' => $item['id']];
+                    return [
+                        'id' => $item['id'],
+                        'name' => $item['label'] ?? null,
+                        'section' => $group['label'] ?? null,
+                    ];
                 }
             }
         }

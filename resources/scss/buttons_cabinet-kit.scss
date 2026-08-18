@@ -1,0 +1,43 @@
+// Buttons — additive to the host's own .button classes if it has them;
+// otherwise this is a complete, standalone button style.
+.button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: .35rem;
+	border-radius: .4rem;
+	padding: .45rem .9rem;
+	font-size: .9rem;
+	background: var(--ck-button-bg);
+	color: var(--ck-text-color);
+	cursor: pointer;
+	transition: background-color .15s ease;
+
+	&:hover {
+		background: var(--ck-button-hover-bg);
+	}
+}
+
+.primary-button {
+	background: var(--ck-brand-bg);
+	color: var(--ck-brand-color);
+
+	&:hover {
+		filter: brightness(1.1);
+	}
+}
+
+.ghost-button {
+	background: transparent;
+	box-shadow: none;
+}
+
+.button-sm {
+	font-size: .8rem;
+	padding: .3rem .6rem;
+}
+
+.button-lg {
+	font-size: 1rem;
+	padding: .6rem 1.1rem;
+}

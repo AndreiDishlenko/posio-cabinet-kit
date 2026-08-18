@@ -1,0 +1,32 @@
+// Form controls — used by the auth pages (Login/Register/…) and the Profile
+// tab. Client-side validation toggles `.is-invalid`; backend errors render
+// through `.ck-error`.
+.ck-form-row {
+	display: flex;
+	flex-direction: column;
+	gap: .3rem;
+	margin-bottom: .9rem;
+}
+
+.ck-input {
+	border: 1px solid var(--ck-border-color, #e5e7eb);
+	border-radius: .4rem;
+	padding: .45rem .6rem;
+	font-size: .9rem;
+	background: var(--ck-card-bg, #fff);
+	color: var(--ck-text-color, #1c1c1c);
+
+	&:focus {
+		outline: none;
+		border-color: var(--ck-brand-bg, #3961E9);
+	}
+
+	&.is-invalid {
+		border-color: #dc2626;
+	}
+}
+
+.ck-error {
+	font-size: .75rem;
+	color: #dc2626;
+}

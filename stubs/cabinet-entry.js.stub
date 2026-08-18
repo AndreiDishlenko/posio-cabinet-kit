@@ -14,6 +14,10 @@ import mitt from 'mitt';
 import { resolveCabinetKitPage } from '@cabinet-kit/resolvePage.js';
 
 import '../../../vendor/posio/cabinet-kit/resources/scss/cabinet-kit.scss';
+// Your own overrides, loaded AFTER the kit so they win via the cascade.
+// cabinet-kit:install scaffolds this file; edit it to re-skin the kit without
+// touching vendor/. Safe to remove this import if you don't need overrides.
+import '../scss/cabinet-kit-overrides.scss';
 
 createInertiaApp({
 	resolve: (name) => resolveCabinetKitPage(

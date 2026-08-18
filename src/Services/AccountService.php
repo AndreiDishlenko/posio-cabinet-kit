@@ -29,13 +29,23 @@ class AccountService
 
     public function inviteMember($user, Account $account, ?string $role = null): void
     {
+        if ($user->getKey() === $account->owner_id) {
+            abort(422, 'The account owner is already a member of this account.');
+        }
+
+        $role ??= config('cabinet-kit.roles.default_member_role');
+
+        if (! in_array($role, config('cabinet-kit.roles.assignable_roles'), true)) {
+            abort(422, "Role {$role} is not assignable.");
+        }
+
         DB::table('user_has_accounts')->updateOrInsert(
             ['user_id' => $user->getKey(), 'account_id' => $account->id],
             ['updated_at' => now(), 'created_at' => now()],
         );
 
         $this->scopeRolesToAccount($account->id);
-        $user->assignRole($role ?? config('cabinet-kit.roles.default_member_role'));
+        $user->assignRole($role);
     }
 
     public function setMemberRole($member, Account $account, string $role): void

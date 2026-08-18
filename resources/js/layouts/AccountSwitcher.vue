@@ -22,7 +22,7 @@
 
 			<div class="ck-account-menu-divider"/>
 
-			<Link class="ck-account-menu-item" :href="route('cabinet-kit.settings')" @click="close">
+			<Link class="ck-account-menu-item" :href="route('cabinet-kit.settings', { tab: 'profile' })" @click="close">
 				Settings
 			</Link>
 

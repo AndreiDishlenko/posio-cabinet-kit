@@ -1,0 +1,170 @@
+{
+  "schema": 1,
+  "description": "Mapping used by Sync-CabinetKitFromPosio.ps1 to audit/sync generic cabinet shell updates from posio.cabinet into posio/cabinet-kit.",
+  "source_root_hint": "F:/OpenServer/home/posio.cabinet",
+  "rules": {
+    "copy": "Files that should stay mechanically mirrored after package-specific prefix/name changes have already been extracted.",
+    "manual": "Files that share ancestry with posio.cabinet but are intentionally generalized in the package. Review diffs, port ideas by hand.",
+    "package_only": "Files owned by the package integration layer; they have no source counterpart in posio.cabinet."
+  },
+  "entries": [
+    {
+      "id": "scss-entry",
+      "mode": "manual",
+      "source": "resources/_admin/scss/admin.scss",
+      "target": "resources/scss/cabinet-kit.scss",
+      "notes": "Package entry must keep @use partials and --ck-* tokens. Port only generic base layout rules."
+    },
+    {
+      "id": "scss-buttons",
+      "mode": "manual",
+      "source": "resources/_admin/scss/buttons_admin.scss",
+      "target": "resources/scss/buttons_cabinet-kit.scss",
+      "notes": "Port generic button styles only; keep class contract used by shipped Vue pages."
+    },
+    {
+      "id": "scss-colors",
+      "mode": "manual",
+      "source": "resources/_admin/scss/colors_admin.scss",
+      "target": "resources/scss/colors_cabinet-kit.scss",
+      "notes": "Translate generic tokens to --ck-*; do not copy Posio product colors blindly."
+    },
+    {
+      "id": "scss-cards",
+      "mode": "manual",
+      "source": "resources/_admin/scss/cards_admin.scss",
+      "target": "resources/scss/cards_cabinet-kit.scss",
+      "notes": "Port generic card/field shell classes only."
+    },
+    {
+      "id": "scss-forms",
+      "mode": "manual",
+      "source": "resources/_admin/scss/forms_admin.scss",
+      "target": "resources/scss/forms_cabinet-kit.scss",
+      "notes": "Port generic form field styling only."
+    },
+    {
+      "id": "scss-icons",
+      "mode": "manual",
+      "source": "resources/scss/icons_shared.scss",
+      "target": "resources/scss/icons_cabinet-kit.scss",
+      "notes": "Port generic icon sizing helpers only; preserve ck prefix."
+    },
+    {
+      "id": "layout-cabinet-layout",
+      "mode": "manual",
+      "source": "resources/_admin/js/layouts/CabinetLayout.vue",
+      "target": "resources/js/layouts/CabinetLayout.vue",
+      "notes": "Package layout excludes product tour, hints, AI widgets and Posio-specific shared props."
+    },
+    {
+      "id": "layout-cabinet-header",
+      "mode": "manual",
+      "source": "resources/_admin/js/layouts/CabinetHeader.vue",
+      "target": "resources/js/layouts/CabinetHeader.vue",
+      "notes": "Port only generic header UX. Package uses @cabinet-kit imports and cabinetKit* props."
+    },
+    {
+      "id": "layout-side-menu",
+      "mode": "manual",
+      "source": "resources/_admin/js/layouts/SideMenu.vue",
+      "target": "resources/js/layouts/SideMenu.vue",
+      "notes": "Source menu is tied to Posio permissions/routes; package menu is config-driven."
+    },
+    {
+      "id": "settings-page",
+      "mode": "manual",
+      "source": "resources/_admin/js/pages/CabinetSettings.vue",
+      "target": "resources/js/pages/Settings.vue",
+      "notes": "Package page keeps only generic settings shell and config-driven tabs."
+    },
+    {
+      "id": "settings-account-tab",
+      "mode": "manual",
+      "source": "resources/_admin/js/pages/Settings/CabinetSettingsAccountTab.vue",
+      "target": "resources/js/pages/Settings/AccountTab.vue",
+      "notes": "Port generic account fields only. Product-specific integrations/logo/configuration stay out."
+    },
+    {
+      "id": "settings-users-tab",
+      "mode": "manual",
+      "source": "resources/_admin/js/pages/Settings/CabinetSettingsAccountUsersTab.vue",
+      "target": "resources/js/pages/Settings/UsersTab.vue",
+      "notes": "Package tab is intentionally smaller; role UI can be added only if generic."
+    },
+    {
+      "id": "settings-profile-tab",
+      "mode": "manual",
+      "source": "resources/_admin/js/pages/Settings/CabinetSettingsUserProfileTab.vue",
+      "target": "resources/js/pages/Settings/ProfileTab.vue",
+      "notes": "Package profile tab owns generic name/email/password forms."
+    },
+    {
+      "id": "ui-card-template",
+      "mode": "manual",
+      "source": "resources/_admin/js/components/cards/DocCards/Templates/DocCardTemplate.vue",
+      "target": "resources/js/components/ui/CardTemplate.vue",
+      "notes": "Only card shell ideas may be useful; source file is document-specific."
+    },
+    {
+      "id": "ui-table",
+      "mode": "manual",
+      "source": "resources/js/Elements/Table.vue",
+      "target": "resources/js/components/ui/Table.vue",
+      "notes": "Package table is minimal by design. Port fuller table behavior only after deciding it is generic."
+    },
+    {
+      "id": "model-account",
+      "mode": "manual",
+      "source": "app/Models/Account.php",
+      "target": "src/Models/Account.php",
+      "notes": "Package model must keep a small schema: owner_id, name, settings, expire."
+    },
+    {
+      "id": "service-account",
+      "mode": "manual",
+      "source": "app/Services/AccountService.php",
+      "target": "src/Services/AccountService.php",
+      "notes": "Port only generic membership/role behavior. No onboarding/demo/product data."
+    },
+    {
+      "id": "repository-account",
+      "mode": "manual",
+      "source": "app/Repositories/AccountRepository.php",
+      "target": "src/Repositories/AccountRepository.php",
+      "notes": "Package repository should not depend on the host repository base class."
+    },
+    {
+      "id": "middleware-set-permission-team",
+      "mode": "manual",
+      "source": "app/Http/Middleware/SetPermissionTeam.php",
+      "target": "src/Http/Middleware/SetPermissionTeam.php",
+      "notes": "Keep Spatie team context behavior generic."
+    },
+    {
+      "id": "routes-cabinet",
+      "mode": "manual",
+      "source": "routes/cabinet_routes.php",
+      "target": "routes/cabinet.php",
+      "notes": "Package route file owns only auth/dashboard/settings/account shell routes."
+    },
+    {
+      "id": "package-provider",
+      "mode": "package_only",
+      "target": "src/CabinetKitServiceProvider.php",
+      "notes": "Composer package integration: migrations/routes/views/config/Inertia paths."
+    },
+    {
+      "id": "package-install-command",
+      "mode": "package_only",
+      "target": "src/Console/Commands/InstallCommand.php",
+      "notes": "Host scaffolding and install diagnostics."
+    },
+    {
+      "id": "package-resolver",
+      "mode": "package_only",
+      "target": "resources/js/resolvePage.js",
+      "notes": "Override-aware page resolver used by consumer Vite entry."
+    }
+  ]
+}

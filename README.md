@@ -60,6 +60,9 @@ working untouched.
 
 - Menu items, Settings tabs, assignable roles → `config/cabinet-kit.php`
   (survives updates for free).
+- Styles → `resources/_admin/scss/cabinet-kit-overrides.scss` (scaffolded by
+  install, loaded after the kit so your rules win; redefine `--ck-*` tokens or
+  re-declare element classes — never edit the package's own scss).
 - Deeper changes → `resources/_admin/overrides/pages/...` (checked before
   the package's own version — see `docs/EXTENDING.md`).
 

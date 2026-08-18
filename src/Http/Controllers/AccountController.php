@@ -34,12 +34,19 @@ class AccountController extends Controller
         $this->authorize('manage-account');
 
         $validated = $request->validate([
-            'user_id' => 'required|integer|exists:'.config('cabinet-kit.users_table', 'users').',id',
+            'user_id' => 'nullable|integer|exists:'.config('cabinet-kit.users_table', 'users').',id',
+            'email' => 'nullable|email|exists:'.config('cabinet-kit.users_table', 'users').',email',
             'role' => 'nullable|string',
         ]);
 
+        abort_unless(! empty($validated['user_id']) || ! empty($validated['email']), 422, 'Select a user or enter an existing user email.');
+
         $userModel = config('cabinet-kit.user_model');
-        $member = $userModel::findOrFail($validated['user_id']);
+        $member = ! empty($validated['user_id'])
+            ? $userModel::findOrFail($validated['user_id'])
+            : $userModel::query()->where('email', $validated['email'])->firstOrFail();
+
+        abort_if($member->getKey() === $request->user()->getKey(), 422, 'You are already a member of this account.');
 
         $this->accountService->inviteMember($member, $request->user()->currentAccount(), $validated['role'] ?? null);
 
@@ -58,6 +65,8 @@ class AccountController extends Controller
         $userModel = config('cabinet-kit.user_model');
         $member = $userModel::findOrFail($validated['user_id']);
 
+        abort_if($member->getKey() === $request->user()->getKey(), 422, 'You cannot change your own account role.');
+
         $this->accountService->setMemberRole($member, $request->user()->currentAccount(), $validated['role']);
 
         return back();
@@ -71,6 +80,8 @@ class AccountController extends Controller
 
         $userModel = config('cabinet-kit.user_model');
         $member = $userModel::findOrFail($validated['user_id']);
+
+        abort_if($member->getKey() === $request->user()->getKey(), 422, 'You cannot remove yourself from the active account.');
 
         $this->accountService->removeMember($member, $request->user()->currentAccount());
 

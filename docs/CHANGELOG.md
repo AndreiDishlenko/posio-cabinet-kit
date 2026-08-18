@@ -1,5 +1,74 @@
 # Changelog
 
+## v0.3.3 - sync maintenance + account member management polish
+
+**Added**
+- Windows-first maintenance workflow for porting generic shell improvements
+  from `posio.cabinet`: `tools/sync-manifest.json`,
+  `tools/Sync-CabinetKitFromPosio.ps1`, and root
+  `CABINET_KIT_MAINTENANCE.md`.
+- Package-local knowledge base under `.claude/context/` with the current
+  package boundary and transfer decisions, so future AI passes can start from
+  compact package facts instead of rereading the full host project context.
+- `UsersTab.vue` can now invite an existing user by email, change member roles
+  through `cabinet-kit.account.member.role`, and remove members with a native
+  confirmation.
+
+**Changed**
+- `ShareCabinetKitData` now shares `currentPage.name` and
+  `currentPage.section` from the permission-filtered menu, enabling generic
+  header breadcrumbs.
+- `CabinetHeader.vue` now renders `section / page` or `page / sub-section`
+  breadcrumbs, while staying free of host-only widgets.
+- `Settings.vue` now supports `?tab=...` deep links and keeps the URL in sync
+  when the active tab changes.
+- `AccountSwitcher.vue` links directly to the Profile tab.
+- `SettingsController` passes member role names and assignable roles to the
+  settings page.
+
+**Fixed**
+- `AccountController` now accepts invite by either `user_id` or `email`, blocks
+  self role/removal operations, and `AccountService` validates invite roles
+  against `config('cabinet-kit.roles.assignable_roles')`.
+
+## v0.3.2 — complete the shipped stylesheet (auth forms + cabinet layout)
+
+The single host-imported stylesheet was missing rules that can't live in a
+component's scoped block, so a fresh install rendered the cabinet broken and
+some form/icon styling never applied.
+
+**Fixed**
+- **Cabinet layout collapsed.** `CabinetLayout`'s root is `h-full`
+  (height: 100%), but nothing established the `html → body → #app` full-height
+  chain, so the layout fell back to content height while `SideMenu`
+  (`h-[100dvh]`) stayed full-height — a visibly broken shell. Added the base
+  height chain to the entry.
+- **`body` never themed.** `--ck-background-color` / `--ck-text-color` were
+  defined but never applied to `body`; the cabinet kept the browser's default
+  background/text color. Now applied.
+- **`.ck-icon` / `.ck-icon-sm` only existed in SideMenu's scoped styles**, so
+  `CabinetHeader`, `AccountSwitcher`, `CardTemplate` and `Table` rendered
+  icons at the default 1em. Promoted to a global `icons_cabinet-kit.scss`
+  (plus `.ck-icon-lg`).
+- `.ck-input` had no `:focus` state — added a brand-colored focus border.
+
+**Changed**
+- The monolithic `cabinet-kit.scss` was split by responsibility to match the
+  host project's own scss layout: `colors_cabinet-kit.scss`,
+  `buttons_cabinet-kit.scss`, `cards_cabinet-kit.scss`,
+  `forms_cabinet-kit.scss`, `icons_cabinet-kit.scss`, with `cabinet-kit.scss`
+  now the entry (layout tokens + base + `@use` of the partials). The import
+  path hosts use (`cabinet-kit.scss`) is unchanged.
+
+**Added**
+- **Host style-override layer.** `cabinet-kit:install` now scaffolds
+  `resources/_admin/scss/cabinet-kit-overrides.scss` (from a stub) and the
+  cabinet Vite entry imports it *after* the package stylesheet, so a host can
+  re-skin the kit — redefine `--ck-*` tokens or re-declare element classes —
+  without touching (and without a merge conflict on `composer update`) any
+  file under `vendor/`. The package's own scss stays a 1:1 mirror of upstream
+  posio. See `docs/EXTENDING.md` → "Customizing styles".
+
 ## v0.3.0 — self-contained host integration (root view, Inertia page paths)
 
 Driven by the first real third-party install (solut_new), where

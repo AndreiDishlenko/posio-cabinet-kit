@@ -7,7 +7,7 @@
 				type="button"
 				class="ck-tab"
 				:class="{ 'is-active': tab.id === activeTab }"
-				@click="activeTab = tab.id"
+				@click="setActiveTab(tab.id)"
 				>
 				{{ $t ? $t(tab.label) : tab.label }}
 			</button>
@@ -16,6 +16,7 @@
 		<component :is="activeComponent"
 			:account="account"
 			:members="members"
+			:roles="assignable_roles"
 			:can_manage_account="can_manage_account"
 			/>
 
@@ -52,10 +53,14 @@
 				type: Boolean,
 				default: false,
 			},
+			assignable_roles: {
+				type: Array,
+				default: () => [],
+			},
 		},
 		data() {
 			return {
-				activeTab: this.tabs[0]?.id,
+				activeTab: this.initialTab(),
 			}
 		},
 		computed: {
@@ -65,6 +70,34 @@
 			activeComponent() {
 				const tab = this.tabs.find(tab => tab.id === this.activeTab);
 				return tab ? TAB_COMPONENTS[tab.component] : null;
+			},
+		},
+		watch: {
+			tabs() {
+				if (!this.tabs.some(tab => tab.id === this.activeTab))
+					this.activeTab = this.initialTab();
+			},
+		},
+		methods: {
+			initialTab() {
+				if (typeof window === 'undefined')
+					return this.tabs[0]?.id;
+
+				const requested = new URLSearchParams(window.location.search).get('tab');
+				if (requested && this.tabs.some(tab => tab.id === requested))
+					return requested;
+
+				return this.tabs[0]?.id;
+			},
+			setActiveTab(tabId) {
+				this.activeTab = tabId;
+
+				if (typeof window === 'undefined')
+					return;
+
+				const url = new URL(window.location.href);
+				url.searchParams.set('tab', tabId);
+				window.history.replaceState({}, '', url);
 			},
 		},
 	}

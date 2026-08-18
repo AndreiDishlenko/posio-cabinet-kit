@@ -1,0 +1,21 @@
+// Icon sizing — @iconify/vue renders inline SVGs at 1em by default. These give
+// the kit a consistent icon scale. `.ck-icon` is also declared inside
+// SideMenu's scoped styles (same size), but CabinetHeader/AccountSwitcher/
+// CardTemplate/Table rely on this global definition.
+.ck-icon {
+	width: 20px;
+	height: 20px;
+	flex: 0 0 auto;
+}
+
+.ck-icon-sm {
+	width: 16px;
+	height: 16px;
+	flex: 0 0 auto;
+}
+
+.ck-icon-lg {
+	width: 24px;
+	height: 24px;
+	flex: 0 0 auto;
+}

@@ -48,7 +48,8 @@ resources/js/
   pages/Auth/                     Login, Register, ForgotPassword, ResetPassword, VerifyEmail
   components/ui/                 Table.vue, ModalForm.vue, CardTemplate.vue
   resolvePage.js                  override-aware Inertia page resolver
-resources/scss/cabinet-kit.scss   --ck-* design tokens, .button/.card base classes
+resources/scss/                   cabinet-kit.scss entry (tokens + base + @use) →
+                                  colors/buttons/cards/forms/icons_cabinet-kit.scss partials
 ```
 
 ## Multi-tenancy model
