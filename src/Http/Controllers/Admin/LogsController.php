@@ -3,11 +3,12 @@
 namespace Posio\CabinetKit\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
+use Inertia\Inertia;
 
 class LogsController extends Controller
 {
     public function index()
     {
-        return redirect('/admin/log-viewer');
+        return Inertia::render('pages/Logs');
     }
 }

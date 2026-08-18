@@ -17,6 +17,17 @@ use Posio\CabinetKit\Http\Middleware\SetPermissionTeam;
 use Posio\CabinetKit\Http\Middleware\ShareCabinetKitData;
 use Posio\CabinetKit\Http\Middleware\UseCabinetKitRootView;
 
+Route::get('cabinet-assets/{path}', function (string $path) {
+    $assetRoot = realpath(__DIR__.'/../public/cabinet-assets');
+    $assetPath = $assetRoot ? realpath($assetRoot.DIRECTORY_SEPARATOR.$path) : false;
+
+    if (! $assetRoot || ! $assetPath || ! str_starts_with($assetPath, $assetRoot.DIRECTORY_SEPARATOR)) {
+        abort(404);
+    }
+
+    return response()->file($assetPath);
+})->where('path', '.*')->name('cabinet-kit.assets');
+
 Route::middleware(['web', UseCabinetKitRootView::class])
     ->prefix(config('cabinet-kit.route_prefix', 'cabinet'))
     ->group(function () {

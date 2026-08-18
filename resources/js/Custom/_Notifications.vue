@@ -99,7 +99,7 @@
             unreadCount() {
 				// console.log('unreadCount', this.notifications);
 				if ( !this.$page.props?.user?.notifications )
-					return [];
+					return 0;
 
                 let result = 0;
 
@@ -113,6 +113,9 @@
 			// Имя канала должно совпадать с бэкендом: WebSocketService добавляет
 			// суффикс окружения (".local"/".staging" и т.п.) вне production.
 			notification_channel() {
+				if (!this.$page.props.user?.id)
+					return null;
+
 				const env = document.querySelector('meta[name="app-env"]')?.content || 'production';
 				let name = `user.${this.$page.props.user.id}`;
 				if ( env !== 'production' )
@@ -121,6 +124,9 @@
 			}
         },
 		mounted() {
+			if (!window.Echo?.private || !this.notification_channel)
+				return;
+
 			this.channel = window.Echo.private(this.notification_channel)
 				.listen('.notification.new', (e) => {
 					// console.log('new notification', e);
@@ -164,11 +170,18 @@
                 //     if (item.id==msgId && item.is_read==false) {
                 //         item.is_read = true;
 
-				router.post( 
-					route('cabinet.messages.read'), 
-					{},
-					{ headers: { 'X-Inertia-Skip-Pause': '1' } }
-				);
+				if (!this.unreadCount || typeof route !== 'function')
+					return;
+
+				try {
+					router.post( 
+						route('cabinet.messages.read'), 
+						{},
+						{ headers: { 'X-Inertia-Skip-Pause': '1' } }
+					);
+				} catch (error) {
+					console.warn('[cabinet-kit] Notifications read route is not available.', error);
+				}
                 //     }
                 // })
 			},

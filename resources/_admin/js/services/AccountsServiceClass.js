@@ -37,6 +37,9 @@ export class AccountsServiceClass {
 	handleWebsocketEvent() {
 		this.unhandleWebsocketEvent();
 
+		if (!window.Echo?.private || !this.current_account?.id)
+			return;
+
 		// Имя канала должно совпадать с бэкендом: WebSocketService добавляет
 		// суффикс окружения (".local"/".staging" и т.п.) вне production, чтобы
 		// dev/staging не пересекались с продом на общем broadcast-сервере.

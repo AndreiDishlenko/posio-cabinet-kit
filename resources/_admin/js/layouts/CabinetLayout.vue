@@ -1,11 +1,11 @@
 <template>
 
-    <Head :title="$t(page_name ? page_name : $page.props.currentPage.name)"/>
+    <Head :title="$t(page_name ? page_name : ($page.props.currentPage?.name || 'Cabinet'))"/>
 
-    <div class="page-wrapper flex flex-row h-full overflow-y-hidden" :class="$inprogress.value ? 'disabled' : ''">
+    <div class="ck-page-wrapper" :class="$inprogress.value ? 'disabled' : ''">
 		<!-- scrollbar-thin -->
 
-        <CabinetMenu class="page-menu max-h-dvh-100 h-dvh-100 "
+        <CabinetMenu class="ck-page-menu"
             :class="disable_menu ? 'disabled' : null"
             :disabled="disable_menu"
             ref="sideMenu"
@@ -13,16 +13,16 @@
             Menu
         </CabinetMenu>
 
-        <div class="page-layout relative grow min-w-0 flex flex-col" >
+        <div class="ck-page-layout" >
 
             <CabinetHeader class="min-h-0 px-3 sm:px-5" :page_name="page_name"/>
 
-			<div class="page-content-wrapper p-2 lg:p-4 flex flex-col overflow-hidden " 
+			<div class="ck-page-content" 
 				:class="['space-y-'+space_y]"
 				>
 				<!-- scrollbar -->
 
-				<div class="page-content-inner-scroller grow overflow-y-hidden flex flex-col"
+				<div class="ck-page-content-scroller"
 					:class="{
 						'scrolled-wrapper scrollbar scrollbar-thin' : scrolled
 					}">
@@ -117,13 +117,13 @@
 </script>
 
 <style lang="scss">
-	.page-wrapper {
+	.ck-page-wrapper {
 	// 	max-height: calc( 100dvh - 5px );
 	// 	// border: 1px solid red;
 		// height:100%;
 	}
 	
-	.page-content-wrapper {
+	.ck-page-content {
 		// Отступ под BottomTabBar — только когда бар виден (телефон в портретной ориентации, ширина < md)
 		@media (max-width: 767.98px) and (orientation: portrait) {
 			// height: calc( 100% + var(--bottom-tab-bar-height) );
@@ -133,8 +133,6 @@
 		}
 		// border: 1px solid red;
 		// padding-bottom: 200px;
-		height: 100%;
-		
 	}
 
 	.page-bottom-spacer {

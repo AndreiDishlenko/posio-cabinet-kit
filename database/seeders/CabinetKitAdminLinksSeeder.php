@@ -54,8 +54,8 @@ class CabinetKitAdminLinksSeeder extends Seeder
                 'order_id' => 50,
                 'name' => 'Logs',
                 'icon' => 'ix:log',
-                'link' => '/admin/log-viewer',
-                'route' => null,
+                'link' => null,
+                'route' => 'cabinet-kit.logs',
                 'permissions' => 'sysper-log-view',
                 'is_header' => false,
                 'is_published' => true,
@@ -71,6 +71,14 @@ class CabinetKitAdminLinksSeeder extends Seeder
                 'is_published' => true,
             ],
         ];
+
+        AdminLink::query()
+            ->where('name', 'Logs')
+            ->where('link', '/admin/log-viewer')
+            ->update([
+                'link' => null,
+                'route' => 'cabinet-kit.logs',
+            ]);
 
         foreach ($items as $item) {
             AdminLink::query()->updateOrCreate(
