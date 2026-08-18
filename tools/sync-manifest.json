@@ -270,6 +270,27 @@
       "source": "resources/_admin/js/layouts/SideMenu.vue",
       "target": "resources/_admin/js/layouts/SideMenu.vue",
       "notes": "Package's own _admin-section side menu (used by Permissions/UsersAdmin pages), distinct from the generalized top-level copy tracked as layout-side-menu. Settings dropdown reuses resources/js/pages/Settings/settingsTabs.js and links via route('cabinet-kit.settings', { tab }) — keep in sync with resources/js/layouts/SideMenu.vue if the settings tab contract changes."
+    },
+    {
+      "id": "helpers-arrays",
+      "mode": "copy",
+      "source": "resources/js/posio/helpers/Arrays.js",
+      "target": "resources/js/posio/helpers/Arrays.js",
+      "notes": "Ported verbatim minus the dead removeFromArray stub. Table.vue reaches it through the global $H set by resources/js/posio/helpers.js."
+    },
+    {
+      "id": "helpers-aggregator",
+      "mode": "manual",
+      "source": "resources/js/posio/helpers.js",
+      "target": "resources/js/posio/helpers.js",
+      "notes": "Same shape and global-$H contract as the original, but only the helper namespaces the package actually ported (Ar/ar, Dt/dt). Add a namespace here when porting its helper module."
+    },
+    {
+      "id": "pause-application",
+      "mode": "manual",
+      "source": "resources/js/pauseApplication.js",
+      "target": "resources/js/pauseApplication.js",
+      "notes": "Ported as-is except init(): the package has no module-level Emitter singleton, so createApp.js hands it the app emitter."
     }
   ]
 }

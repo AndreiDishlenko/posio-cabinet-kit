@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.3.23 — Missing app globals (`$H`, `$dayjs`, pause state) restored
+
+**Fixed**
+- Every page that mounts a modal broke on render: `ModalForm.vue` reads
+  `$modal_inprogress`, which no longer existed after extraction. The
+  `pauseApplication.js` singleton is back (`$inprogress`,
+  `$modal_inprogress`, `$pauseApplication`), driven by the app emitter's
+  `pause_application` / `unpause_application` events instead of a
+  module-level emitter singleton. `$inprogress` is a real ref now, so the
+  layout/card spinners it feeds actually react.
+- `Table.vue` threw `ReferenceError: $H is not defined` while building its
+  select sources: the helper aggregator wasn't ported. `posio/helpers.js`
+  now exists with the namespaces the package uses (`Ar`/`ar` from the
+  ported `helpers/Arrays.js`, `Dt`/`dt` from the already-ported
+  `helpers/Datetime.js`), registered as `$H`/`$h` and, as in the original,
+  published on `window` — without clobbering a host's own `$H`.
+- `$dayjs` was never registered although the extracted table cells, table
+  sorting and notifications list format dates with it. `dayjs` was already
+  in the installer's npm dependency list.
+- Ziggy's own Vue plugin is no longer installed: it registers `route` as a
+  global mixin, which shadowed the package's resolver — the legacy route
+  aliases never applied inside templates — and its `provide('route')`
+  produced an "App already provides property with key route" warning on
+  every load. The package installs the resolver itself.
+
 ## v0.3.22 — Settings tabs back to their original shape + Tailwind theme in the preset
 
 **Fixed**

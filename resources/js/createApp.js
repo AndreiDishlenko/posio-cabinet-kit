@@ -1,10 +1,13 @@
 import { createInertiaApp } from '@inertiajs/vue3';
+import dayjs from 'dayjs';
 import { createApp, h } from 'vue';
-import { ZiggyVue, route as ziggyRoute } from 'ziggy-js';
+import { route as ziggyRoute } from 'ziggy-js';
 
 import { createEmitter } from './emitter.js';
 import { i18n } from './i18n.config.js';
 import { applyLocale, browserLocale, storedLocale } from './localeSync.js';
+import { $inprogress, $modal_inprogress, $pauseApplication } from './pauseApplication.js';
+import Helpers from './posio/helpers.js';
 import { resolveCabinetKitPage } from './resolvePage.js';
 import './vee-validator.js';
 import '@fontsource/inter/400.css';
@@ -37,19 +40,24 @@ export function createCabinetKitApp({ overrides = {}, title, progress, setup: ho
             hydrateI18n(props.initialPage?.props?.cabinetKitI18n);
 
             const app = createApp({ render: () => h(App, props) });
+            const emitter = createEmitter();
 
             app.use(plugin);
-            app.use(ZiggyVue);
             installRouteHelper(app);
             app.use(i18n);
-            app.config.globalProperties.$emitter = createEmitter();
+            app.use(Helpers);
+            app.config.globalProperties.$emitter = emitter;
+            app.config.globalProperties.$dayjs = dayjs;
             app.config.globalProperties.$locRoute = localizedRoute;
             app.config.globalProperties.$apiClient = createApiClient();
             app.config.globalProperties.$toast = createToast();
             app.config.globalProperties.$popup = createPopup();
             app.config.globalProperties.$accountService = createAccountService();
             app.config.globalProperties.$settings = createSettingsService();
-            app.config.globalProperties.$inprogress = { value: false };
+            app.config.globalProperties.$pauseApplication = $pauseApplication;
+            app.config.globalProperties.$inprogress = $inprogress;
+            app.config.globalProperties.$modal_inprogress = $modal_inprogress;
+            $pauseApplication.init(emitter);
             app.config.globalProperties.$is_mobile = { value: typeof window !== 'undefined' ? window.innerWidth <= 640 : false };
             app.config.globalProperties.$is_tablet = { value: typeof window !== 'undefined' ? window.innerWidth <= 1024 : false };
             app.config.globalProperties.$dictionaries = createDictionaries();
@@ -82,6 +90,11 @@ const ROUTE_ALIASES = {
  * Ziggy отдаёт свой помощник только внутрь компонентов, а часть кода кабинета
  * (миксины таблиц/карточек, сервисы) зовёт его из обычных модулей — поэтому тот
  * же помощник кладётся ещё и в глобальную область.
+ *
+ * Штатный плагин Ziggy здесь не подключается намеренно: он ставит своё имя
+ * маршрута глобальной примесью, которая перекрывает наше — подмена устаревших
+ * имён тогда не срабатывала бы в шаблонах, а повторная выдача одного ключа
+ * давала предупреждение при загрузке.
  */
 function installRouteHelper(app) {
     const resolve = (name, params, absolute, config) => ziggyRoute(

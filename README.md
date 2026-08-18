@@ -15,10 +15,13 @@ Not a finished product — a **shell** you extend per project. See
 - Inertia.js (Laravel adapter) + Vue 3, Options API
 - `spatie/laravel-permission` (pulled in automatically)
 - `tightenco/ziggy` (composer) + npm: `vue`, `@inertiajs/vue3`, `ziggy-js`,
-  `@iconify/vue`, `@vuepic/vue-datepicker`, `@fontsource/inter`,
-  `@fontsource/roboto`, `@fontsource/open-sans`, `@fontsource/inter-tight`,
-  `@fontsource/pt-sans`, `vue-i18n` — package pages resolve URLs through
-  `route()` and use Iconify icons/date inputs with bundled fonts
+  `@iconify/vue`, `@headlessui/vue`, `@vuepic/vue-datepicker`,
+  `vue-final-modal`, `vee-validate`, `vue-i18n`, `dayjs`, `axios`,
+  `@fontsource/inter`, `@fontsource/roboto`, `@fontsource/open-sans`,
+  `@fontsource/inter-tight`, `@fontsource/pt-sans` — package pages resolve
+  URLs through `route()` and use Iconify icons/date inputs with bundled
+  fonts. `php artisan cabinet-kit:install` adds them to `package.json` for
+  you; `cabinet-kit:doctor` re-checks the list.
 - A `User` model with `password`/`email_verified_at` columns (Laravel's
   default `users` migration already has both)
 
