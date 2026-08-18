@@ -175,7 +175,7 @@
 					local.permission_ids = local.permission_ids.filter(id => id !== permission.id);
 
 				const result = await this.$apiClient.post(
-					route('admin.role.togglepermission'),
+					route('cabinet-kit.permissions.toggle'),
 					{ role_id: role.id, permission_id: permission.id, granted }
 				);
 
@@ -209,7 +209,7 @@
 					return;
 
 				const result = await this.$apiClient.post(
-					route('admin.permission.store'),
+					route('cabinet-kit.permissions.store'),
 					{ name }
 				);
 
@@ -246,7 +246,7 @@
 					return this.cancelEdit();
 
 				const result = await this.$apiClient.post(
-					route('admin.permission.update'),
+					route('cabinet-kit.permissions.rename.post'),
 					{ id: permission.id, name }
 				);
 

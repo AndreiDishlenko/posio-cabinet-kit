@@ -31,7 +31,7 @@ class LoginController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->route(config('cabinet-kit.login_redirect_route', 'cabinet-kit.dashboard'));
+        return redirect()->route(config('cabinet-kit.login_redirect_route', 'cabinet-kit.users'));
     }
 
     public function logout(Request $request)

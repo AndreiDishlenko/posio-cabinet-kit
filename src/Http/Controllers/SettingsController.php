@@ -60,6 +60,9 @@ class SettingsController extends Controller
             'phone' => $user->phone ?? null,
             'avatar' => $user->avatar ?? null,
             'registered' => optional($user->created_at)->format('d.m.Y'),
+            'play_notifications' => method_exists($user, 'getSetting')
+                ? (bool) $user->getSetting('play_notifications')
+                : false,
         ];
     }
 

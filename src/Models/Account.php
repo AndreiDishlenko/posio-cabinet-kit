@@ -19,9 +19,52 @@ class Account extends Model
 
     protected ?EloquentUser $owner = null;
 
+    /**
+     * Реквизиты организации живут в json-мешке, а не отдельными колонками:
+     * структурные колонки таблицы принадлежат пакету и могут разойтись
+     * с миграциями хоста при обновлении.
+     */
+    public const PROFILE_FIELDS = [
+        'description',
+        'address',
+        'phone',
+        'email',
+        'url',
+        'logo',
+        'unitsystem_id',
+        'currency_id',
+    ];
+
     public function info(): array
     {
-        return $this->only(['id', 'name', 'expire']);
+        return array_merge(
+            $this->only(['id', 'name', 'expire']),
+            $this->profile(),
+        );
+    }
+
+    /** Реквизиты организации из json-мешка, всегда полным набором ключей. */
+    public function profile(): array
+    {
+        $settings = (array) $this->settings;
+
+        return collect(self::PROFILE_FIELDS)
+            ->mapWithKeys(fn ($field) => [$field => $settings[$field] ?? null])
+            ->all();
+    }
+
+    /** Записывает реквизиты организации, игнорируя всё, что не входит в набор. */
+    public function fillProfile(array $values): void
+    {
+        $settings = (object) ($this->settings ?? new \stdClass());
+
+        foreach (self::PROFILE_FIELDS as $field) {
+            if (array_key_exists($field, $values)) {
+                $settings->{$field} = $values[$field];
+            }
+        }
+
+        $this->settings = $settings;
     }
 
     /** @return EloquentUser the host's own User model instance */

@@ -1,5 +1,72 @@
 # Changelog
 
+## v0.3.22 — Settings tabs back to their original shape + Tailwind theme in the preset
+
+**Fixed**
+- `tailwind-preset.cjs` only contributed a content glob, so every non-stock
+  utility the package templates use silently produced nothing: `text-md`
+  (13 usages, among them the language selector), `text-xxs`/`text-xxl`, the
+  `xs:` and `lt-*` breakpoints (35 usages), `grid-rows-*`, and the
+  `h-dvh-*`/`max-h-dvh-*` utilities that give `CabinetLayout` its height.
+  The preset now carries the theme (font sizes bound to the `--text-*`
+  variables, the extra screens, `darkMode: 'class'`) and the dynamic-viewport
+  utility plugin, and its content glob also covers `resources/_admin/js`.
+- Form validation rules were never registered in the package, so any form
+  with `validationRules` would have thrown on submit — `vee-validator.js` is
+  now part of the package and loaded by `createCabinetKitApp()`.
+- `$popup.confirm_yn()` is provided (browser confirm by default); the
+  extracted table/modal mixins already called it.
+
+**Changed**
+- `Settings.vue` renders through `Tabs.vue` (overflow menu, tab in the URL,
+  remembered per account) instead of an ad-hoc button row. The tab list stays
+  config-driven — each tab now receives only its own props.
+- `ProfileTab.vue` is the full profile tab again: avatar with upload, name /
+  phone / e-mail, old + new password, interface language, colour theme, sound
+  notifications, and a save button that activates only on real changes.
+- `AccountTab.vue` is a company-settings form (logo, name, description,
+  address, phone, e-mail, URL) instead of a two-line read-only card.
+- `UsersTab.vue` shows the owner separately, switches member roles through a
+  dropdown, and invites by e-mail with client-side validation first.
+
+**Added**
+- `POST /account` (`cabinet-kit.account.update`) and `POST /account/logo`
+  (`cabinet-kit.account.addlogo`). Company details are stored in
+  `accounts.settings` (json) — no new columns on the shipped table.
+- `Account::profile()` / `Account::fillProfile()`; `Account::info()` now
+  returns those fields alongside `id`/`name`/`expire`.
+- The sound-notification preference is persisted per user and shared as
+  `user.play_notifications`, which `_Notifications.vue` already read.
+- The system (root) user's profile is now read-only on the server too, not
+  just in the form.
+
+## v0.3.21 — route names in the shipped Vue layer
+
+**Fixed**
+- Ziggy's helper is now installed on the app *and* on the global scope, so the
+  extracted mixins/components that call `route(...)` from plain module scope
+  (table/modal-card mixins, the permissions matrix) stop failing with
+  `route is not defined`.
+- The old-name aliases (`cabinet.*`, `admin.*` → `cabinet-kit.*`) are applied
+  through that helper instead of patching `window.route`, which was never set
+  by Ziggy v2 — the alias table had no effect before. A name the host itself
+  registered wins over the alias.
+- `CabinetBurgerMenu.vue`, `SideMenu.vue`, `PermissionsMatrixTable.vue` and
+  `UsersAdmin.vue` now reference the package's own route names, so the burger
+  menu no longer throws `route 'cabinet.settings' is not in the route list`
+  and tears down the page with it.
+- `_Notifications.vue` resolves the host-only notification routes defensively:
+  a missing route now warns instead of breaking the click.
+
+**Removed**
+- The placeholder dashboard: `DashboardController`, `pages/Dashboard.vue` and
+  the `cabinet-kit.dashboard` route are gone — a landing page belongs to the
+  host project, not to the shell. Hosts that linked to `cabinet-kit.dashboard`
+  must register their own route (any name) and point `home_route` /
+  `login_redirect_route` at it.
+- The stale `cabinet-kit.dashboard` fallback in the auth redirects, which now
+  falls back to `cabinet-kit.users` like the shipped config does.
+
 ## v0.4.0 - one-command host installation
 
 **Added**

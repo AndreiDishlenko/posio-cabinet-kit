@@ -1,24 +1,18 @@
 <template>
 
-	<CabinetLayout :page_name="activeTabLabel">
+	<CabinetLayout :space_y="2" :page_name="current_tab_title">
 
-		<div class="flex flex-row gap-2 border-b mb-4">
-			<button v-for="tab in tabs" :key="tab.id"
-				type="button"
-				class="button ghost-button button-sm"
-				:class="{ 'primary-button': tab.id === activeTab }"
-				@click="setActiveTab(tab.id)"
-				>
-				{{ $t ? $t(tab.label) : tab.label }}
-			</button>
-		</div>
-
-		<component :is="activeComponent"
-			:account="account"
-			:members="members"
-			:roles="assignable_roles"
-			:can_manage_account="can_manage_account"
-			/>
+		<Tabs
+			v-model="active_tab"
+			:tabs="tabs"
+			storage-key="tab"
+			>
+			<template v-for="tab in tabs" :key="tab.id" #[tab.id]>
+				<div class="v-flex items-stretch space-y-6 pb-6">
+					<component :is="tabComponent(tab)" v-bind="tabProps(tab)"/>
+				</div>
+			</template>
+		</Tabs>
 
 	</CabinetLayout>
 
@@ -26,6 +20,7 @@
 
 <script>
 	import CabinetLayout from '../layouts/CabinetLayout.vue';
+	import Tabs from '@/js/Elements/Tabs.vue';
 
 	import AccountTab from './Settings/AccountTab.vue';
 	import UsersTab from './Settings/UsersTab.vue';
@@ -35,7 +30,7 @@
 
 	export default {
 		name: 'Settings',
-		components: { CabinetLayout },
+		components: { CabinetLayout, Tabs },
 		props: {
 			tabs: {
 				type: Array,
@@ -57,47 +52,89 @@
 				type: Array,
 				default: () => [],
 			},
+			profile: {
+				type: Object,
+				default: () => ({}),
+			},
+			own_account: {
+				type: Object,
+				default: () => ({}),
+			},
+			account_users: {
+				type: Array,
+				default: () => [],
+			},
+			can_manage_members: {
+				type: Boolean,
+				default: false,
+			},
+			can_manage_account_users: {
+				type: Boolean,
+				default: false,
+			},
+			is_owner: {
+				type: Boolean,
+				default: false,
+			},
+			is_system_user: {
+				type: Boolean,
+				default: false,
+			},
 		},
 		data() {
 			return {
-				activeTab: this.initialTab(),
+				active_tab: this.initialTab(),
 			}
 		},
 		computed: {
-			activeTabLabel() {
-				return this.tabs.find(tab => tab.id === this.activeTab)?.label || 'Settings';
-			},
-			activeComponent() {
-				const tab = this.tabs.find(tab => tab.id === this.activeTab);
-				return tab ? TAB_COMPONENTS[tab.component] : null;
+			current_tab_title() {
+				const tab = this.tabs.find(tab => tab.id === this.active_tab);
+				return tab ? tab.label : 'Settings';
 			},
 		},
 		watch: {
 			tabs() {
-				if (!this.tabs.some(tab => tab.id === this.activeTab))
-					this.activeTab = this.initialTab();
+				if (!this.tabs.some(tab => tab.id === this.active_tab))
+					this.active_tab = this.initialTab();
 			},
 		},
 		methods: {
 			initialTab() {
-				if (typeof window === 'undefined')
-					return this.tabs[0]?.id;
-
-				const requested = new URLSearchParams(window.location.search).get('tab');
-				if (requested && this.tabs.some(tab => tab.id === requested))
-					return requested;
-
-				return this.tabs[0]?.id;
+				return this.tabs[0]?.id || '';
 			},
-			setActiveTab(tabId) {
-				this.activeTab = tabId;
+			tabComponent(tab) {
+				return TAB_COMPONENTS[tab.component] || null;
+			},
+			// Каждому табу — только его собственные данные; таб, добавленный хостом
+			// через конфиг, получает прежний общий набор, чтобы не ломать его пропсы.
+			tabProps(tab) {
+				if (tab.component === 'ProfileTab')
+					return {
+						in_data: this.profile,
+						disabled: this.is_system_user,
+					};
 
-				if (typeof window === 'undefined')
-					return;
+				if (tab.component === 'AccountTab')
+					return {
+						in_data: this.own_account,
+						can_edit: this.can_manage_members,
+						is_owner: this.is_owner,
+					};
 
-				const url = new URL(window.location.href);
-				url.searchParams.set('tab', tabId);
-				window.history.replaceState({}, '', url);
+				if (tab.component === 'UsersTab')
+					return {
+						in_data: this.own_account,
+						users: this.account_users,
+						roles: this.assignable_roles,
+						can_edit: this.can_manage_account_users,
+					};
+
+				return {
+					account: this.account,
+					members: this.members,
+					roles: this.assignable_roles,
+					can_manage_account: this.can_manage_account,
+				};
 			},
 		},
 	}

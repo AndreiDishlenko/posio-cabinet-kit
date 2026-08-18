@@ -15,12 +15,16 @@ class ProfileController extends Controller
         $usersTable = config('cabinet-kit.users_table', 'users');
         $user = $request->user();
 
+        // Учётная запись обслуживания правке не подлежит — форма её тоже гасит.
+        abort_if(method_exists($user, 'isSystem') && $user->isSystem(), 403, 'This profile is read-only.');
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => "required|email|unique:{$usersTable},email,{$user->getKey()}",
             'phone' => 'nullable|string|max:40',
             'old_password' => 'nullable|current_password',
             'password' => ['nullable', 'confirmed', Password::defaults()],
+            'play_notifications' => 'nullable|boolean',
         ]);
 
         $updates = [
@@ -37,6 +41,10 @@ class ProfileController extends Controller
         }
 
         $user->forceFill($updates)->save();
+
+        if (array_key_exists('play_notifications', $validated) && method_exists($user, 'setSetting')) {
+            $user->setSetting('play_notifications', (bool) $validated['play_notifications']);
+        }
 
         return back();
     }

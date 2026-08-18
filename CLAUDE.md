@@ -40,6 +40,15 @@ The working method: pull the relevant original files/components from
 Posio-specific (product tour, AI widgets, product business logic),
 rename to the package's own prefixes (`cabinet-kit.*`, `--ck-*`).
 
+**Always try to preserve the original files and components from
+`posio.cabinet` as they are.** Port them over verbatim and change only
+what genuinely has to change for the package (Posio-specific logic
+stripped, prefixes renamed, host assumptions removed). Do not rewrite,
+restructure, re-style or "improve" an original file while porting it,
+and do not author a fresh replacement when an original exists — every
+gratuitous deviation makes the next re-sync from `posio.cabinet` a
+manual merge instead of a mechanical copy.
+
 The mapping between original and package files, plus which files are
 safe to mechanically re-sync vs. need hand-review, lives in
 `tools/sync-manifest.json` and is applied by

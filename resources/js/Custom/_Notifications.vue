@@ -156,7 +156,17 @@
 				window.Echo.leave(this.notification_channel);
 			}
         },
-		methods: {			
+		methods: {
+			// Маршруты уведомлений принадлежат хосту: в голом кабинете их может не
+			// быть — тогда пункт просто не срабатывает, а страница не падает.
+			hostRoute(name) {
+				try {
+					return route(name);
+				} catch (error) {
+					console.warn(`[cabinet-kit] Route "${name}" is not available in the host app.`, error);
+					return null;
+				}
+			},
 			setRead() {
                 // console.log('setRead');
                 
@@ -170,18 +180,19 @@
                 //     if (item.id==msgId && item.is_read==false) {
                 //         item.is_read = true;
 
-				if (!this.unreadCount || typeof route !== 'function')
+				if (!this.unreadCount)
 					return;
 
-				try {
-					router.post( 
-						route('cabinet.messages.read'), 
-						{},
-						{ headers: { 'X-Inertia-Skip-Pause': '1' } }
-					);
-				} catch (error) {
-					console.warn('[cabinet-kit] Notifications read route is not available.', error);
-				}
+				const url = this.hostRoute('cabinet.messages.read');
+
+				if (!url)
+					return;
+
+				router.post(
+					url,
+					{},
+					{ headers: { 'X-Inertia-Skip-Pause': '1' } }
+				);
                 //     }
                 // })
 			},
@@ -190,7 +201,12 @@
                 if ( !invite.token )
                     this.$toast.error( this.$t('The invitation has already been used. Please request access from the owner again.') )
 
-                router.visit( route('cabinet.invite.accept'), {
+                const url = this.hostRoute('cabinet.invite.accept');
+
+                if ( !url )
+                    return;
+
+                router.visit( url, {
                         method: 'get',
                         data: {
                             token: invite.token
@@ -218,7 +234,12 @@
 			clickItem(notification) {
 				// console.log('Notifications.clickItem', notification.data);
 				if ( notification.type=='order' ) {
-                    router.visit(route('cabinet.docs.orders'), {
+                    const url = this.hostRoute('cabinet.docs.orders');
+
+                    if ( !url )
+                        return false;
+
+                    router.visit(url, {
                         method: 'get',
                         data: {
                             date: notification.data.order_date || '' //this.$dayjs(notification.datetime).format('YYYY-MM-DD')

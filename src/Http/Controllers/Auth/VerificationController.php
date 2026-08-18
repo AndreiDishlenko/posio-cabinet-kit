@@ -12,7 +12,7 @@ class VerificationController extends Controller
     public function notice(Request $request)
     {
         if ($request->user()->hasVerifiedEmail()) {
-            return redirect()->route(config('cabinet-kit.login_redirect_route', 'cabinet-kit.dashboard'));
+            return redirect()->route(config('cabinet-kit.login_redirect_route', 'cabinet-kit.users'));
         }
 
         return Inertia::render('pages/Auth/VerifyEmail');
@@ -24,13 +24,13 @@ class VerificationController extends Controller
             $request->fulfill();
         }
 
-        return redirect()->route(config('cabinet-kit.login_redirect_route', 'cabinet-kit.dashboard'));
+        return redirect()->route(config('cabinet-kit.login_redirect_route', 'cabinet-kit.users'));
     }
 
     public function send(Request $request)
     {
         if ($request->user()->hasVerifiedEmail()) {
-            return redirect()->route(config('cabinet-kit.login_redirect_route', 'cabinet-kit.dashboard'));
+            return redirect()->route(config('cabinet-kit.login_redirect_route', 'cabinet-kit.users'));
         }
 
         $request->user()->sendEmailVerificationNotification();

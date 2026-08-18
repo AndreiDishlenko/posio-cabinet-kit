@@ -341,10 +341,10 @@
             },
 
             // Ссылка на страницу настроек с активным табом в query. Ключ query —
-            // storage-key группы табов на странице ('settings'), см. Tabs.vue →
+            // storage-key группы табов на странице ('tab'), см. Tabs.vue →
             // applyQueryTab(). Ziggy кладёт неизвестный маршруту параметр в query.
             settingsHref(tabId) {
-                return route('cabinet.settings', { tab: tabId });
+                return route('cabinet-kit.settings', { tab: tabId });
             },
 
             // ── Группы-дропдауны ───────────────────────────────────────────

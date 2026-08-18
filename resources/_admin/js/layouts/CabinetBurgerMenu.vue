@@ -42,7 +42,7 @@
 			<BurgerMenuItem
 				icon="proicons:settings"
 				:label="$t('Settings')"
-				:href="route('cabinet.settings')"
+				:href="route('cabinet-kit.settings')"
 				@click="closeSilently"
 			/>
 
@@ -128,7 +128,7 @@
 					return t.id==val }
 				)[0].name;
 
-				router.post( route('cabinet.account.set'), { account_id: val }, {
+				router.post( route('cabinet-kit.account.set'), { account_id: val }, {
 					onError: async (errors) => {
 						// console.warn('errors', errors);
 						// Переключения не произошло — поле возвращается к активному аккаунту.

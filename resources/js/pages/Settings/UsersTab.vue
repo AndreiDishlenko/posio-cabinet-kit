@@ -1,149 +1,234 @@
 <template>
 
-	<div class="card">
-		<h3 class="card-header">{{ $t ? $t('Users') : 'Users' }}</h3>
+	<div ref="form" class="v-flex items-stretch space-y-6">
 
-		<table class="table table-sm">
-			<thead>
-				<tr>
-					<th>{{ $t ? $t('Name') : 'Name' }}</th>
-					<th>{{ $t ? $t('Email') : 'Email' }}</th>
-					<th>{{ $t ? $t('Role') : 'Role' }}</th>
-					<th v-if="can_manage_account"></th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr v-for="member in members" :key="member.id">
-					<td>{{ member.name }} <span v-if="member.is_owner" class="status-badge badge-muted">{{ $t ? $t('Owner') : 'Owner' }}</span></td>
-					<td>{{ member.email }}</td>
-					<td>
-						<span v-if="member.is_owner">{{ member.role || ownerRoleLabel }}</span>
-						<select v-else-if="can_manage_account"
-							class="form-control form-select"
-							:value="member.role"
-							@change="changeRole(member, $event.target.value)"
-							>
-							<option v-for="role in roles" :key="role.name" :value="role.name">
-								{{ $t ? $t(role.name) : role.name }}
-							</option>
-						</select>
-						<span v-else>{{ member.role || defaultRoleLabel }}</span>
-					</td>
-					<td v-if="can_manage_account">
-						<button v-if="!member.is_owner" type="button" class="button ghost-button button-sm" @click="removeMember(member)">
-							{{ $t ? $t('Remove') : 'Remove' }}
-						</button>
-					</td>
-				</tr>
-			</tbody>
-		</table>
+		<h2 v-if="account_name" class="account-scope-name">{{ account_name }}</h2>
 
-		<form v-if="can_manage_account" class="form-group" @submit.prevent="inviteMember">
-			<h4 class="card-header">{{ $t ? $t('Invite a user') : 'Invite a user' }}</h4>
-			<div class="flex flex-col sm:flex-row gap-3">
-				<input
-					type="email"
-					class="form-control"
-					v-model="invite.email"
-					:placeholder="$t ? $t('User email') : 'User email'"
-					maxlength="70"
+		<!-- Account owner -->
+		<div v-if="owner" class="card">
+			<h2 class="text-yellow">{{ $t('Account owner') }}</h2>
+			<div class="flex flex-col gap-1 text-secondary sm:flex-row sm:items-center sm:space-x-4 sm:gap-0 sm:mx-2">
+				<div class="text-color truncate sm:w-1/3">{{ owner.name }}</div>
+				<div class="grow truncate">{{ owner.email }}</div>
+				<div class="text-sm sm:w-40 sm:text-right">{{ $t('Account owner') }}</div>
+			</div>
+		</div>
+
+		<!-- Members -->
+		<div class="card">
+			<div class="card-body">
+				<h2 class="text-yellow">{{ $t('Account Users') }}</h2>
+
+				<div v-if="!guests.length" class="text-secondary mx-2">{{ $t('No connected users yet') }}</div>
+
+				<div
+					v-for="(user, index) in guests"
+					:key="user.id"
+					class="flex flex-col gap-3 text-secondary sm:flex-row sm:items-center sm:space-x-4 sm:mx-2"
 					>
-				<select class="form-control form-select" v-model="invite.role">
-					<option v-for="role in roles" :key="role.name" :value="role.name">
-						{{ $t ? $t(role.name) : role.name }}
-					</option>
-				</select>
-				<button type="submit" class="button primary-button button-sm" :disabled="invite.saving">
-					{{ $t ? $t('Invite') : 'Invite' }}
+					<div class="flex flex-col min-w-0 grow sm:flex-row sm:items-center sm:space-x-4">
+						<div class="text-color truncate sm:w-1/3">{{ user.name }}</div>
+						<div class="grow truncate">{{ user.email }}</div>
+					</div>
+
+					<div class="flex items-center justify-between gap-3 sm:justify-end">
+						<Selectable
+							class="w-40"
+							:in_data="ordered_roles"
+							:model-value="user.role_id"
+							:placeholder="$t('Administrator')"
+							@onChange="(role_id) => changeRole(user, role_id)"
+							/>
+
+						<template v-if="can_edit">
+							<button class="button lt-sm:hidden" @click="removeMember(index)">{{ $t('Disconnect') }}</button>
+							<Icon icon="mdi:trash-outline" class="icon text-secondary sm:hidden" @click="removeMember(index)"/>
+						</template>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Invite user -->
+		<div class="card label-group space-y-3">
+			<h3>{{ $t('Invite a user') }}</h3>
+			<span class="text-sm text-secondary">{{ $t('The user gets access to this account with the role you assign after connecting.') }}</span>
+			<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:space-x-4 sm:gap-0">
+				<input
+					ref="invite_email"
+					type="text"
+					v-model="invite_email"
+					:placeholder="$t('Enter the user\'s email address')"
+					class="form-control"
+					maxlength="70"
+					/>
+				<button class="button primary-button lt-sm:w-full"
+					:class="(invite_email && can_edit) ? '' : 'disabled'"
+					@click="invite()"
+					>{{ $t('Invite') }}
 				</button>
 			</div>
-			<span v-if="invite.error" class="form-error">{{ invite.error }}</span>
-		</form>
+			<p v-if="invite_error" class="form-error">{{ invite_error }}</p>
+		</div>
+
 	</div>
 
 </template>
 
 <script>
+	import { Icon } from '@iconify/vue';
 	import { router } from '@inertiajs/vue3';
+	import { validate } from 'vee-validate';
+
+	import Selectable from '@/js/Elements/Forms/Selectable.vue';
 
 	export default {
 		name: 'UsersTab',
+		components: { Icon, Selectable },
 		props: {
-			members: {
+			in_data: {
+				type: Object,
+				default: () => ({}),
+			},
+			users: {
 				type: Array,
 				default: () => [],
-			},
-			can_manage_account: {
-				type: Boolean,
-				default: false,
 			},
 			roles: {
 				type: Array,
 				default: () => [],
 			},
+			// Приглашение, смена роли и отключение доступны управляющему составом;
+			// то же право проверяется на сервере.
+			can_edit: {
+				type: Boolean,
+				default: false,
+			},
 		},
 		data() {
 			return {
-				invite: {
-					email: '',
-					role: this.roles[0]?.name || 'Administrator',
-					error: '',
-					saving: false,
+				members: this.users.map(user => ({ ...user })),
+				invite_email: '',
+				invite_error: '',
+				// Порядок ролей в выпадающем списке.
+				role_order: {
+					'Administrator': 1,
+					'Manager': 2,
+					'User': 3,
 				},
 			}
 		},
 		computed: {
-			ownerRoleLabel() {
-				return this.$t ? this.$t('Account owner') : 'Account owner';
+			account_name() {
+				return this.in_data?.name;
 			},
-			defaultRoleLabel() {
-				return this.$t ? this.$t('User') : 'User';
+			owner() {
+				return this.members.find(user => user.is_owner) || null;
+			},
+			guests() {
+				return this.members.filter(user => !user.is_owner);
+			},
+			ordered_roles() {
+				return [...this.roles].sort(
+					(a, b) => (this.role_order[a.name] ?? 99) - (this.role_order[b.name] ?? 99)
+				);
+			},
+		},
+		watch: {
+			users(value) {
+				this.members = value.map(user => ({ ...user }));
 			},
 		},
 		methods: {
-			changeRole(member, role) {
-				if (!role || role === member.role)
-					return;
-
-				router.post(route('cabinet-kit.account.member.role'), { user_id: member.id, role }, { preserveScroll: true });
+			isSelf(user) {
+				return Number(user.id) === Number(this.$page.props.user?.id);
 			},
-			inviteMember() {
-				this.invite.error = '';
 
-				if (!/^\S+@\S+\.\S+$/.test(this.invite.email)) {
-					this.invite.error = this.$t ? this.$t('Enter a valid email') : 'Enter a valid email';
+			changeRole(user, role_id) {
+				// Свою роль сменить нельзя; учётной записи обслуживания меняется
+				// только роль в аккаунте — её реквизиты и отключение закрыты.
+				if ( !this.can_edit || this.isSelf(user) )
 					return;
-				}
 
-				this.invite.saving = true;
+				if ( !role_id || role_id === user.role_id )
+					return;
 
-				router.post(route('cabinet-kit.account.member.invite'), {
-					email: this.invite.email,
-					role: this.invite.role,
-				}, {
-					preserveScroll: true,
-					onSuccess: () => {
-						this.invite.email = '';
-					},
+				const role = this.roles.find(r => r.id === role_id);
+				if ( !role )
+					return;
+
+				const previous = user.role_id;
+				user.role_id = role_id;
+
+				router.post( route('cabinet-kit.account.member.role'), { user_id: user.id, role: role.name }, {
 					onError: (errors) => {
-						this.invite.error = errors.email || errors.user_id || errors.error || (this.$t ? this.$t('Could not invite user') : 'Could not invite user');
+						user.role_id = previous;
+						this.$toast.error( errors.error || this.$t('Member role was not updated') );
 					},
-					onFinish: () => {
-						this.invite.saving = false;
+					onSuccess: () => {
+						user.role_name = role.name;
+						this.$toast.success( this.$t('Member role updated') );
 					},
+					preserveScroll: true,
+					preserveState: true,
 				});
 			},
-			removeMember(member) {
-				const confirmed = window.confirm(this.$t ? this.$t('Are you sure you want to remove account member?') : 'Are you sure you want to remove account member?');
-				if (!confirmed)
-					return;
 
-				router.post(route('cabinet-kit.account.member.remove'), { user_id: member.id }, { preserveScroll: true });
+			async invite() {
+				if ( !this.can_edit )
+					return false;
+
+				const validation = await validate(this.invite_email, 'required|email');
+				if ( !validation.valid ) {
+					this.invite_error = validation.errors[0];
+					return false;
+				}
+				this.invite_error = '';
+
+				router.post( route('cabinet-kit.account.member.invite'), { email: this.invite_email }, {
+					onError: (errors) => {
+						this.invite_error = errors.email || errors.error || this.$t('Could not invite user');
+					},
+					onSuccess: () => {
+						this.invite_email = '';
+						this.$toast.success( this.$t('Invitation was sent') );
+					},
+					preserveScroll: true,
+				});
+			},
+
+			async removeMember(index) {
+				if ( !this.can_edit )
+					return false;
+
+				const user = this.guests[index];
+
+				const confirmed = await this.$popup.confirm_yn( this.$t('Are you sure you want to remove account member?'), { danger: true } );
+				if ( !confirmed )
+					return false;
+
+				router.post( route('cabinet-kit.account.member.remove'), { user_id: user.id }, {
+					onError: (errors) => {
+						this.$toast.error( errors.error || this.$t('Member was not removed') );
+					},
+					onSuccess: () => {
+						this.$toast.success( this.$t('Member was removed successfully') );
+					},
+					preserveScroll: true,
+				});
 			},
 		},
 	}
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
+
+	// Имя аккаунта над содержимым таба, относящегося к аккаунту, а не к пользователю.
+	.account-scope-name {
+		@apply text-lg font-semibold self-start;
+		padding: 0.25rem 0.75rem;
+		border-left: 3px solid var(--primary-button-background);
+		color: var(--text-color);
+	}
 
 </style>

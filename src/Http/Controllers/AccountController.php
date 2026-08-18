@@ -29,6 +29,49 @@ class AccountController extends Controller
         return back()->with('account', $account->info());
     }
 
+    /** Реквизиты организации — правит владелец или управляющий составом. */
+    public function update(Request $request)
+    {
+        $this->authorize('manage-members');
+
+        $validated = $request->validate([
+            'name' => 'required|string|min:2|max:255',
+            'description' => 'nullable|string|max:255',
+            'address' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:40',
+            'email' => 'nullable|email|max:255',
+            'url' => 'nullable|string|max:255',
+        ]);
+
+        $account = $request->user()->currentAccount();
+
+        abort_unless($account, 404, 'No active account.');
+
+        $account->fillProfile($validated);
+        $account->name = $validated['name'];
+        $account->save();
+
+        return back();
+    }
+
+    public function addLogo(Request $request)
+    {
+        $this->authorize('manage-members');
+
+        $request->validate([
+            'photo' => ['required', 'image', 'max:8192', 'dimensions:min_width=100,min_height=100,max_width=1000,max_height=1000'],
+        ]);
+
+        $account = $request->user()->currentAccount();
+
+        abort_unless($account, 404, 'No active account.');
+
+        $account->fillProfile(['logo' => $request->file('photo')->store('logos', 'public')]);
+        $account->save();
+
+        return back();
+    }
+
     public function inviteMember(Request $request)
     {
         $this->authorize('manage-account');

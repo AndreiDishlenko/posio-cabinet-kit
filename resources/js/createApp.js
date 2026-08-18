@@ -1,11 +1,12 @@
 import { createInertiaApp } from '@inertiajs/vue3';
 import { createApp, h } from 'vue';
-import { ZiggyVue } from 'ziggy-js';
+import { ZiggyVue, route as ziggyRoute } from 'ziggy-js';
 
 import { createEmitter } from './emitter.js';
 import { i18n } from './i18n.config.js';
 import { applyLocale, browserLocale, storedLocale } from './localeSync.js';
 import { resolveCabinetKitPage } from './resolvePage.js';
+import './vee-validator.js';
 import '@fontsource/inter/400.css';
 import '@fontsource/inter/500.css';
 import '@fontsource/inter/600.css';
@@ -33,18 +34,19 @@ export function createCabinetKitApp({ overrides = {}, title, progress, setup: ho
         ),
         setup({ el, App, props, plugin }) {
             applyDefaultTheme();
-            installOriginalRouteAliases();
             hydrateI18n(props.initialPage?.props?.cabinetKitI18n);
 
             const app = createApp({ render: () => h(App, props) });
 
             app.use(plugin);
             app.use(ZiggyVue);
+            installRouteHelper(app);
             app.use(i18n);
             app.config.globalProperties.$emitter = createEmitter();
             app.config.globalProperties.$locRoute = localizedRoute;
             app.config.globalProperties.$apiClient = createApiClient();
             app.config.globalProperties.$toast = createToast();
+            app.config.globalProperties.$popup = createPopup();
             app.config.globalProperties.$accountService = createAccountService();
             app.config.globalProperties.$settings = createSettingsService();
             app.config.globalProperties.$inprogress = { value: false };
@@ -58,30 +60,56 @@ export function createCabinetKitApp({ overrides = {}, title, progress, setup: ho
     });
 }
 
-function installOriginalRouteAliases() {
-    if (typeof window === 'undefined' || typeof window.route !== 'function') {
-        return;
+// Имена маршрутов исходного кабинета, от которых могли остаться ссылки в
+// переопределениях хоста: пакет зарегистрировал те же экраны под своим префиксом.
+const ROUTE_ALIASES = {
+    'cabinet.settings': 'cabinet-kit.settings',
+    'cabinet.settings.update': 'cabinet-kit.profile.update.post',
+    'cabinet.settings.avatar': 'cabinet-kit.profile.avatar',
+    'cabinet.account.set': 'cabinet-kit.account.set',
+    'cabinet.account.update': 'cabinet-kit.account.update',
+    'cabinet.account.addlogo': 'cabinet-kit.account.addlogo',
+    'cabinet.account.member.invite': 'cabinet-kit.account.member.invite',
+    'cabinet.account.member.role': 'cabinet-kit.account.member.role',
+    'cabinet.account.member.remove': 'cabinet-kit.account.member.remove',
+    'admin.user.update': 'cabinet-kit.users.update.post',
+    'admin.role.togglepermission': 'cabinet-kit.permissions.toggle',
+    'admin.permission.store': 'cabinet-kit.permissions.store',
+    'admin.permission.update': 'cabinet-kit.permissions.rename.post',
+};
+
+/**
+ * Ziggy отдаёт свой помощник только внутрь компонентов, а часть кода кабинета
+ * (миксины таблиц/карточек, сервисы) зовёт его из обычных модулей — поэтому тот
+ * же помощник кладётся ещё и в глобальную область.
+ */
+function installRouteHelper(app) {
+    const resolve = (name, params, absolute, config) => ziggyRoute(
+        resolveRouteName(name, config),
+        params,
+        absolute,
+        config,
+    );
+
+    app.config.globalProperties.route = resolve;
+    app.provide('route', resolve);
+    globalThis.route = resolve;
+}
+
+// Приоритет у маршрута, который хост зарегистрировал сам: подмена нужна только
+// когда старого имени в списке нет.
+function resolveRouteName(name, config) {
+    const alias = ROUTE_ALIASES[name];
+
+    if (! alias) {
+        return name;
     }
 
-    const baseRoute = window.route;
-    const aliases = {
-        'cabinet.settings': 'cabinet-kit.settings',
-        'cabinet.settings.update': 'cabinet-kit.profile.update.post',
-        'cabinet.settings.avatar': 'cabinet-kit.profile.avatar',
-        'cabinet.account.set': 'cabinet-kit.account.set',
-        'cabinet.account.member.invite': 'cabinet-kit.account.member.invite',
-        'cabinet.account.member.role': 'cabinet-kit.account.member.role',
-        'cabinet.account.member.remove': 'cabinet-kit.account.member.remove',
-        'admin.user.update': 'cabinet-kit.users.update.post',
-        'admin.role.togglepermission': 'cabinet-kit.permissions.toggle',
-        'admin.permission.store': 'cabinet-kit.permissions.store',
-        'admin.permission.update': 'cabinet-kit.permissions.rename.post',
-    };
-
-    window.route = (name, params, absolute, config) => {
-        const routeName = aliases[name] ?? name;
-        return baseRoute(routeName, params, absolute, config);
-    };
+    try {
+        return ziggyRoute(undefined, undefined, undefined, config).has(name) ? name : alias;
+    } catch {
+        return alias;
+    }
 }
 
 function hydrateI18n(payload = {}) {
@@ -161,6 +189,25 @@ function createToast() {
     return {
         success: (message) => console.info(message),
         error: (message) => console.error(message),
+    };
+}
+
+// Подтверждение необратимых действий. Оформленный диалог — дело хоста: он может
+// подменить помощник своим, поэтому здесь только браузерный запрос как основа.
+function createPopup() {
+    let open = false;
+
+    return {
+        confirm_yn: async (message) => {
+            if (typeof window === 'undefined') return false;
+
+            open = true;
+            const result = window.confirm(message);
+            open = false;
+
+            return result;
+        },
+        isOpen: () => open,
     };
 }
 

@@ -39,21 +39,28 @@ Edit `config/cabinet-kit.php` → `settings_tabs`, add
    package version into `overrides/pages/Settings.vue`, add your import to
    `TAB_COMPONENTS`, keep everything else identical.
 
-This is the same mechanism the bundled `ProfileTab.vue` uses (profile info +
-change-password forms) — it's a real, functional tab, not a stub, precisely
-because "a base page with extensible tabs" is what `settings_tabs` already
-is. Don't build a second, parallel tabs system for a similar need.
+Each shipped tab receives only the props it needs (`Settings.vue` →
+`tabProps()`); a tab whose `component` isn't one of the three shipped names
+gets the generic bag — `account`, `members`, `roles`, `can_manage_account` —
+so a host tab written against an earlier version keeps working. The page
+itself passes everything the controller shares, so widening that bag is a
+one-line change in your override.
+
+This is the same mechanism the bundled `ProfileTab.vue` uses (profile,
+password, interface preferences) — it's a real, functional tab, not a stub,
+precisely because "a base page with extensible tabs" is what `settings_tabs`
+already is. Don't build a second, parallel tabs system for a similar need.
 
 ## Overriding a page
 
 ```
-resources/_admin/overrides/pages/Dashboard.vue   →  replaces vendor's pages/Dashboard.vue
 resources/_admin/overrides/pages/Settings.vue    →  replaces vendor's pages/Settings.vue
+resources/_admin/overrides/pages/UsersAdmin.vue  →  replaces vendor's pages/UsersAdmin.vue
 resources/_admin/overrides/pages/Auth/Login.vue  →  replaces vendor's pages/Auth/Login.vue
 ```
 
 `resolveCabinetKitPage()` matches by the Inertia render name's basename
-(`pages/Dashboard` → looks for a file ending in `/Dashboard.vue` in the
+(`pages/Settings` → looks for a file ending in `/Settings.vue` in the
 overrides glob first). Copy the package file as your starting point so you
 don't have to reverse-engineer its props.
 

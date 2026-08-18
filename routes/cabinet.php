@@ -10,7 +10,6 @@ use Posio\CabinetKit\Http\Controllers\Auth\LoginController;
 use Posio\CabinetKit\Http\Controllers\Auth\PasswordResetController;
 use Posio\CabinetKit\Http\Controllers\Auth\RegisterController;
 use Posio\CabinetKit\Http\Controllers\Auth\VerificationController;
-use Posio\CabinetKit\Http\Controllers\DashboardController;
 use Posio\CabinetKit\Http\Controllers\ProfileController;
 use Posio\CabinetKit\Http\Controllers\SettingsController;
 use Posio\CabinetKit\Http\Middleware\CanSystemPermission;
@@ -92,7 +91,6 @@ Route::middleware(['web', UseCabinetKitRootView::class])
             ->name(config('cabinet-kit.route_name_prefix', 'cabinet-kit.'))
             ->group(function () {
                 Route::get('/', fn () => redirect()->route(config('cabinet-kit.home_route', 'cabinet-kit.users')))->name('home');
-                Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
                 Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
 
                 Route::middleware(CanSystemPermission::class.':sysper-users')->group(function () {
@@ -120,6 +118,8 @@ Route::middleware(['web', UseCabinetKitRootView::class])
                 Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
                 Route::post('/account/set', [AccountController::class, 'set'])->name('account.set');
+                Route::post('/account', [AccountController::class, 'update'])->name('account.update');
+                Route::post('/account/logo', [AccountController::class, 'addLogo'])->name('account.addlogo');
                 Route::post('/account/member/invite', [AccountController::class, 'inviteMember'])->name('account.member.invite');
                 Route::post('/account/member/role', [AccountController::class, 'setMemberRole'])->name('account.member.role');
                 Route::post('/account/member/remove', [AccountController::class, 'removeMember'])->name('account.member.remove');

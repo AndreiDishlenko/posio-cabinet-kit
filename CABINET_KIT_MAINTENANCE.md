@@ -56,7 +56,17 @@ without reintroducing Posio-specific logic.
 
 1. Run the sync audit and review every `different` or `missing` row.
 2. Port generic improvements into package files; leave product-specific code
-   in `posio.cabinet` or in future feature packages.
+   in `posio.cabinet` or in future feature packages. Ported files arrive with
+   upstream route names — rename them to the package's own, otherwise Ziggy
+   throws mid-render and takes the whole page down:
+
+```powershell
+Select-String -Path resources -Include *.vue,*.js -Recurse `
+  -Pattern "route\('(cabinet|admin)\." 
+```
+
+   Names the package genuinely does not own (host-only screens) must be
+   resolved defensively, never inline in a template.
 3. Update `docs/CHANGELOG.md`, `docs/ARCHITECTURE.md` or `docs/EXTENDING.md`
    when contracts change.
 4. Run package-level syntax checks:

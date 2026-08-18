@@ -29,7 +29,7 @@ owned and edited by the host.
 ```
 src/
   CabinetKitServiceProvider.php   registers migrations/routes/config, commands
-  Http/Controllers/               AccountController, SettingsController, DashboardController, ProfileController
+  Http/Controllers/               AccountController, SettingsController, ProfileController
   Http/Controllers/Auth/          LoginController, RegisterController, PasswordResetController, VerificationController
   Http/Middleware/                SetPermissionTeam, ShareCabinetKitData
   Models/Account.php              tenant model (name + settings jsonb, owner_id)
@@ -44,7 +44,7 @@ routes/cabinet.php                mounted automatically, prefix+name from config
 config/cabinet-kit.php            user_model, menu[], settings_tabs[], roles, login_redirect_route
 resources/js/
   layouts/                        CabinetLayout, CabinetHeader, SideMenu, AccountSwitcher, AuthLayout
-  pages/                          Dashboard.vue, Settings.vue + Settings/{Account,Users,Profile}Tab.vue
+  pages/                          Settings.vue + Settings/{Account,Users,Profile}Tab.vue
   pages/Auth/                     Login, Register, ForgotPassword, ResetPassword, VerifyEmail
   components/ui/                 Table.vue, ModalForm.vue, CardTemplate.vue
   resolvePage.js                  override-aware Inertia page resolver
@@ -81,7 +81,7 @@ Route **names** for the auth group are Laravel's own unprefixed convention
 (`login`, `register`, `logout`, `password.*`, `verification.*`) rather than
 `cabinet-kit.*` — that's not a style choice, framework internals (the `auth`
 middleware's redirect-to-login, `EmailVerificationRequest`) look those exact
-names up. Only the *authenticated* dashboard/settings/account route group
+names up. Only the *authenticated* users/settings/account route group
 uses the `cabinet-kit.` name prefix.
 
 ## Rendering pipeline (who owns which layer)
@@ -123,7 +123,12 @@ CabinetKit provides its own auth (see above). It still expects:
    translation helper fed by Laravel JSON translations shared through
    Inertia.
 6. Tailwind config uses `vendor/posio/cabinet-kit/tailwind-preset.cjs`, which
-   contributes the package Vue content glob.
+   contributes the package Vue content globs *and* the theme those templates
+   are written against: font sizes bound to the `--text-*` variables (incl.
+   the non-stock `md`/`xxs`/`xxl` steps), the `xs` and `lt-*` breakpoints,
+   class-based dark mode, and the `h-dvh-*`/`max-h-dvh-*` utilities. Without
+   the preset those classes compile to nothing and the cabinet loses its
+   typography and its height.
 7. (Optional) `implements MustVerifyEmail` on the host's `User` model if
    email verification should actually be enforced elsewhere — the
    verify/resend routes work regardless, they just don't block anything on

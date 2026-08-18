@@ -148,6 +148,7 @@ class ShareCabinetKitData
             'can_manage_members' => $account ? $user->can('manage-members') : false,
             'can_manage_account' => $account ? $user->can('manage-account') : false,
             'tour_done' => method_exists($user, 'getSetting') ? (bool) $user->getSetting('tour_done') : true,
+            'play_notifications' => method_exists($user, 'getSetting') ? (bool) $user->getSetting('play_notifications') : false,
         ];
     }
 }

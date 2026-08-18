@@ -18,7 +18,7 @@
                 :in_data="currentRow"
                 :roles="roles"
                 :perms="permissions"
-                route_prefix="admin.user"
+                route_prefix="cabinet-kit.users"
                 @close="closeTableModal()"
                 />
         </ModalForm>

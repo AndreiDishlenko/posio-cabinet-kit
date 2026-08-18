@@ -48,6 +48,6 @@ class RegisterController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route(config('cabinet-kit.login_redirect_route', 'cabinet-kit.dashboard'));
+        return redirect()->route(config('cabinet-kit.login_redirect_route', 'cabinet-kit.users'));
     }
 }
