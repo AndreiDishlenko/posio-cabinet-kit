@@ -4,6 +4,7 @@ import { ZiggyVue } from 'ziggy-js';
 
 import { createEmitter } from './emitter.js';
 import { resolveCabinetKitPage } from './resolvePage.js';
+import '@vuepic/vue-datepicker/dist/main.css';
 import '../scss/cabinet-kit.scss';
 
 export function createCabinetKitApp({ overrides = {}, title, progress, setup: hostSetup } = {}) {

@@ -7,6 +7,7 @@ final class FrontendDependencies
     public const PACKAGES = [
         '@headlessui/vue' => '^1.7.23',
         '@iconify/vue' => '^5.0.0',
+        '@vuepic/vue-datepicker' => '^11.0.3',
         'axios' => '^1.7.9',
         'dayjs' => '^1.11.13',
         'vee-validate' => '^4.15.0',
