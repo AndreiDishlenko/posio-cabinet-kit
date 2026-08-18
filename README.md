@@ -14,7 +14,7 @@ Not a finished product — a **shell** you extend per project. See
 - Laravel 11/12, PHP 8.2+
 - Inertia.js (Laravel adapter) + Vue 3, Options API
 - `spatie/laravel-permission` (pulled in automatically)
-- `tightenco/ziggy` (composer) + npm: `ziggy-js`, `@iconify/vue` —
+- `tightenco/ziggy` (composer) + npm: `ziggy-js`, `@iconify/vue`, `vue-i18n` —
   package pages resolve URLs through `route()` and use Iconify icons
 - A `User` model with `password`/`email_verified_at` columns (Laravel's
   default `users` migration already has both)
