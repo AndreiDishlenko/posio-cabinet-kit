@@ -5,6 +5,7 @@ namespace Posio\CabinetKit\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use Posio\CabinetKit\Support\FrontendDependencies;
 
 /**
  * Package config values that live in the host's own config/cabinet-kit.php
@@ -20,6 +21,8 @@ class SyncConfigCommand extends Command
 
     public function handle(): int
     {
+        $this->syncPackageJsonDependencies();
+
         $hostPath = config_path('cabinet-kit.php');
         $packagePath = __DIR__.'/../../../config/cabinet-kit.php';
 
@@ -46,5 +49,46 @@ class SyncConfigCommand extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    protected function syncPackageJsonDependencies(): void
+    {
+        $path = base_path('package.json');
+        if (! File::exists($path)) {
+            $this->warn('package.json was not found — install CabinetKit npm dependencies manually: '.implode(' ', array_keys(FrontendDependencies::PACKAGES)).'.');
+            return;
+        }
+
+        $json = json_decode(File::get($path), true);
+        if (! is_array($json)) {
+            $this->warn('package.json could not be parsed — install CabinetKit npm dependencies manually: '.implode(' ', array_keys(FrontendDependencies::PACKAGES)).'.');
+            return;
+        }
+
+        $json['dependencies'] ??= [];
+        $added = [];
+
+        foreach (FrontendDependencies::PACKAGES as $package => $version) {
+            if (isset($json['dependencies'][$package]) || isset($json['devDependencies'][$package])) {
+                continue;
+            }
+
+            $json['dependencies'][$package] = $version;
+            $added[] = $package;
+        }
+
+        if ($added === []) {
+            return;
+        }
+
+        ksort($json['dependencies']);
+
+        if (! File::exists($path.'.bak')) {
+            File::copy($path, $path.'.bak');
+        }
+
+        File::put($path, json_encode($json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES).PHP_EOL);
+        $this->info('Patched package.json with CabinetKit npm dependencies: '.implode(', ', $added).'.');
+        $this->warn('Run npm install before npm run dev/build.');
     }
 }

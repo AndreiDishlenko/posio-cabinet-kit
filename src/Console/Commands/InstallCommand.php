@@ -5,6 +5,7 @@ namespace Posio\CabinetKit\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
+use Posio\CabinetKit\Support\FrontendDependencies;
 
 class InstallCommand extends Command
 {
@@ -40,6 +41,7 @@ class InstallCommand extends Command
 
         $this->patchViteConfig($entry);
         $this->patchTailwindConfig();
+        $this->patchPackageJson();
         $this->patchUserModel();
         $this->publishPermissionMigrations();
 
@@ -373,6 +375,42 @@ MD);
         }
     }
 
+    protected function patchPackageJson(): void
+    {
+        $path = base_path('package.json');
+        if (! File::exists($path)) {
+            $this->warn('package.json was not found. Install CabinetKit npm dependencies manually: '.implode(' ', array_keys(FrontendDependencies::PACKAGES)).'.');
+            return;
+        }
+
+        $json = json_decode(File::get($path), true);
+        if (! is_array($json)) {
+            $this->warn('package.json could not be parsed. Install CabinetKit npm dependencies manually: '.implode(' ', array_keys(FrontendDependencies::PACKAGES)).'.');
+            return;
+        }
+
+        $json['dependencies'] ??= [];
+        $added = [];
+
+        foreach (FrontendDependencies::PACKAGES as $package => $version) {
+            if (isset($json['dependencies'][$package]) || isset($json['devDependencies'][$package])) {
+                continue;
+            }
+
+            $json['dependencies'][$package] = $version;
+            $added[] = $package;
+        }
+
+        if ($added === []) {
+            return;
+        }
+
+        ksort($json['dependencies']);
+        $this->backupAndPut($path, json_encode($json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES).PHP_EOL);
+        $this->info('Patched package.json with CabinetKit npm dependencies: '.implode(', ', $added).'.');
+        $this->warn('Run npm install before npm run dev/build.');
+    }
+
     protected function patchUserModel(): void
     {
         $path = app_path('Models/User.php');
@@ -487,6 +525,6 @@ MD);
         $this->newLine();
         $this->line('<fg=green>CabinetKit install finished.</>');
         $this->line("Vite entry: {$entry}");
-        $this->line('Run npm install if the host is missing ziggy-js or @iconify/vue, then npm run dev.');
+        $this->line('Run npm install, then npm run dev.');
     }
 }

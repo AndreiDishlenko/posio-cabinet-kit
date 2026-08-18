@@ -5,6 +5,7 @@ namespace Posio\CabinetKit\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
+use Posio\CabinetKit\Support\FrontendDependencies;
 
 class DoctorCommand extends Command
 {
@@ -32,9 +33,10 @@ class DoctorCommand extends Command
         $this->check(Schema::hasTable('accounts') && Schema::hasTable('user_has_accounts'), 'CabinetKit account tables exist', 'Run php artisan migrate.');
         $this->check(Schema::hasTable('admin_links'), 'CabinetKit admin_links table exists', 'Run php artisan migrate.');
         $this->check($this->routeNamesDoNotCollide(), 'Route names can be cached', "Set 'auth_routes' => false or remove duplicate auth route names.");
-        $this->check($this->packageJsonHas('ziggy-js'), 'package.json contains ziggy-js', 'Run npm install ziggy-js.');
-        $this->check($this->packageJsonHas('@iconify/vue'), 'package.json contains @iconify/vue', 'Run npm install @iconify/vue.');
-        $this->check($this->packageJsonHas('@headlessui/vue'), 'package.json contains @headlessui/vue', 'Run npm install @headlessui/vue.');
+        foreach (FrontendDependencies::PACKAGES as $package => $version) {
+            $this->check($this->packageJsonHas($package), "package.json contains {$package}", "Run npm install {$package}@\"{$version}\".");
+        }
+
         $this->check(File::exists(public_path('cabinet-assets/images/cabinet_logo_dark_theme.svg')), 'CabinetKit original menu assets are published', 'Run php artisan vendor:publish --tag=cabinet-kit-assets --force.');
 
         if ($this->failures > 0) {
