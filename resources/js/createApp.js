@@ -113,9 +113,46 @@ function createAccountService() {
 }
 
 function createSettingsService() {
+    const storageKey = (key) => `cabinet:${key}`;
+    const read = (key, fallback = null) => {
+        if (typeof localStorage === 'undefined') return fallback;
+
+        const value = localStorage.getItem(storageKey(key));
+        if (value === null) return fallback;
+
+        try {
+            return JSON.parse(value);
+        } catch {
+            return fallback;
+        }
+    };
+    const write = (key, value) => {
+        if (typeof localStorage === 'undefined') return;
+
+        localStorage.setItem(storageKey(key), JSON.stringify(value));
+    };
+    const pageStateKey = (pageKey, accountId = null) => {
+        const account = String(accountId ?? 'default');
+
+        return `page_state:${account}:${pageKey}`;
+    };
+
     return {
-        setSetting: (key, value) => {
-            localStorage.setItem(`cabinet:${key}`, JSON.stringify(value));
+        getSetting: read,
+        setSetting: write,
+        removeItem: (key) => {
+            if (typeof localStorage === 'undefined') return;
+
+            localStorage.removeItem(storageKey(key));
+        },
+        getPageState: (pageKey, accountId = null) => read(pageStateKey(pageKey, accountId), {}),
+        mergePageState: (pageKey, accountId = null, partial = {}) => {
+            const current = read(pageStateKey(pageKey, accountId), {});
+
+            write(pageStateKey(pageKey, accountId), {
+                ...current,
+                ...partial,
+            });
         },
     };
 }
