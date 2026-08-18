@@ -21,30 +21,32 @@ Route::middleware(['web', UseCabinetKitRootView::class])
         // convention (login, register, ...) so framework internals (the
         // `auth` middleware's redirect-to-login, signed verification links)
         // resolve them without extra config.
-        Route::middleware('guest')->group(function () {
-            Route::get('login', [LoginController::class, 'showLogin'])->name('login');
-            Route::post('login', [LoginController::class, 'login']);
+        if (config('cabinet-kit.auth_routes', true)) {
+            Route::middleware('guest')->group(function () {
+                Route::get('login', [LoginController::class, 'showLogin'])->name('login');
+                Route::post('login', [LoginController::class, 'login']);
 
-            Route::get('register', [RegisterController::class, 'showRegister'])->name('register');
-            Route::post('register', [RegisterController::class, 'register']);
+                Route::get('register', [RegisterController::class, 'showRegister'])->name('register');
+                Route::post('register', [RegisterController::class, 'register']);
 
-            Route::get('forgot-password', [PasswordResetController::class, 'request'])->name('password.request');
-            Route::post('forgot-password', [PasswordResetController::class, 'email'])->name('password.email');
-            Route::get('reset-password/{token}', [PasswordResetController::class, 'reset'])->name('password.reset');
-            Route::post('reset-password', [PasswordResetController::class, 'update'])->name('password.update');
-        });
+                Route::get('forgot-password', [PasswordResetController::class, 'request'])->name('password.request');
+                Route::post('forgot-password', [PasswordResetController::class, 'email'])->name('password.email');
+                Route::get('reset-password/{token}', [PasswordResetController::class, 'reset'])->name('password.reset');
+                Route::post('reset-password', [PasswordResetController::class, 'update'])->name('password.store');
+            });
 
-        Route::middleware('auth')->group(function () {
-            Route::post('logout', [LoginController::class, 'logout'])->name('logout');
+            Route::middleware('auth')->group(function () {
+                Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 
-            Route::get('email/verify', [VerificationController::class, 'notice'])->name('verification.notice');
-            Route::get('email/verify/{id}/{hash}', [VerificationController::class, 'verify'])
-                ->middleware('signed')
-                ->name('verification.verify');
-            Route::post('email/verification-notification', [VerificationController::class, 'send'])
-                ->middleware('throttle:6,1')
-                ->name('verification.send');
-        });
+                Route::get('email/verify', [VerificationController::class, 'notice'])->name('verification.notice');
+                Route::get('email/verify/{id}/{hash}', [VerificationController::class, 'verify'])
+                    ->middleware('signed')
+                    ->name('verification.verify');
+                Route::post('email/verification-notification', [VerificationController::class, 'send'])
+                    ->middleware('throttle:6,1')
+                    ->name('verification.send');
+            });
+        }
 
         Route::middleware(array_merge(
                 config('cabinet-kit.middleware', ['web', 'auth']),

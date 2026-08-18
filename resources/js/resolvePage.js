@@ -1,6 +1,6 @@
 /**
  * Inertia page resolver for CabinetKit: a host override always wins over the
- * package's own version of the same page. Usage in the host's admin.js:
+ * package's own version of the same page. Low-level usage:
  *
  *   import { resolveCabinetKitPage } from '@cabinet-kit/resolvePage.js';
  *

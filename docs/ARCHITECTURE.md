@@ -33,10 +33,10 @@ src/
   Http/Controllers/Auth/          LoginController, RegisterController, PasswordResetController, VerificationController
   Http/Middleware/                SetPermissionTeam, ShareCabinetKitData
   Models/Account.php              tenant model (name + settings jsonb, owner_id)
-  Traits/                         HasAccount (User), HasSettings, HasCustomFields
+  Traits/                         IsCabinetKitUser (User), HasAccount, HasSettings, HasCustomFields
   Repositories/AccountRepository.php
   Services/                       AccountService (role writes + account creation), MenuService (menu/tabs filtering)
-  Console/Commands/               InstallCommand, SyncConfigCommand
+  Console/Commands/               InstallCommand, DoctorCommand, SyncConfigCommand
 database/
   migrations/                     accounts, user_has_accounts, users.settings
   seeders/CabinetKitRolesSeeder.php  Account owner / Manager / Administrator / User + manage-account permission
@@ -73,7 +73,7 @@ Bundled (since v0.2.0): login, registration (creates the `User` *and* its
 `Account` in one step — a "Company name" field on the register form calls
 `AccountService::createAccount()`), logout, password reset (Laravel's core
 `Password` broker + the host's own mail config), and email verification
-(routes always exist; nothing actually *enforces* verification unless the
+(routes exist when `cabinet-kit.auth_routes` is true; nothing actually *enforces* verification unless the
 host's `User` implements `MustVerifyEmail` and adds the `verified`
 middleware itself — that's a deliberate opt-in, not assumed).
 
@@ -104,26 +104,24 @@ uses the `cabinet-kit.` name prefix.
 CabinetKit provides its own auth (see above). It still expects:
 
 1. A `User` model (path configurable via `cabinet-kit.user_model`) with
-   `HasAccount` + `HasSettings` + `HasCustomFields` traits added, plus the
+   the `IsCabinetKitUser` trait added, plus the
    standard `password` / `email_verified_at` columns Laravel's own `users`
    migration already creates.
 2. `spatie/laravel-permission` installed with `'teams' => true` in
    `config/permission.php` *before* its migrations run.
 3. `tightenco/ziggy` installed (composer) + `ziggy-js` (npm) — every URL in
    CabinetKit Vue pages goes through `route()`.
-4. Vite: alias `@cabinet-kit` → `vendor/posio/cabinet-kit/resources/js`,
-   `server.fs.allow` for `vendor/posio/cabinet-kit`, and the cabinet entry
-   (`config('cabinet-kit.vite_entry')`, default
-   `resources/_admin/js/admin.js`) added to the laravel-vite-plugin `input`
-   array (see `stubs/vite-alias-snippet.js`).
-5. `resources/_admin/js/admin.js` wired through `resolveCabinetKitPage()` —
-   `cabinet-kit:install` scaffolds it from `stubs/cabinet-entry.js.stub`
-   when missing. The stub also registers `ZiggyVue` and a `mitt` bus as
-   `$emitter` (mobile burger ⇄ SideMenu events). npm deps: `vue`,
-   `@inertiajs/vue3`, `ziggy-js`, `@iconify/vue`, `mitt`.
-6. Tailwind `content` glob covering
-   `./vendor/posio/cabinet-kit/resources/js/**/*.vue` — package templates
-   use utility classes (flex/gap/p-*), which otherwise never get generated.
+4. Vite: the cabinet entry (`config('cabinet-kit.vite_entry')`, default
+   `resources/_admin/js/cabinet.ts`) must be in the laravel-vite-plugin
+   `input` array, and `cabinetKit()` from
+   `vendor/posio/cabinet-kit/resources/vite/cabinet-kit.js` must be in
+   `plugins`. That plugin provides the alias, `server.fs.allow`, and optional
+   HTTPS/HMR config.
+5. `resources/_admin/js/cabinet.ts` uses `createCabinetKitApp()` from the
+   package. The factory registers `ZiggyVue`, the package page resolver,
+   package styles, and the built-in `$emitter` bus.
+6. Tailwind config uses `vendor/posio/cabinet-kit/tailwind-preset.cjs`, which
+   contributes the package Vue content glob.
 7. (Optional) `implements MustVerifyEmail` on the host's `User` model if
    email verification should actually be enforced elsewhere — the
    verify/resend routes work regardless, they just don't block anything on

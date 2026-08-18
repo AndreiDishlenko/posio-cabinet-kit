@@ -112,9 +112,9 @@ Two levels:
    .button.primary-button { text-transform: uppercase; }
    ```
 
-If a host installed before this file existed, create it by hand at that path
-and add `import '../scss/cabinet-kit-overrides.scss';` after the package scss
-import in `resources/_admin/js/admin.js` — that's all the wiring there is.
+If a host installed before this file existed, rerun `php artisan
+cabinet-kit:install` or create it by hand and import it from
+`resources/_admin/js/cabinet.ts` after `createCabinetKitApp`.
 
 ## Adding a new permission / role
 

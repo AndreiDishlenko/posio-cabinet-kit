@@ -14,7 +14,7 @@ Not a finished product — a **shell** you extend per project. See
 - Laravel 11/12, PHP 8.2+
 - Inertia.js (Laravel adapter) + Vue 3, Options API
 - `spatie/laravel-permission` (pulled in automatically)
-- `tightenco/ziggy` (composer) + npm: `ziggy-js`, `@iconify/vue`, `mitt` —
+- `tightenco/ziggy` (composer) + npm: `ziggy-js`, `@iconify/vue` —
   package pages resolve URLs through `route()` and use Iconify icons
 - A `User` model with `password`/`email_verified_at` columns (Laravel's
   default `users` migration already has both)
@@ -25,16 +25,15 @@ Not a finished product — a **shell** you extend per project. See
 composer config repositories.cabinet-kit vcs F:/Packages/posio-cabinet-kit
 composer require posio/cabinet-kit
 php artisan cabinet-kit:install
+npm run dev
 ```
 
-The install command publishes `config/cabinet-kit.php`, runs migrations,
-optionally seeds base roles, scaffolds `resources/_admin/overrides/` (with a
-README explaining the override mechanism) and the cabinet Vite entry
-`resources/_admin/js/admin.js` (from `stubs/cabinet-entry.js.stub`). It then
-prints the remaining manual steps: adding the `HasAccount` / `HasSettings` /
-`HasCustomFields` traits to your `User` model, and wiring vite.config.js
-(alias + `fs.allow` + `input` entry) and the Tailwind `content` glob per
-`stubs/vite-alias-snippet.js`.
+The install command publishes `config/cabinet-kit.php`, enables Spatie
+Permission teams before migrations, resolves auth-route conflicts, scaffolds
+the cabinet Vite entry (`resources/_admin/js/cabinet.ts` by default),
+patches `vite.config`, `tailwind.config` and `app/Models/User.php` with
+`.bak` backups, runs migrations, seeds base roles, and finishes with
+`cabinet-kit:doctor`.
 
 Every CabinetKit page renders into the package's own Blade root view
 (`cabinet-kit::app`) with its own Vite entry — the host's main app view and
@@ -49,6 +48,7 @@ no separate account-creation step for a brand-new install.
 ```bash
 composer update posio/cabinet-kit
 php artisan cabinet-kit:sync-config   # reports any new config keys to add by hand
+php artisan cabinet-kit:doctor        # verifies frontend/backend wiring
 ```
 
 Vue/SCSS/routes/migrations are read straight from `vendor/posio/cabinet-kit/`

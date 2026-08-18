@@ -3,6 +3,7 @@
 namespace Posio\CabinetKit;
 
 use Illuminate\Support\ServiceProvider;
+use Posio\CabinetKit\Console\Commands\DoctorCommand;
 use Posio\CabinetKit\Console\Commands\InstallCommand;
 use Posio\CabinetKit\Console\Commands\SyncConfigCommand;
 
@@ -31,6 +32,7 @@ class CabinetKitServiceProvider extends ServiceProvider
 
         if ($this->app->runningInConsole()) {
             $this->commands([
+                DoctorCommand::class,
                 InstallCommand::class,
                 SyncConfigCommand::class,
             ]);
@@ -48,7 +50,7 @@ class CabinetKitServiceProvider extends ServiceProvider
     protected function registerInertiaPagePaths(): void
     {
         $packagePages = dirname(__DIR__).DIRECTORY_SEPARATOR.'resources'.DIRECTORY_SEPARATOR.'js';
-        $overridePages = resource_path('_admin/overrides');
+        $overridePages = resource_path(config('cabinet-kit.overrides_path', '_admin/overrides'));
 
         // inertia-laravel v3: runtime ensure_pages_exist + assertInertia share these paths.
         $paths = config('inertia.pages.paths');

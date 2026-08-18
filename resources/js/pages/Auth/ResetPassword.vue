@@ -81,7 +81,7 @@
 
 				this.submitting = true;
 
-				router.post(route('password.update'), this.form, {
+				router.post(route('password.store'), this.form, {
 					onError: (errors) => { this.errors = errors; },
 					onFinish: () => { this.submitting = false; },
 				});

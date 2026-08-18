@@ -32,9 +32,36 @@ return [
     // full control of the cabinet's HTML shell.
     'root_view' => 'cabinet-kit::app',
 
+    // Register bundled auth routes (login/register/password/email verify).
+    // Set to false when the host application already owns these route names.
+    'auth_routes' => true,
+
     // Vite entry the bundled root view loads. Must also be listed in the
     // host vite.config.js `input` array. cabinet-kit:install scaffolds it.
-    'vite_entry' => 'resources/_admin/js/admin.js',
+    'vite_entry' => 'resources/_admin/js/cabinet.ts',
+
+    // Host override components. Paths are relative to resource_path().
+    'overrides_path' => '_admin/overrides',
+
+    // Built-in users created during installation. Existing users are kept as-is:
+    // passwords are only written when the user row is first created.
+    'system_team_id' => 0,
+    'system_users' => [
+        'sa' => [
+            'name' => 'sa',
+            'email' => env('CABINET_KIT_SA_EMAIL', 'sa@gmail.com'),
+            'password' => env('CABINET_KIT_SA_PASSWORD', '12345678'),
+            'system_role' => 'SAdmin',
+            'account_name' => 'Root Account',
+        ],
+        'admin' => [
+            'name' => 'admin',
+            'email' => env('CABINET_KIT_ADMIN_EMAIL', 'admin@gmail.com'),
+            'password' => env('CABINET_KIT_ADMIN_PASSWORD', '12345678'),
+            'system_role' => 'System administrator',
+            'account_name' => 'Admin Account',
+        ],
+    ],
 
     // Per-account roles (Spatie Permission teams, team_id = account_id).
     // Keep in sync with database/seeders/CabinetKitRolesSeeder.php.

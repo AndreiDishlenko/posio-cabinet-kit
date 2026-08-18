@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.4.0 - one-command host installation
+
+**Added**
+- `resources/vite/cabinet-kit.js` Vite plugin for the `@cabinet-kit` alias,
+  vendor `fs.allow`, and optional local HTTPS/HMR.
+- `tailwind-preset.cjs`, `resources/js/createApp.js`, built-in emitter, and
+  `IsCabinetKitUser` so hosts wire one preset, one factory, and one trait.
+- `cabinet-kit:doctor` with CI-friendly non-zero exit on failed checks.
+
+**Changed**
+- `cabinet-kit:install` now enables Spatie Permission teams before migrations,
+  handles auth route conflicts through `auth_routes`, resolves/scaffolds the
+  Vite entry, patches Vite/Tailwind/User with `.bak` backups, runs migrations,
+  seeds roles, and then runs doctor.
+- Default Vite entry is now `resources/_admin/js/cabinet.ts`.
+- Password reset submit route name follows Laravel starter-kit convention:
+  `password.store`.
+
+**Removed**
+- `mitt` is no longer required by host projects.
+- The old `stubs/vite-alias-snippet.js` manual-instructions stub.
+
 ## v0.3.3 - sync maintenance + account member management polish
 
 **Added**

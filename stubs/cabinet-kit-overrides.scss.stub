@@ -1,7 +1,7 @@
 // CabinetKit style overrides — YOUR file, in YOUR project. Safe to edit.
 //
 // This is imported *after* the package's own stylesheet (see the cabinet Vite
-// entry, resources/_admin/js/admin.js), so anything you write here wins over
+// entry, resources/_admin/js/cabinet.ts), so anything you write here wins over
 // the kit's defaults through normal CSS cascade — no need to touch, fork, or
 // copy anything under vendor/posio/cabinet-kit. `composer update` never
 // overwrites this file.

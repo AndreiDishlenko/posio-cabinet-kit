@@ -8,7 +8,7 @@
 
 	{{-- Ziggy's route() helper — CabinetKit pages use it for every link/post. --}}
 	@routes
-	@vite(config('cabinet-kit.vite_entry', 'resources/_admin/js/admin.js'))
+	@vite(config('cabinet-kit.vite_entry', 'resources/_admin/js/cabinet.ts'))
 	@inertiaHead
 </head>
 <body>
