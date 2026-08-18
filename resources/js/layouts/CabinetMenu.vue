@@ -12,7 +12,7 @@
 </template>
 
 <script>
-    import Sidemenu         from '@/_admin/js/layouts/SideMenu.vue';
+    import Sidemenu         from './SideMenu.vue';
 
     export default {
         components: { Sidemenu },

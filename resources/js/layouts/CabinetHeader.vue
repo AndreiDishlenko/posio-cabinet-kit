@@ -70,7 +70,7 @@
 	import ThemeSelector from '@/js/Custom/_ThemeSelector.vue';
 	import Notifications from '@/js/Custom/_Notifications.vue';
 	import CabinetBurgerMenu    from '@/_admin/js/layouts/CabinetBurgerMenu.vue';
-	import LangSelectorPill from '@/_admin/js/components/LangSelectorPill.vue';
+	import LangSelectorPill from '../Components/LangSelectorPill.vue';
 
 	export default {
 		components: { Icon, ThemeSelector, Avatar, LangSelectorPill, Notifications, CabinetBurgerMenu },

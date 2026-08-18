@@ -51,6 +51,16 @@ return [
     'translations' => [
         'json_paths' => [lang_path()],
         'fallback_locale' => null,
+        'locales' => [
+            'uk' => [
+                'name' => 'Ukrainian',
+                'icon' => 'emojione:flag-for-ukraine',
+            ],
+            'en' => [
+                'name' => 'English',
+                'icon' => 'emojione:flag-for-united-kingdom',
+            ],
+        ],
     ],
 
     // Built-in users created during installation. Existing users are kept as-is:

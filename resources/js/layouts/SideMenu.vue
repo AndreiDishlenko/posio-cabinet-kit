@@ -169,18 +169,18 @@
     import Avatar           from '@/js/Elements/Avatar.vue';
     import Dropdown         from '@/js/Elements/Dropdown.vue';
 
-    import { buildSettingsTabs } from '@/_admin/js/pages/Settings/settingsTabs.js';
+    import { buildSettingsTabs } from '../pages/Settings/settingsTabs.js';
 
     export default {
         components: { Link, Icon, Avatar, Dropdown },
         props: {
             in_data: {
-                type: Object,
-                default: {}
+                type: Array,
+                default: () => [],
             },
             current_id: {
-                type: Number,
-                default: 0
+                type: [Number, String],
+                default: null,
             },
             disabled: {
                 type: Boolean,
@@ -223,13 +223,13 @@
             // Табы настроек — тот же состав, что и на странице CabinetSettings
             // (общий settingsTabs.js). Право manage-members шарится глобально.
             settingsTabs() {
-                return buildSettingsTabs(this.$page.props.user?.can_manage_members);
+                return buildSettingsTabs(this.$page.props.user?.can_manage_account);
             },
             // Клик по пользователю ведёт именно в профиль (таб settings),
             // поэтому таб задаётся явно через query — иначе восстановится
             // последний открытый.
             profileHref() {
-                return this.settingsHref('settings');
+                return this.settingsHref('profile');
             },
         },
         watch: {
@@ -344,7 +344,7 @@
             // storage-key группы табов на странице ('settings'), см. Tabs.vue →
             // applyQueryTab(). Ziggy кладёт неизвестный маршруту параметр в query.
             settingsHref(tabId) {
-                return route('cabinet.settings', { settings: tabId });
+                return route('cabinet.settings', { tab: tabId });
             },
 
             // ── Группы-дропдауны ───────────────────────────────────────────

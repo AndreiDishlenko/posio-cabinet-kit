@@ -5,6 +5,7 @@ namespace Posio\CabinetKit\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Inertia\Inertia;
+use Posio\CabinetKit\Services\MenuService;
 use Spatie\Permission\Models\Role;
 
 class SettingsController extends Controller
@@ -15,22 +16,33 @@ class SettingsController extends Controller
         $account = $user->currentAccount();
         $assignableRoles = config('cabinet-kit.roles.assignable_roles', []);
 
-        return Inertia::render('pages/CabinetSettings', [
+        $members = $account?->members()->map(fn ($member) => [
+            'id' => $member->id,
+            'name' => $member->name,
+            'email' => $member->email,
+            'role_id' => $member->roles->first()?->id,
+            'role_name' => $member->roles->first()?->name,
+            'role' => $member->roles->first()?->name,
+            'is_owner' => (int) $member->id === (int) $account->owner_id,
+            'is_system' => method_exists($member, 'isSystem') ? $member->isSystem() : false,
+        ])->values() ?? collect();
+
+        $roles = Role::query()
+            ->whereIn('name', $assignableRoles)
+            ->orderByRaw($this->roleOrderSql($assignableRoles))
+            ->get(['id', 'name']);
+
+        return Inertia::render('pages/Settings', [
+            'tabs' => app(MenuService::class)->settingsTabsFor($user),
+            'account' => $account?->info() ?? [],
+            'members' => $members,
+            'roles' => $roles,
+            'can_manage_account' => $user->can('manage-account'),
+            'assignable_roles' => $roles,
+
             'profile' => $this->profilePayload($user),
             'own_account' => $account?->info() ?? [],
-            'account_users' => $account?->members()->map(fn ($member) => [
-                'id' => $member->id,
-                'name' => $member->name,
-                'email' => $member->email,
-                'role_id' => $member->roles->first()?->id,
-                'role_name' => $member->roles->first()?->name,
-                'is_owner' => (int) $member->id === (int) $account->owner_id,
-                'is_system' => method_exists($member, 'isSystem') ? $member->isSystem() : false,
-            ])->values() ?? [],
-            'assignable_roles' => Role::query()
-                ->whereIn('name', $assignableRoles)
-                ->orderByRaw($this->roleOrderSql($assignableRoles))
-                ->get(['id', 'name']),
+            'account_users' => $members,
             'can_manage_members' => $user->can('manage-members'),
             'can_manage_account_users' => $user->can('manage-account'),
             'is_owner' => $account ? (int) $account->owner_id === (int) $user->getKey() : false,

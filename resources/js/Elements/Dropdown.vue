@@ -330,10 +330,16 @@
             },
             open(e) {
                 // console.log('Dropdown.open')
+                if (this.hasDisabledClass || !this.$refs.dropdownbutton)
+                    return false;
+
                 this.$emitter.emit('close_dropdowns', {el: this, isChild: this.isChild});
                 this.isMenuOpen=true;
 
-                this.updatePosition()
+                if (!this.updatePosition()) {
+                    this.isMenuOpen = false;
+                    return false;
+                }
 
                 this.$nextTick(() => {
                     document.addEventListener('mousedown', this.handleClickOutside);
@@ -441,7 +447,11 @@
             updatePosition() {
                 // console.log('updatePosition', this.stick_side);
 
-                const rect = this.$refs.dropdownbutton.getBoundingClientRect()
+                const button = this.$refs.dropdownbutton;
+                if (!button || !button.isConnected)
+                    return false;
+
+                const rect = button.getBoundingClientRect()
                 // console.log('source_rect', rect.left, rect.right, document.documentElement.clientWidth);
 
                 let scrollbar_width = window.innerWidth - document.documentElement.clientWidth
@@ -454,6 +464,8 @@
 
                 this.computedDirection = this.resolveDirection(rect);
                 this.computedAlign     = this.resolveAlign();
+
+                return true;
             },
             // Auto-flip 'down' -> 'up' when there isn't enough room below the
             // button (e.g. a table row near the bottom of a short screen), so the

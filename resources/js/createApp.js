@@ -3,6 +3,8 @@ import { createApp, h } from 'vue';
 import { ZiggyVue } from 'ziggy-js';
 
 import { createEmitter } from './emitter.js';
+import { i18n } from './i18n.config.js';
+import { applyLocale, browserLocale, storedLocale } from './localeSync.js';
 import { resolveCabinetKitPage } from './resolvePage.js';
 import '@fontsource/inter/400.css';
 import '@fontsource/inter/500.css';
@@ -32,19 +34,23 @@ export function createCabinetKitApp({ overrides = {}, title, progress, setup: ho
         setup({ el, App, props, plugin }) {
             applyDefaultTheme();
             installOriginalRouteAliases();
+            hydrateI18n(props.initialPage?.props?.cabinetKitI18n);
 
             const app = createApp({ render: () => h(App, props) });
 
             app.use(plugin);
             app.use(ZiggyVue);
+            app.use(i18n);
             app.config.globalProperties.$emitter = createEmitter();
-            app.config.globalProperties.$t = translate;
-            app.config.globalProperties.$i18n = createI18nContext(app);
+            app.config.globalProperties.$locRoute = localizedRoute;
             app.config.globalProperties.$apiClient = createApiClient();
             app.config.globalProperties.$toast = createToast();
             app.config.globalProperties.$accountService = createAccountService();
             app.config.globalProperties.$settings = createSettingsService();
             app.config.globalProperties.$inprogress = { value: false };
+            app.config.globalProperties.$is_mobile = { value: typeof window !== 'undefined' ? window.innerWidth <= 640 : false };
+            app.config.globalProperties.$is_tablet = { value: typeof window !== 'undefined' ? window.innerWidth <= 1024 : false };
+            app.config.globalProperties.$dictionaries = createDictionaries();
 
             hostSetup?.(app);
             app.mount(el);
@@ -76,6 +82,47 @@ function installOriginalRouteAliases() {
         const routeName = aliases[name] ?? name;
         return baseRoute(routeName, params, absolute, config);
     };
+}
+
+function hydrateI18n(payload = {}) {
+    const locales = normalizeLocales(payload.locales);
+    const localeCodes = Object.keys(locales);
+    const fallbackLocale = payload.fallbackLocale || 'en';
+    const locale = payload.locale || storedLocale() || browserLocale();
+
+    if (localeCodes.length) {
+        i18n.global.locales = locales;
+        i18n.global.supported_locales = localeCodes;
+        i18n.global.default_locale = localeCodes.includes(fallbackLocale) ? fallbackLocale : localeCodes[0];
+    }
+
+    i18n.global.fallbackLocale = fallbackLocale;
+    i18n.global.setLocaleMessage(locale, payload.messages ?? {});
+    applyLocale(locale);
+}
+
+function normalizeLocales(locales = []) {
+    if (Array.isArray(locales)) {
+        return locales.reduce((result, locale) => {
+            if (locale?.code) result[locale.code] = locale;
+            return result;
+        }, {});
+    }
+
+    return Object.entries(locales).reduce((result, [code, locale]) => {
+        result[code] = typeof locale === 'object' ? { code, ...locale } : { code, name: locale };
+        return result;
+    }, {});
+}
+
+function localizedRoute(name, locale, params = {}, absolute = undefined) {
+    const localizedName = `${name}.${locale}`;
+
+    try {
+        return route(localizedName, params, absolute);
+    } catch {
+        return null;
+    }
 }
 
 function createApiClient() {
@@ -168,42 +215,20 @@ function createSettingsService() {
     };
 }
 
+function createDictionaries() {
+    return {
+        currencies: [
+            { id: 'UAH', name: 'UAH' },
+            { id: 'USD', name: 'USD' },
+            { id: 'EUR', name: 'EUR' },
+        ],
+    };
+}
+
 function applyDefaultTheme() {
     const root = document.documentElement;
 
     if (!root.classList.contains('dark') && !root.classList.contains('light')) {
         root.classList.add('dark');
     }
-}
-
-function translate(key, replacements = {}) {
-    const messages = this?.$page?.props?.cabinetKitI18n?.messages ?? {};
-    const translated = messages[key] ?? key;
-
-    return interpolate(translated, replacements);
-}
-
-function interpolate(message, replacements) {
-    return Object.entries(replacements ?? {}).reduce((value, [key, replacement]) => (
-        value
-            .replaceAll(`:${key}`, replacement)
-            .replaceAll(`{${key}}`, replacement)
-    ), String(message));
-}
-
-function createI18nContext(app) {
-    return {
-        get locale() {
-            return app.config.globalProperties.$page?.props?.cabinetKitI18n?.locale;
-        },
-        get fallbackLocale() {
-            return app.config.globalProperties.$page?.props?.cabinetKitI18n?.fallbackLocale;
-        },
-        get messages() {
-            return app.config.globalProperties.$page?.props?.cabinetKitI18n?.messages ?? {};
-        },
-        get locales() {
-            return app.config.globalProperties.$page?.props?.cabinetKitI18n?.locales ?? [];
-        },
-    };
 }

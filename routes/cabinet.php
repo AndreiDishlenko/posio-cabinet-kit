@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Cookie;
 use Posio\CabinetKit\Http\Controllers\Admin\LogsController;
 use Posio\CabinetKit\Http\Controllers\Admin\PermissionsController;
 use Posio\CabinetKit\Http\Controllers\Admin\UsersController;
@@ -31,6 +32,27 @@ Route::get('cabinet-assets/{path}', function (string $path) {
 Route::middleware(['web', UseCabinetKitRootView::class])
     ->prefix(config('cabinet-kit.route_prefix', 'cabinet'))
     ->group(function () {
+        Route::post('setlocale', function () {
+            $locale = request()->string('locale')->toString();
+            $locales = collect(config('cabinet-kit.translations.locales', []))
+                ->keys()
+                ->map(fn ($code) => (string) $code)
+                ->all();
+
+            abort_unless(in_array($locale, $locales, true), 422);
+
+            session(['locale' => $locale]);
+            app()->setLocale($locale);
+
+            if ($user = request()->user()) {
+                if (method_exists($user, 'setSetting')) {
+                    $user->setSetting('locale', $locale);
+                }
+            }
+
+            return response()->json(['locale' => $locale])
+                ->withCookie(Cookie::forever('locale', $locale));
+        })->name('app.setlocale');
 
         // Guest-only auth routes. Names stay Laravel's own unprefixed
         // convention (login, register, ...) so framework internals (the
