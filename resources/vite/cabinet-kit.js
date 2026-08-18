@@ -6,19 +6,18 @@ const PACKAGE_DIR = 'vendor/posio/cabinet-kit';
 export default function cabinetKit(options = {}) {
     const root = options.root ?? process.cwd();
     const packageDir = path.resolve(root, PACKAGE_DIR);
+    const aliases = createAliases(packageDir);
 
     return {
         name: 'cabinet-kit',
-        config() {
+        config(userConfig) {
+            userConfig.resolve ??= {};
+            userConfig.resolve.alias = [
+                ...aliases,
+                ...normalizeAliases(userConfig.resolve.alias),
+            ];
+
             const config = {
-                resolve: {
-                    alias: {
-                        '@cabinet-kit': path.join(packageDir, 'resources/js'),
-                        '@/_admin': path.join(packageDir, 'resources/_admin'),
-                        '@/js/Components': path.join(packageDir, 'resources/js/Components'),
-                        '@/js': path.join(packageDir, 'resources/js'),
-                    },
-                },
                 css: {
                     preprocessorOptions: {
                         scss: {
@@ -38,6 +37,25 @@ export default function cabinetKit(options = {}) {
             return config;
         },
     };
+}
+
+function createAliases(packageDir) {
+    return [
+        { find: '@cabinet-kit', replacement: path.join(packageDir, 'resources/js') },
+        { find: '@/_admin', replacement: path.join(packageDir, 'resources/_admin') },
+        { find: '@/js/Components', replacement: path.join(packageDir, 'resources/js/Components') },
+        { find: '@/js', replacement: path.join(packageDir, 'resources/js') },
+    ];
+}
+
+function normalizeAliases(alias) {
+    if (! alias) return [];
+
+    if (Array.isArray(alias)) {
+        return alias;
+    }
+
+    return Object.entries(alias).map(([find, replacement]) => ({ find, replacement }));
 }
 
 function resolveHttps(option, root) {
