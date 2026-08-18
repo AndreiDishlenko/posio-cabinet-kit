@@ -16,6 +16,8 @@ export function createCabinetKitApp({ overrides = {}, title, progress, setup: ho
             import.meta.glob('./pages/**/*.vue', { eager: true }),
         ),
         setup({ el, App, props, plugin }) {
+            applyDefaultTheme();
+
             const app = createApp({ render: () => h(App, props) });
 
             app.use(plugin);
@@ -28,6 +30,14 @@ export function createCabinetKitApp({ overrides = {}, title, progress, setup: ho
             app.mount(el);
         },
     });
+}
+
+function applyDefaultTheme() {
+    const root = document.documentElement;
+
+    if (!root.classList.contains('dark') && !root.classList.contains('light')) {
+        root.classList.add('dark');
+    }
 }
 
 function translate(key, replacements = {}) {

@@ -30,6 +30,7 @@ class DoctorCommand extends Command
         $this->check($this->permissionConfigLooksReady(), 'Spatie Permission table config matches CabinetKit', 'Set model_has_roles=user_has_roles, model_has_permissions=user_has_permissions and model_morph_key=user_id.');
         $this->check($this->permissionTablesLookReady(), 'Permission role tables exist and include team_id when present', 'Run php artisan migrate after CabinetKit patches config/permission.php.');
         $this->check(Schema::hasTable('accounts') && Schema::hasTable('user_has_accounts'), 'CabinetKit account tables exist', 'Run php artisan migrate.');
+        $this->check(Schema::hasTable('admin_links'), 'CabinetKit admin_links table exists', 'Run php artisan migrate.');
         $this->check($this->routeNamesDoNotCollide(), 'Route names can be cached', "Set 'auth_routes' => false or remove duplicate auth route names.");
         $this->check($this->packageJsonHas('ziggy-js'), 'package.json contains ziggy-js', 'Run npm install ziggy-js.');
         $this->check($this->packageJsonHas('@iconify/vue'), 'package.json contains @iconify/vue', 'Run npm install @iconify/vue.');

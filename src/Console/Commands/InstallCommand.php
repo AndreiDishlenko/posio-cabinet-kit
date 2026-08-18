@@ -418,6 +418,9 @@ MD);
         (new \Posio\CabinetKit\Database\Seeders\CabinetKitRolesSeeder())->run();
         $this->info('Roles and permissions seeded.');
 
+        (new \Posio\CabinetKit\Database\Seeders\CabinetKitAdminLinksSeeder())->run();
+        $this->info('Admin links seeded.');
+
         if ($this->confirm('Seed CabinetKit system users and assign their roles?', true)) {
             (new \Posio\CabinetKit\Database\Seeders\CabinetKitSystemUsersSeeder())->run();
             $this->info('System users seeded.');

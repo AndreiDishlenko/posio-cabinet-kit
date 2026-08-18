@@ -1,6 +1,4 @@
-// CabinetKit style entry — mirrors the host project's split-by-responsibility
-// scss layout (colors / buttons / cards / forms / icons as separate partials).
-// Import this once from the host's main admin scss entry:
+// CabinetKit style entry. Import this once from the host admin SCSS entry:
 //   @use '../../../vendor/posio/cabinet-kit/resources/scss/cabinet-kit.scss';
 @use 'colors_cabinet-kit';
 @use 'buttons_cabinet-kit';
@@ -8,32 +6,73 @@
 @use 'forms_cabinet-kit';
 @use 'icons_cabinet-kit';
 
-// Layout tokens (color tokens live in colors_cabinet-kit.scss).
 :root {
 	--ck-header-height: 60px;
-	--ck-rail-width: 64px;
-	--ck-expanded-width: 240px;
+	--ck-rail-width: 56px;
+	--ck-expanded-width: 300px;
+	--ck-item-height: 40px;
+	--ck-item-radius: 20px;
+	--ck-panel-pad: 8px;
+	--ck-ease: cubic-bezier(0.2, 0, 0, 1);
+	--ck-ease-dur: 250ms;
+	--ck-viewport-height: 100vh;
 }
 
-// Base layout chain — CabinetLayout's root (.ck-page-wrapper) is `h-full`
-// (height: 100%), which only resolves against a full-height ancestor chain.
-// Without this the whole cabinet collapses to content height while SideMenu
-// (h-[100dvh]) stays full-height — the classic "cabinet doesn't display"
-// symptom. Inertia mounts the kit's pages into #app (bundled cabinet-kit::app
-// root view). Scoped to this Vite entry, so the host's other pages are
-// untouched.
-html,
-body {
-	height: 100%;
+@supports (height: 100dvh) {
+	:root {
+		--ck-viewport-height: 100dvh;
+	}
 }
 
 #app {
-	height: 100%;
+	max-height: 100vh;
+	max-height: calc(var(--ck-viewport-height) - 1px);
+	height: 100vh;
+	height: calc(var(--ck-viewport-height) - 1px);
+	overflow-y: hidden;
 }
 
-// Theme the page surface — the tokens exist but were never applied to body,
-// so the cabinet kept the browser's default background/text color.
 body {
 	background: var(--ck-background-color);
 	color: var(--ck-text-color);
+}
+
+.ck-page-wrapper {
+	display: flex;
+	flex-direction: row;
+	height: 100%;
+	overflow-y: hidden;
+	background: var(--ck-background-color);
+	color: var(--ck-text-color);
+}
+
+.ck-page-layout {
+	position: relative;
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.ck-page-content {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	height: 100%;
+	overflow: hidden;
+	padding: .5rem;
+}
+
+.ck-page-content > .ck-page-content-scroller {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	min-height: 0;
+	overflow-y: auto;
+}
+
+@media (min-width: 1024px) {
+	.ck-page-content {
+		padding: 1rem;
+	}
 }

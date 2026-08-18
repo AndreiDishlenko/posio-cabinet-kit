@@ -110,18 +110,6 @@ class ShareCabinetKitData
             return null;
         }
 
-        foreach (app(MenuService::class)->menuFor($user) as $group) {
-            foreach ($group['children'] ?? [] as $item) {
-                if (($item['route'] ?? null) === $routeName) {
-                    return [
-                        'id' => $item['id'],
-                        'name' => $item['label'] ?? null,
-                        'section' => $group['label'] ?? null,
-                    ];
-                }
-            }
-        }
-
-        return null;
+        return app(MenuService::class)->currentPage($routeName, $user);
     }
 }

@@ -1,6 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Posio\CabinetKit\Http\Controllers\Admin\LogsController;
+use Posio\CabinetKit\Http\Controllers\Admin\PermissionsController;
+use Posio\CabinetKit\Http\Controllers\Admin\UsersController;
 use Posio\CabinetKit\Http\Controllers\AccountController;
 use Posio\CabinetKit\Http\Controllers\Auth\LoginController;
 use Posio\CabinetKit\Http\Controllers\Auth\PasswordResetController;
@@ -9,6 +12,7 @@ use Posio\CabinetKit\Http\Controllers\Auth\VerificationController;
 use Posio\CabinetKit\Http\Controllers\DashboardController;
 use Posio\CabinetKit\Http\Controllers\ProfileController;
 use Posio\CabinetKit\Http\Controllers\SettingsController;
+use Posio\CabinetKit\Http\Middleware\CanSystemPermission;
 use Posio\CabinetKit\Http\Middleware\SetPermissionTeam;
 use Posio\CabinetKit\Http\Middleware\ShareCabinetKitData;
 use Posio\CabinetKit\Http\Middleware\UseCabinetKitRootView;
@@ -54,8 +58,26 @@ Route::middleware(['web', UseCabinetKitRootView::class])
             ))
             ->name(config('cabinet-kit.route_name_prefix', 'cabinet-kit.'))
             ->group(function () {
-                Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+                Route::get('/', fn () => redirect()->route(config('cabinet-kit.home_route', 'cabinet-kit.users')))->name('home');
+                Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
                 Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
+
+                Route::middleware(CanSystemPermission::class.':sysper-users')->group(function () {
+                    Route::get('/users', [UsersController::class, 'index'])->name('users');
+                    Route::put('/users', [UsersController::class, 'update'])->name('users.update');
+                });
+
+                Route::middleware(CanSystemPermission::class.':sysper-roles')->group(function () {
+                    Route::get('/permissions', [PermissionsController::class, 'system'])->name('permissions');
+                    Route::get('/permissions/account', [PermissionsController::class, 'account'])->name('permissions.account');
+                    Route::post('/permissions/toggle', [PermissionsController::class, 'toggle'])->name('permissions.toggle');
+                    Route::post('/permissions', [PermissionsController::class, 'store'])->name('permissions.store');
+                    Route::put('/permissions', [PermissionsController::class, 'rename'])->name('permissions.rename');
+                });
+
+                Route::middleware(CanSystemPermission::class.':sysper-log-view')->group(function () {
+                    Route::get('/logs', [LogsController::class, 'index'])->name('logs');
+                });
 
                 Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
                 Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');

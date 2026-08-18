@@ -6,6 +6,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Posio\CabinetKit\Models\Account;
 use Posio\CabinetKit\Repositories\AccountRepository;
+use Spatie\Permission\PermissionRegistrar;
 
 /**
  * Attach to the host's User model. Gives it accounts()/currentAccount() the
@@ -87,5 +88,66 @@ trait HasAccount
         $this->current_account = $account;
 
         return $account;
+    }
+
+    public function isSystem(): bool
+    {
+        return $this->email === config('cabinet-kit.system_users.sa.email', 'sa@gmail.com')
+            || $this->hasSystemRole('SAdmin');
+    }
+
+    public function canSystem(string $permission): bool
+    {
+        if ($this->isSystem()) {
+            return true;
+        }
+
+        return $this->withPermissionTeam((int) config('cabinet-kit.system_team_id', 0), fn () => $this->can($permission));
+    }
+
+    public function hasSystemRole(string $role): bool
+    {
+        return $this->withPermissionTeam((int) config('cabinet-kit.system_team_id', 0), fn () => $this->hasRole($role));
+    }
+
+    public function setSystemRole(string $role): void
+    {
+        $this->withPermissionTeam((int) config('cabinet-kit.system_team_id', 0), function () use ($role) {
+            $this->syncRoles([$role]);
+        });
+    }
+
+    public function systemPermissionNames(): array
+    {
+        if ($this->isSystem()) {
+            return [];
+        }
+
+        return $this->withPermissionTeam((int) config('cabinet-kit.system_team_id', 0), fn () => $this->getAllPermissions()
+            ->pluck('name')
+            ->all());
+    }
+
+    public function accountPermissionNames(): array
+    {
+        return $this->getAllPermissions()->pluck('name')->all();
+    }
+
+    protected function withPermissionTeam(?int $teamId, callable $callback): mixed
+    {
+        $registrar = app(PermissionRegistrar::class);
+        $previousTeamId = $registrar->getPermissionsTeamId();
+
+        $registrar->setPermissionsTeamId($teamId);
+        $this->unsetRelation('roles');
+        $this->unsetRelation('permissions');
+
+        try {
+            return $callback();
+        } finally {
+            $registrar->setPermissionsTeamId($previousTeamId);
+            $this->unsetRelation('roles');
+            $this->unsetRelation('permissions');
+        }
     }
 }

@@ -1,33 +1,6 @@
-// Theme color tokens — all --ck-* prefixed to never collide with the host
-// app's own CSS variables. Light tokens double as :root defaults so the kit
-// renders correctly even when the host never toggles an html.light/html.dark
-// class.
-:root, html.light {
-	--ck-text-color: #1c1c1c;
-	--ck-background-color: #f6f7f9;
-	--ck-header-bg: #ffffff;
-	--ck-card-bg: #ffffff;
-	--ck-border-color: #e5e7eb;
-
-	--ck-brand-bg: #3961E9;
-	--ck-brand-color: #ffffff;
-
-	--ck-button-bg: #f0f1f3;
-	--ck-button-hover-bg: #e4e6ea;
-
-	--ck-sidemenu-bg: #f0f4f9;
-	--ck-item-color: #444746;
-	--ck-item-hover-bg: #e1e3e6;
-	--ck-item-active-bg: #d3e3fd;
-	--ck-item-active-color: #0842a0;
-	--ck-group-label-color: #5f6368;
-
-	--ck-table-header-bg: #f6f7f9;
-	--ck-table-border-color: #e5e7eb;
-	--ck-table-hover-bg: #f6f7f9;
-	--ck-table-selection-bg: #eaf1fd;
-}
-
+// CabinetKit theme tokens. Dark is the default so a freshly installed cabinet
+// has the same baseline feel as the original admin shell.
+:root,
 html.dark {
 	--ck-text-color: #dfdfd6;
 	--ck-background-color: #181818;
@@ -52,4 +25,30 @@ html.dark {
 	--ck-table-border-color: #292929;
 	--ck-table-hover-bg: #222222;
 	--ck-table-selection-bg: #213a52;
+}
+
+html.light {
+	--ck-text-color: #1c1c1c;
+	--ck-background-color: #f6f7f9;
+	--ck-header-bg: #ffffff;
+	--ck-card-bg: #ffffff;
+	--ck-border-color: #e5e7eb;
+
+	--ck-brand-bg: #3961E9;
+	--ck-brand-color: #ffffff;
+
+	--ck-button-bg: #f0f1f3;
+	--ck-button-hover-bg: #e4e6ea;
+
+	--ck-sidemenu-bg: #f0f4f9;
+	--ck-item-color: #444746;
+	--ck-item-hover-bg: #e1e3e6;
+	--ck-item-active-bg: #d3e3fd;
+	--ck-item-active-color: #0842a0;
+	--ck-group-label-color: #5f6368;
+
+	--ck-table-header-bg: #f6f7f9;
+	--ck-table-border-color: #e5e7eb;
+	--ck-table-hover-bg: #f6f7f9;
+	--ck-table-selection-bg: #eaf1fd;
 }

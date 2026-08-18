@@ -1,54 +1,71 @@
 <template>
-
-	<!--
-		Collapsible rail-style side menu (icons-only rail, pins open on click,
-		pushes content when pinned). Mobile (<1024px): slides in as an overlay.
-		Genericized from posio.cabinet's Gemini-style menu — no product tour,
-		no per-account persisted expand state (host can add that back via an
-		override if it needs the extra polish).
-	-->
-	<div class="ck-shell" :class="{ 'is-pinned': !isFolded, 'is-pullout': isPullout, 'is-expanded': isExpanded }">
-
+	<div
+		ref="shell"
+		class="ck-shell"
+		:class="{
+			'is-pinned': !isFolded,
+			'is-pullout': isPullout,
+			'is-expanded': isExpanded,
+		}"
+	>
 		<div ref="panel" class="ck-panel">
+			<div class="ck-panel-scroll">
+				<div class="ck-header">
+					<button type="button" class="ck-brand" @click="onBurger">
+						<slot name="brand">
+							<span class="ck-brand-mark">C</span>
+							<span class="ck-brand-label">{{ translate('Cabinet') }}</span>
+						</slot>
+					</button>
 
-			<div class="ck-header">
-				<slot name="brand">
-					<span class="ck-brand-fallback">{{ $t ? $t('Cabinet') : 'Cabinet' }}</span>
-				</slot>
-
-				<button type="button" class="ck-toggle" @click="togglePinned">
-					<Icon icon="material-symbols:left-panel-close-outline-rounded" class="ck-icon"/>
-				</button>
-			</div>
-
-			<nav class="ck-nav">
-				<div v-for="(group, groupIndex) in in_data" :key="groupIndex" class="ck-group">
-
-					<div class="ck-group-label">{{ $t ? $t(group.label) : group.label }}</div>
-
-					<ul class="ck-group-list">
-						<li v-for="item in group.children" :key="item.id"
-							class="ck-item"
-							:class="{ 'is-active': item.id === current_id }"
-							>
-							<Link v-if="item.route" class="ck-link" :href="route(item.route)">
-								<Icon :icon="item.icon" class="ck-icon"/>
-								<span class="ck-label">{{ $t ? $t(item.label) : item.label }}</span>
-							</Link>
-							<a v-else-if="item.link" class="ck-link" :href="item.link">
-								<Icon :icon="item.icon" class="ck-icon"/>
-								<span class="ck-label">{{ $t ? $t(item.label) : item.label }}</span>
-							</a>
-						</li>
-					</ul>
-
+					<button type="button" class="ck-toggle" :aria-label="translate('Collapse menu')" @click="onBurger">
+						<Icon icon="material-symbols:left-panel-close-outline-rounded" class="ck-icon"/>
+					</button>
 				</div>
-			</nav>
 
+				<nav class="ck-nav">
+					<div v-for="(group, groupIndex) in normalizedMenu" :key="group.id ?? groupIndex" class="ck-group">
+						<button
+							v-if="group.label"
+							type="button"
+							class="ck-group-label"
+							:aria-expanded="isGroupExpanded(groupIndex)"
+							@click="toggleGroup(groupIndex)"
+						>
+							<span class="ck-group-label-text">{{ translate(group.label) }}</span>
+							<Icon icon="ep:arrow-down-bold" class="ck-group-arrow" :class="{ 'is-open': isGroupExpanded(groupIndex) }"/>
+						</button>
+
+						<transition name="ck-collapse">
+							<ul v-if="isGroupExpanded(groupIndex)" class="ck-group-list">
+								<li
+									v-for="item in group.children"
+									:key="item.id ?? item.route ?? item.link"
+									class="ck-item"
+									:class="{ 'is-active': item.id == current_id, 'is-disabled': !item.route && !item.link }"
+								>
+									<Link v-if="item.route" class="ck-link" :href="route(item.route)">
+										<Icon :icon="item.icon || 'mdi:circle-medium'" class="ck-icon"/>
+										<span class="ck-label">{{ translate(item.label) }}</span>
+									</Link>
+
+									<a v-else-if="item.link" class="ck-link" :href="item.link">
+										<Icon :icon="item.icon || 'mdi:circle-medium'" class="ck-icon"/>
+										<span class="ck-label">{{ translate(item.label) }}</span>
+									</a>
+
+									<span v-else class="ck-link">
+										<Icon :icon="item.icon || 'mdi:circle-medium'" class="ck-icon"/>
+										<span class="ck-label">{{ translate(item.label) }}</span>
+									</span>
+								</li>
+							</ul>
+						</transition>
+					</div>
+				</nav>
+			</div>
 		</div>
-
 	</div>
-
 </template>
 
 <script>
@@ -60,10 +77,14 @@
 		components: { Link, Icon },
 		props: {
 			in_data: {
-				type: Array,
+				type: [Array, Object],
 				default: () => [],
 			},
 			current_id: {
+				type: [Number, String],
+				default: null,
+			},
+			active_account_id: {
 				type: [Number, String],
 				default: null,
 			},
@@ -72,11 +93,30 @@
 			return {
 				isFolded: true,
 				isPullout: false,
+				collapsedGroups: [],
 			}
 		},
 		computed: {
+			normalizedMenu() {
+				return Array.isArray(this.in_data) ? this.in_data : Object.values(this.in_data ?? {});
+			},
 			isExpanded() {
 				return !this.isFolded || this.isPullout;
+			},
+			activeGroupIndex() {
+				if (!this.current_id) return -1;
+
+				return this.normalizedMenu.findIndex(group =>
+					group.children?.some(item => item.id == this.current_id)
+				);
+			},
+			storageSuffix() {
+				return this.active_account_id ? `:${this.active_account_id}` : '';
+			},
+		},
+		watch: {
+			active_account_id() {
+				this.restoreCollapsedGroups();
 			},
 		},
 		created() {
@@ -84,10 +124,22 @@
 			if (saved === 'false') this.isFolded = false;
 			if (saved === 'true') this.isFolded = true;
 
+			this.restoreCollapsedGroups();
+
 			this.$emitter?.on('ck_burger_click', this.onBurger);
+			this.$emitter?.on('burger_button_click', this.onBurger);
+			this.$emitter?.on('open_side_menu', this.openSideMenu);
+			this.$emitter?.on('close_side_menu', this.closeSideMenu);
+		},
+		mounted() {
+			document.addEventListener('click', this.handleClickOutside);
 		},
 		beforeUnmount() {
+			document.removeEventListener('click', this.handleClickOutside);
 			this.$emitter?.off('ck_burger_click', this.onBurger);
+			this.$emitter?.off('burger_button_click', this.onBurger);
+			this.$emitter?.off('open_side_menu', this.openSideMenu);
+			this.$emitter?.off('close_side_menu', this.closeSideMenu);
 		},
 		methods: {
 			onBurger() {
@@ -95,11 +147,57 @@
 					this.isPullout = !this.isPullout;
 					return;
 				}
+
 				this.togglePinned();
 			},
 			togglePinned() {
 				this.isFolded = !this.isFolded;
 				localStorage.setItem('cabinetKitSideMenuState', this.isFolded);
+			},
+			openSideMenu() {
+				if (window.innerWidth < 1024) {
+					this.isPullout = true;
+					return;
+				}
+
+				this.isFolded = false;
+				localStorage.setItem('cabinetKitSideMenuState', this.isFolded);
+			},
+			closeSideMenu() {
+				this.isPullout = false;
+			},
+			handleClickOutside(event) {
+				if (!this.isPullout || this.$refs.shell?.contains(event.target)) return;
+
+				this.isPullout = false;
+			},
+			isGroupExpanded(groupIndex) {
+				return groupIndex === this.activeGroupIndex || !this.collapsedGroups.includes(groupIndex);
+			},
+			toggleGroup(groupIndex) {
+				if (!this.isExpanded || groupIndex === this.activeGroupIndex) return;
+
+				if (this.collapsedGroups.includes(groupIndex)) {
+					this.collapsedGroups = this.collapsedGroups.filter(index => index !== groupIndex);
+				} else {
+					this.collapsedGroups = [...this.collapsedGroups, groupIndex];
+				}
+
+				localStorage.setItem(this.groupStorageKey(), JSON.stringify(this.collapsedGroups));
+			},
+			restoreCollapsedGroups() {
+				try {
+					const saved = localStorage.getItem(this.groupStorageKey());
+					this.collapsedGroups = saved ? JSON.parse(saved) : [];
+				} catch {
+					this.collapsedGroups = [];
+				}
+			},
+			groupStorageKey() {
+				return `cabinetKitCollapsedGroups${this.storageSuffix}`;
+			},
+			translate(value) {
+				return this.$t ? this.$t(value) : value;
 			},
 		},
 	}
@@ -108,71 +206,132 @@
 <style lang="scss" scoped>
 	.ck-shell {
 		position: relative;
-		flex-shrink: 0;
-		height: 100%;
-		width: var(--ck-rail-width, 64px);
 		z-index: 40;
-		transition: width .2s ease;
+		flex: 0 0 auto;
+		width: var(--ck-rail-width);
+		height: 100%;
+		font-family: var(--ck-font, inherit);
+		transition: width var(--ck-ease-dur) var(--ck-ease);
 	}
 
 	.ck-shell.is-pinned {
-		width: var(--ck-expanded-width, 240px);
-	}
-
-	@media (max-width: 1023.98px) {
-		.ck-shell, .ck-shell.is-pinned {
-			width: 0;
-		}
+		width: var(--ck-expanded-width);
 	}
 
 	.ck-panel {
 		position: absolute;
 		inset-inline-start: 0;
 		top: 0;
+		width: var(--ck-rail-width);
 		height: 100%;
-		width: var(--ck-rail-width, 64px);
+		background: var(--ck-sidemenu-bg);
+		overflow: hidden;
+		transition:
+			width var(--ck-ease-dur) var(--ck-ease),
+			transform var(--ck-ease-dur) var(--ck-ease);
+	}
+
+	.ck-shell.is-expanded .ck-panel {
+		width: var(--ck-expanded-width);
+	}
+
+	.ck-panel-scroll {
 		display: flex;
 		flex-direction: column;
-		background: var(--ck-sidemenu-bg, #f0f4f9);
+		height: 100%;
 		overflow-x: hidden;
 		overflow-y: auto;
-		transition: width .2s ease, transform .2s ease;
+		scrollbar-width: none;
 	}
 
-	.ck-shell.is-pinned .ck-panel {
-		width: var(--ck-expanded-width, 240px);
-	}
-
-	@media (max-width: 1023.98px) {
-		.ck-panel {
-			width: var(--ck-expanded-width, 240px);
-			transform: translateX(-100%);
-			z-index: 10000;
-		}
-		.ck-shell.is-pullout .ck-panel {
-			transform: translateX(0);
-			box-shadow: 0 8px 24px rgba(0, 0, 0, .18);
-		}
+	.ck-panel-scroll::-webkit-scrollbar {
+		display: none;
 	}
 
 	.ck-header {
-		height: var(--ck-header-height, 60px);
+		position: relative;
 		display: flex;
 		align-items: center;
-		padding-inline: .5rem;
-		flex-shrink: 0;
+		height: var(--ck-header-height);
+		padding: 0 var(--ck-panel-pad);
+		flex: 0 0 auto;
+	}
+
+	.ck-brand {
+		position: relative;
+		display: flex;
+		align-items: center;
+		width: 100%;
+		height: var(--ck-item-height);
+		border: 0;
+		padding: 0 10px;
+		background: transparent;
+		color: var(--ck-item-color);
+		cursor: pointer;
+		text-align: start;
+		border-radius: var(--ck-item-radius);
+		overflow: hidden;
+	}
+
+	.ck-brand:hover,
+	.ck-toggle:hover,
+	.ck-group-label:hover,
+	.ck-link:hover {
+		background-color: var(--ck-item-hover-bg);
+	}
+
+	.ck-brand-mark {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 20px;
+		height: 20px;
+		flex: 0 0 auto;
+		border-radius: 6px;
+		background: var(--ck-brand-bg);
+		color: var(--ck-brand-color);
+		font-size: 12px;
+		font-weight: 700;
+	}
+
+	.ck-brand-label {
+		display: none;
+		min-width: 0;
+		margin-left: 12px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		font-weight: 600;
+		opacity: 0;
+		transition: opacity var(--ck-ease-dur) var(--ck-ease);
+	}
+
+	.ck-shell.is-expanded .ck-brand-label {
+		display: block;
+		opacity: 1;
 	}
 
 	.ck-toggle {
-		margin-inline-start: auto;
-		opacity: 0;
-		pointer-events: none;
-		width: 32px;
-		height: 32px;
+		position: absolute;
+		right: var(--ck-panel-pad);
+		top: 0;
+		bottom: 0;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		border-radius: .35rem;
+		width: var(--ck-item-height);
+		height: var(--ck-item-height);
+		margin: auto 0;
+		border: 0;
+		border-radius: var(--ck-item-radius);
+		background: transparent;
+		color: var(--ck-item-color);
+		cursor: pointer;
+		opacity: 0;
+		pointer-events: none;
+		transition:
+			background-color var(--ck-ease-dur) var(--ck-ease),
+			opacity var(--ck-ease-dur) var(--ck-ease);
 	}
 
 	.ck-shell.is-expanded .ck-toggle {
@@ -180,76 +339,163 @@
 		pointer-events: auto;
 	}
 
-	.ck-toggle:hover {
-		background: var(--ck-item-hover-bg, #e1e3e6);
-	}
-
 	.ck-nav {
-		padding: .25rem .5rem .75rem;
+		padding: 4px var(--ck-panel-pad) 12px;
 		flex: 1 1 auto;
 	}
 
 	.ck-group {
-		margin-top: .5rem;
+		margin-top: 8px;
 	}
 
 	.ck-group-label {
-		font-size: .7rem;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		width: 100%;
+		margin: 12px 0 4px;
+		padding: 6px 10px;
+		border: 0;
+		border-radius: var(--ck-item-radius);
+		background: transparent;
+		color: var(--ck-group-label-color);
+		cursor: pointer;
+		font-size: 12px;
 		font-weight: 500;
+		line-height: 1.4;
+		text-align: start;
 		opacity: 0;
-		padding: .3rem .5rem;
-		color: var(--ck-group-label-color, #5f6368);
-		transition: opacity .2s ease;
+		pointer-events: none;
+		transition:
+			background-color var(--ck-ease-dur) var(--ck-ease),
+			opacity var(--ck-ease-dur) var(--ck-ease);
 	}
 
 	.ck-shell.is-expanded .ck-group-label {
 		opacity: 1;
+		pointer-events: auto;
+	}
+
+	.ck-group-label-text {
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.ck-group-arrow {
+		width: 12px;
+		height: 12px;
+		flex: 0 0 auto;
+		transition: transform var(--ck-ease-dur) var(--ck-ease);
+	}
+
+	.ck-group-arrow.is-open {
+		transform: rotate(180deg);
+	}
+
+	.ck-collapse-enter-active,
+	.ck-collapse-leave-active {
+		overflow: hidden;
+		transition:
+			max-height var(--ck-ease-dur) var(--ck-ease),
+			opacity var(--ck-ease-dur) var(--ck-ease);
+	}
+
+	.ck-collapse-enter-from,
+	.ck-collapse-leave-to {
+		max-height: 0;
+		opacity: 0;
+	}
+
+	.ck-collapse-enter-to,
+	.ck-collapse-leave-from {
+		max-height: 600px;
+		opacity: 1;
 	}
 
 	.ck-group-list {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		display: flex;
-		flex-direction: column;
-		gap: .1rem;
+	}
+
+	.ck-item {
+		list-style: none;
 	}
 
 	.ck-link {
 		display: flex;
 		align-items: center;
-		height: 40px;
-		border-radius: .5rem;
-		color: var(--ck-item-color, #444746);
+		width: 100%;
+		height: var(--ck-item-height);
+		box-sizing: border-box;
+		border-radius: var(--ck-item-radius);
+		padding: 0 10px;
+		color: var(--ck-item-color);
+		cursor: pointer;
 		text-decoration: none;
-		overflow: hidden;
-		padding-inline: .6rem;
-		transition: background-color .2s ease, color .2s ease;
+		transition:
+			background-color var(--ck-ease-dur) var(--ck-ease),
+			color var(--ck-ease-dur) var(--ck-ease);
 	}
 
 	.ck-icon {
 		width: 20px;
 		height: 20px;
 		flex: 0 0 auto;
+		color: inherit;
 	}
 
 	.ck-label {
-		margin-inline-start: .6rem;
+		display: none;
+		flex: 0 1 auto;
+		min-width: 0;
+		margin-left: 12px;
 		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		line-height: 1.4;
 		opacity: 0;
-		transition: opacity .2s ease;
+		transition: opacity var(--ck-ease-dur) var(--ck-ease);
 	}
 
 	.ck-shell.is-expanded .ck-label {
+		display: block;
 		opacity: 1;
 	}
 
-	.ck-link:hover {
-		background: var(--ck-item-hover-bg, #e1e3e6);
+	.ck-item.is-active .ck-link,
+	.ck-item.is-active .ck-link:hover {
+		background-color: var(--ck-item-active-bg);
+		color: var(--ck-item-active-color);
 	}
 
-	.ck-item.is-active .ck-link {
-		background: var(--ck-item-active-bg, #d3e3fd);
-		color: var(--ck-item-active-color, #0842a0);
+	.ck-item.is-disabled .ck-link {
+		opacity: .4;
+		pointer-events: none;
+		cursor: default;
+	}
+
+	@media (max-width: 1023.98px) {
+		.ck-shell,
+		.ck-shell.is-pinned {
+			width: 0;
+		}
+
+		.ck-panel,
+		.ck-shell.is-expanded .ck-panel {
+			width: var(--ck-expanded-width);
+			transform: translateX(-100%);
+			z-index: 10000;
+		}
+
+		.ck-shell.is-pullout .ck-panel {
+			transform: translateX(0);
+			box-shadow: 0 8px 24px rgba(0, 0, 0, .22);
+		}
 	}
 </style>

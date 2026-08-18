@@ -56,11 +56,30 @@
 
 <style lang="scss" scoped>
 	.ck-header {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
 		height: var(--ck-header-height, 60px);
+		padding-inline: .75rem;
 		background-color: var(--ck-header-bg, #fff);
+		border-bottom: 1px solid var(--ck-border-color, #e5e7eb);
+		flex: 0 0 auto;
+	}
+
+	@media (min-width: 640px) {
+		.ck-header {
+			padding-inline: 1.25rem;
+		}
 	}
 
 	.ck-page-title {
+		display: flex;
+		align-items: baseline;
+		gap: .375rem;
+		overflow: hidden;
+		white-space: nowrap;
 		color: var(--ck-text-color, #1c1c1c);
 	}
 
@@ -82,5 +101,22 @@
 	.ck-mobile-menu-button {
 		position: relative;
 		z-index: 910;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 32px;
+		height: 32px;
+		flex: 0 0 auto;
+		color: var(--ck-item-color, #444746);
+	}
+
+	.ck-header > .grow {
+		flex: 1 1 auto;
+	}
+
+	@media (min-width: 1024px) {
+		.ck-mobile-menu-button {
+			display: none;
+		}
 	}
 </style>

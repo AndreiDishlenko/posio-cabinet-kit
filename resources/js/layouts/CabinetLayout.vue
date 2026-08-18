@@ -18,8 +18,8 @@
 				</template>
 			</CabinetHeader>
 
-			<div class="ck-page-content p-2 lg:p-4 flex flex-col overflow-hidden" :class="space_y_class">
-				<div class="grow overflow-y-auto flex flex-col">
+			<div class="ck-page-content" :class="space_y_class">
+				<div class="ck-page-content-scroller">
 					<slot/>
 				</div>
 			</div>

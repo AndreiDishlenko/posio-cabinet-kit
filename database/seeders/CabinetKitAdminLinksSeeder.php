@@ -1,0 +1,82 @@
+<?php
+
+namespace Posio\CabinetKit\Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Posio\CabinetKit\Models\AdminLink;
+
+class CabinetKitAdminLinksSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $items = [
+            [
+                'order_id' => 10,
+                'name' => 'Administration',
+                'icon' => null,
+                'link' => null,
+                'route' => null,
+                'permissions' => null,
+                'is_header' => true,
+                'is_published' => true,
+            ],
+            [
+                'order_id' => 20,
+                'name' => 'Користувачі',
+                'icon' => 'ph:users',
+                'link' => null,
+                'route' => 'cabinet-kit.users',
+                'permissions' => 'sysper-users',
+                'is_header' => false,
+                'is_published' => true,
+            ],
+            [
+                'order_id' => 30,
+                'name' => 'Дозволи',
+                'icon' => 'fluent-mdl2:permissions',
+                'link' => null,
+                'route' => 'cabinet-kit.permissions',
+                'permissions' => 'sysper-roles',
+                'is_header' => false,
+                'is_published' => true,
+            ],
+            [
+                'order_id' => 40,
+                'name' => 'Ролі акаунту',
+                'icon' => 'fluent-mdl2:permissions',
+                'link' => null,
+                'route' => 'cabinet-kit.permissions.account',
+                'permissions' => 'sysper-roles',
+                'is_header' => false,
+                'is_published' => true,
+            ],
+            [
+                'order_id' => 50,
+                'name' => 'Logs',
+                'icon' => 'ix:log',
+                'link' => null,
+                'route' => 'cabinet-kit.logs',
+                'permissions' => 'sysper-log-view',
+                'is_header' => false,
+                'is_published' => true,
+            ],
+            [
+                'order_id' => 60,
+                'name' => 'Settings',
+                'icon' => 'proicons:settings',
+                'link' => null,
+                'route' => 'cabinet-kit.settings',
+                'permissions' => null,
+                'is_header' => false,
+                'is_published' => true,
+            ],
+        ];
+
+        foreach ($items as $item) {
+            AdminLink::query()->updateOrCreate(
+                ['route' => $item['route'], 'name' => $item['name']],
+                $item,
+            );
+        }
+    }
+}
