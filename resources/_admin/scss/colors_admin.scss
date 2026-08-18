@@ -1,0 +1,315 @@
+html.light {
+	// ── Text ──
+	--text-color:           #1c1c1c;
+	--text-light-grey:      rgba(0, 0, 0, .55);
+	--text-color-secondary: #4a4a4a;
+	--text-color-disabled:  #9a9a9a;
+	--text-color-inverted:  #f5f5f5;
+	--text-color-hardtosee: #c4c4c4;
+
+	// ── Icons ──
+	--icon-color: #747776;
+
+	// ── Backgrounds ──
+	// Page bg uses a subtle cool gray so cards (#fff) stand out without
+	// being aggressive; keeps the warm/cool neutral balance of the dark theme.
+	--background-color:        #ffffff;
+	--background-middle-color: #ffffff;
+	--background-light-color:  #eef0f3;
+	--background-inverse-color:#181818;
+
+	--header-bg:               #ffffff;
+	--burger-menu-bg:          #F6F7F9;
+	--bottom-sheet-bg:         #ffffff;
+	--bottom-sheet-divider:    #ececef;
+
+	// ── Brand (kept identical hue, slightly reduced shadow ink in light) ──
+	--brand-background:        #3961E9;
+	--brand-text-color:        #ffffff;
+
+	// ── Border / divider — tuned for accessibility on white ──
+	--border-color:              #e5e7eb;
+	--sidemenu-background-color: #F2F4F5;
+	--sidemenu-divider-color:    #ececef;
+
+	// ── Semantic — slightly darkened from dark theme for AA contrast on white ──
+	--yellow-color:    #b8810b;
+	--green-color:     #2c8a4f;
+	--success-color:   #2c8a4f;
+	--warning-color:   #c2671c;
+	--error-color:     #c0392b;
+
+	// ── Selection ──
+	--selection-color: #eef2ff;
+
+	// ── Cards ──
+	--card-background:    #ffffff;
+	--card-border-color:  #ffffff;
+	--card-divider:       #ececef;
+
+	// Переключатель текущего аккаунта подсвечен: смена аккаунта меняет весь контекст кабинета.
+	--account-selector-bg:     #fdf3d3;
+
+	// ── Form controls ──
+	--form-control-background:             #F2F4F5;
+	--autofill-background:                 #fffbe6;
+	--form-control-border-color:           #F2F4F5;
+	--form-control-border-color-focus:  #F2F4F5;
+	--placeholder-color:                   #b8bbc1;
+
+	// ── Buttons ──
+	--button-text-color:               #1c1c1c;
+	--button-background:               #f0f1f3;
+	--button-hover-background:         #e4e6ea;
+	--button-disabled-background:      #e8e9ec;
+
+	--primary-button-text:       		#ffffff;
+	--primary-button-background:       #3367D7;
+	--primary-button-hover-background: #2c4fd1;
+	--primary-button-background-25:    rgba(57, 97, 233, 0.25);
+	--primary-button-background-40:    rgba(57, 97, 233, 0.40);
+
+	--fab-primary-bg:        #3961E9;
+	--fab-primary-bg-hover:  #4C81F5;
+	--fab-primary-bg-press:  #1E3F95;
+	--fab-primary-fg:        #ffffff;
+	--fab-primary-shadow:    0 4px 16px rgba(57, 97, 233, .25);
+
+	// ── Selectable / dropdown ──
+	--selectable-background-color: #f0f1f3;
+	--selectable-hover-items:      #e4e6ea;
+
+	--dropdown-background-color: #ffffff;
+	--dropdown-items-color:      #f0f1f3;
+
+	// ── Table ──
+	--table-color:                          #1c1c1c;
+	--table-secondary-color:                #4a4a4a;
+	--table-header-background:              var(--background-color); //#eeeff2;
+	--table-header-text-color:              #767676;
+	--table-header-font-weight:             400;
+	--table-body-background:                var(--background-color); //#ffffff;
+	--table-group-background:               #f6f7f9;
+	--table-selection-color:                #eaf1fd;
+	--table-border-color:                   #ececef;
+	--table-header-border-color:            #e0e2e6;
+	--table-header-divider-color:           var(--table-header-border-color);
+	--table-selected-row-header-background: #d6e1f7;
+	--table-border-radius:                  var(--ui-radius-lg);
+
+	// ── Scrollbars ──
+	--scrollbar-background:              #f6f7f9;
+	--scrollbar-thumb-color:             #f0f3f8;
+	--scrollbar-thumb-hover-color:       #b9bdc6;
+	--scrollbar-thumb-light-color:       #e2e5e9;
+	--scrollbar-thumb-light-hover-color: #d0d3d8;
+
+	--mainmenu-background:   #ffffff;
+
+	// ── Dividers ──
+	--divider-color:        #ececef;
+	--divider-color-light:  #f0f1f3;
+
+	// ── Toggler ──
+	--toggler-background:   #b8bbc1;
+
+	// ── Status indicator base (negative/positive/intermediary already define their own) ──
+	--status-indicator-color: #a0a0a0;
+
+	// ── Нейтральное сообщение (диалоги подтверждения, подсказки) ──
+	--info-color:      #3961E9;
+
+	// ── Готовые смеси (см. пояснение в общих цветах) ──
+	--success-tint-15: rgba(44, 138, 79, .15);
+	--success-tint-25: rgba(44, 138, 79, .25);
+	--success-tint-40: rgba(44, 138, 79, .40);
+
+	--warning-tint-15: rgba(194, 103, 28, .15);
+	--info-tint-15:    rgba(57, 97, 233, .15);
+
+	--error-tint-15:   rgba(192, 57, 43, .15);
+	--error-tint-25:   rgba(192, 57, 43, .25);
+	--error-tint-40:   rgba(192, 57, 43, .40);
+
+	--muted-tint-15:   rgba(74, 74, 74, .15);
+	--muted-tint-30:   rgba(74, 74, 74, .30);
+
+	--green-tint-25:   rgba(44, 138, 79, .25);
+
+	--danger-button-hover-background: #9a2e22;
+
+	--table-header-background-80:       rgba(246, 247, 249, .8);
+	--table-slave-accent:               rgba(28, 28, 28, .45);
+	--table-slave-color:                rgba(28, 28, 28, .65);
+	--table-parent-expanded-background: #f6f7f9;
+	--table-slave-background:           #f6f7f9;
+}
+
+// Custom styles
+html.dark {
+	--header-bg: #1c1c1c;
+	
+	// Backgrounds
+	--burger-menu-bg: #393939;
+	--action-widget-bg: #393939;
+
+	// Bottom sheets
+	--bottom-sheet-bg: #393939;
+	--bottom-sheet-divider: #4a4a4a;
+
+	// Переключатель текущего аккаунта подсвечен: смена аккаунта меняет весь контекст кабинета.
+	--account-selector-bg: #2f2f2f;
+}
+
+html.dark {
+    --text-color: #dfdfd6;
+	--text-light-grey: rgba(255, 255, 255, .7);
+
+	// --text-color-secondary: #969696;
+    --text-color-secondary: #b6b6b6;
+    --text-color-disabled: #6e6e6e;
+    --text-color-inverted: #333333;
+	--text-color-hardtosee: #555555;
+    
+    --background-color: #181818;
+    --background-middle-color: #1c1c1c;
+    --background-light-color: #252525;
+    --background-inverse-color: #eeeeee;
+
+	--muted-foreground: 215 20.2% 65.1%;
+
+    --brand-background: #3961E9;
+    --brand-text-color: #ffffff;
+
+    --border-color: #292929;
+
+    --sidemenu-background-color: #161616;
+    --sidemenu-divider-color: #212121;
+    
+	// --yellow-color: #F9B318;
+	// --green-color: green;
+
+	// --success-color: green;
+    // --warning-color: #fd7e14;
+	--error-color: #c26361;
+
+    --selection-color: #1a1a1a;
+
+    --card-background: #212121;
+	--card-card-background: #262626;
+    --card-border-color: #212121;
+	--card-divider: #313131;
+
+    --form-control-background: inherit;
+    --autofill-background: #292929;
+    --form-control-border-color: #414141;
+    --form-control-border-color-focus: #616161;
+    --placeholder-color: #4e4e4e;
+
+    --button-background: #2c2c2c; //#434344;
+    --button-hover-background: rgb(53, 53, 53);
+    --primary-button-background: #3358cc;
+    --primary-button-hover-background: #2c4cb0;
+    --primary-button-background-25: rgba(51, 88, 204, 0.25);
+    --primary-button-background-40: rgba(51, 88, 204, 0.40);
+    --button-disabled-background: #737374; //#333333;
+    --button-text-color: var(--text-color);
+
+    --selectable-background-color: #3a3a3a;
+    --selectable-hover-items: #4a4a4a;
+    
+    --dropdown-background-color: #2A2A2A;
+    --dropdown-items-color: #3A3A3A;    
+
+    --table-color: #ffffff;
+	--table-secondary-color: #cccccc;
+	--table-header-background: #222222; //#262626;
+	--table-body-background: #181818;
+	--table-group-background: #262626;
+	--table-selection-color: #213a52;
+    --table-border-color: #212121;
+	--table-header-border-color: #303030;
+	--table-header-divider-color: transparent;
+	--table-selected-row-header-background: #2B475E;
+	--table-border-radius: 0.35rem;
+	--table-slave-accent:#333333;
+
+	// ── Нейтральное сообщение (диалоги подтверждения, подсказки) ──
+	--info-color:      #6d8dfb;
+
+	// ── Готовые смеси (см. пояснение в общих цветах) ──
+	--success-tint-15: rgba(0, 128, 0, .15);
+	--success-tint-25: rgba(0, 128, 0, .25);
+	--success-tint-40: rgba(0, 128, 0, .40);
+
+	--warning-tint-15: rgba(253, 126, 20, .15);
+	--info-tint-15:    rgba(109, 141, 251, .15);
+
+	--error-tint-15:   rgba(194, 99, 97, .15);
+	--error-tint-25:   rgba(194, 99, 97, .25);
+	--error-tint-40:   rgba(194, 99, 97, .40);
+
+	--muted-tint-15:   rgba(182, 182, 182, .15);
+	--muted-tint-30:   rgba(182, 182, 182, .30);
+
+	--green-tint-25:   rgba(0, 128, 0, .25);
+
+	--danger-button-hover-background: #9b4f4e;
+
+	--table-header-background-80:       rgba(34, 34, 34, .8);
+	--table-slave-color:                rgba(255, 255, 255, .65);
+	--table-parent-expanded-background: #191919;
+	--table-slave-background:           #191919;
+
+    --scrollbar-background: #1E2329;
+    --scrollbar-thumb-color: #292929; //#1d1d1d; //#272C32;
+    --scrollbar-thumb-hover-color: #2e2e2e;
+    --scrollbar-thumb-light-color: #4a4a4a;
+    --scrollbar-thumb-light-hover-color: #5f5f5f;
+
+    --mainmenu-background: #1F2329;
+
+    --divider-color: #2b2b2c;    
+    --divider-color-light: #212121;
+
+    --toggler-background: #544F54;
+}
+
+html.dark {
+    
+	--text-color-hardtosee: #555555;
+
+    --form-control-border-color: #343434;
+
+    // --selectable-background-color: #1f1f1f;
+    --selectable-background-color: #363636;
+    // --selectable-hover-items: #161616;
+    --selectable-hover-items: #2f2f2f;
+
+    .form-control {
+        --dp-background-color: #212121!important;
+    }
+}
+
+/* ── Gemini-style side menu — цвета ──────────────────────────────────────
+   Значения подобраны под текущий дизайн Gemini (Material 3). Финальная
+   калибровка — по скриншотам живого приложения (менять только эти токены). */
+html.light {
+	--gm-sidemenu-bg:       #F6F7F9; /* surface container — светлее контента */
+	--gm-item-color:        #444746; /* текст пунктов */
+	--gm-item-hover-bg:     #e1e3e6;
+	--gm-item-active-bg:    #d3e3fd; /* secondary container (голубой) */
+	--gm-item-active-color: #0842a0;
+	--gm-group-label-color: #5f6368;
+	--gm-overlay-shadow:    0 8px 24px rgba(0, 0, 0, .18);
+}
+
+html.dark {
+	--gm-sidemenu-bg:       #1e1e1e; /* панель чуть светлее контента (#181818) */
+	--gm-item-color:        #e3e3e3;
+	--gm-item-hover-bg:     #2a2a2a; /* Gemini dark: нейтральный серый, не синий */
+	--gm-item-active-bg:    #37383b; /* активный пункт — серый pill (текущая страница) */
+	--gm-item-active-color: #ffffff;
+	--gm-group-label-color: #9e9e9e;
+	--gm-overlay-shadow:    0 8px 24px rgba(0, 0, 0, .45);
+}

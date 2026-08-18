@@ -1,0 +1,277 @@
+@layer components {
+	.button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 40px;
+        font-size: var(--text-md);
+
+        white-space: nowrap;
+        outline-width: 0px;
+        outline: none;
+        background-color: var(--button-background);
+        color: var(--button-text-color);
+        // padding-top: 5px;
+        padding-bottom: 1px;
+
+        transition: color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+
+        @apply        
+            px-6
+            rounded-lg 
+            cursor-pointer
+            text-center         
+            disabled:opacity-50        
+            shadow-sm 
+            shadow-stone-900/50;
+    }
+
+    .button:focus {
+        outline-width: 0px;
+        outline: none;
+        outline-style: none;
+
+        @apply
+            shadow-sm
+            shadow-stone-900/50
+    }
+
+    .button:not(:disabled):hover {
+        background-color: var(--button-hover-background);
+        box-shadow: 0px 3px 3px -1px rgba(0, 0, 0, 0.2), 0px 2px 4px 1px rgba(0, 0, 0, 0.14), 0px 1px 7px 1px rgba(0, 0, 0, 0.12);
+        /* -webkit-box-shadow: 0px 0px 32px -8px rgba(0,0,0,0.75);
+        -moz-box-shadow: 0px 0px 32px -8px rgba(0,0,0,0.75); */
+    }
+
+    .button:disabled {
+        opacity: 0.5;
+        cursor: auto!important;
+        background-color: var(--button-disabled-background);
+		@apply
+        	hover:bg-neutral-700 
+    }
+
+	/* button-{size}: alias for .ui-{size} + button-specific constraints */
+    .button-xs {
+        height: var(--ui-h-xs);
+        min-height: var(--ui-h-xs);
+        max-height: var(--ui-h-xs);
+        font-size: var(--text-xs)!important;
+        padding-left: var(--ui-px-xs);
+        padding-right: var(--ui-px-xs);
+        border-radius: var(--ui-radius-xs);
+        gap: var(--ui-gap-xs);
+        min-width: 10px;
+        @apply w-min !py-0 !mb-0;
+    }
+
+    .button-sm {
+        height: var(--ui-h-sm);
+        min-height: var(--ui-h-sm);
+        max-height: var(--ui-h-sm);
+        font-size: var(--text-sm);
+        padding-left: var(--ui-px-sm);
+        padding-right: var(--ui-px-sm);
+        border-radius: var(--ui-radius-sm);
+        gap: var(--ui-gap-sm);
+        @apply w-min !py-0;
+    }
+
+    .button-md {
+        height: var(--ui-h-md);
+        min-height: var(--ui-h-md);
+        max-height: var(--ui-h-md);
+        font-size: var(--text-md);
+        padding-left: var(--ui-px-md);
+        padding-right: var(--ui-px-md);
+        border-radius: var(--ui-radius-md);
+        gap: var(--ui-gap-md);
+        @apply w-min !py-0;
+    }
+
+    .button-lg {
+        height: var(--ui-h-lg);
+        min-height: var(--ui-h-lg);
+        max-height: var(--ui-h-lg);
+        font-size: var(--text-lg);
+        padding-left: var(--ui-px-lg);
+        padding-right: var(--ui-px-lg);
+        border-radius: var(--ui-radius-lg);
+        gap: var(--ui-gap-lg);
+    }
+
+    .button-xl {
+        height: var(--ui-h-xl);
+        min-height: var(--ui-h-xl);
+        max-height: var(--ui-h-xl);
+        font-size: var(--text-xl);
+        padding-left: var(--ui-px-xl);
+        padding-right: var(--ui-px-xl);
+        border-radius: var(--ui-radius-xl);
+        gap: var(--ui-gap-xl);
+    }
+
+    .button-2xl {
+        height: var(--ui-h-2xl);
+        min-height: var(--ui-h-2xl);
+        max-height: var(--ui-h-2xl);
+        font-size: var(--text-2xl);
+        padding-left: var(--ui-px-2xl);
+        padding-right: var(--ui-px-2xl);
+        border-radius: var(--ui-radius-2xl);
+        gap: var(--ui-gap-2xl);
+    }
+
+	.button-square {
+		@apply
+			aspect-square
+			px-0;
+	}
+
+	// Отступ между иконкой и подписью внутри кнопки приходит из размерного класса,
+	// а не из утилиты, поэтому фолбэк сборщика сюда не достаёт: на Apple ниже 14.1
+	// иконка липла бы к тексту. Направление берётся из модификатора раскладки.
+	html.no-flex-gap {
+
+		@each $size in xs, sm, md, lg, xl, 2xl {
+			.button-#{$size} > * + * {
+				margin-left: var(--ui-gap-#{$size});
+			}
+
+			.button-#{$size}.flex-col > * + *,
+			.button-#{$size}.\!flex-col > * + * {
+				margin-left: 0;
+				margin-top: var(--ui-gap-#{$size});
+			}
+		}
+
+	}
+
+	// Пропорцию сторон Apple держит только с 15: ниже объявление отбрасывается
+	// и квадратная кнопка сжимается по содержимому. Сторона известна заранее —
+	// это высота размерного класса, поэтому подставляется она.
+	@supports not (aspect-ratio: 1 / 1) {
+
+		.button-square,
+		.btn--icon-only {
+			width: 40px;
+		}
+
+		@each $size in xs, sm, md, lg, xl, 2xl {
+			.button-#{$size}.button-square,
+			.button-#{$size}.btn--icon-only {
+				width: var(--ui-h-#{$size});
+			}
+		}
+
+	}
+
+	.primary-button {
+		background-color:  var(--primary-button-background)!important;
+	}
+
+	.primary-button:hover {
+		background-color: var(--primary-button-hover-background)!important;
+	}
+
+	// Тема без собственного токена наследует базовый цвет текста кнопки.
+	html.light .primary-button {
+		color: var(--primary-button-text, var(--button-text-color));
+	}
+
+	// Подтверждение необратимого действия — удаления, очистки, выхода из аккаунта.
+	.danger-button {
+		background-color: var(--error-color)!important;
+		color: #fff;
+	}
+
+	.danger-button:not(:disabled):hover {
+		// Токен-фолбэк перед смесью — на Apple ниже 16.2 иначе пропадает подсветка наведения.
+		background-color: var(--danger-button-hover-background)!important;
+		background-color: color-mix(in srgb, var(--error-color) 80%, #000)!important;
+	}
+
+	.link-button {
+		background-color: transparent !important;
+		border: 1px solid transparent;
+	}
+
+	.outline-button {
+		// background-color:  var(--background-color)!important;
+		background-color:  transparent!important;
+		border: 1px solid var(--form-control-border-color)!important;
+	}
+
+	.outline-button:hover {
+	}
+
+	.ghost-button {
+		background: var(--ghost-button-bg);
+		color: var(--ghost-button-fg);
+		border: 1px solid var(--ghost-button-border);
+		box-shadow: none;
+
+		&:not(:disabled):hover {
+			background-color: var(--form-control-border-color) !important;
+			box-shadow: none;
+		}
+	}
+
+	.transparent-button {
+		background-color: transparent!important;
+		box-shadow: 0 0 #0000!important;
+	}
+
+	// Pill shape is fixed; height/padding/font-size come from the .button-{size}
+	// modifier so the size prop still has effect on a badge-styled button.
+	// Фолбэк перед color-mix: браузер, который его не понимает, отбрасывает объявление
+	// целиком и оставляет бейдж вовсе без фона — при том что цвет текста подобран
+	// именно под этот фон. Полупрозрачный вариант цвета задаётся токеном темы.
+	.badge-button {
+		border-radius: 999px !important;
+		font-weight: 600;
+		background-color: var(--primary-button-background-25) !important;
+		background-color: color-mix(in srgb, var(--primary-button-background) 25%, transparent) !important;
+		color: var(--primary-button-background) !important;
+		// border: 1px solid color-mix(in srgb, var(--primary-button-background) 40%, transparent) !important;
+		box-shadow: none !important;
+
+		&:not(:disabled):hover {
+			background-color: var(--primary-button-background-40) !important;
+			background-color: color-mix(in srgb, var(--primary-button-background) 40%, transparent) !important;
+		}
+	}
+
+	.pill-button {
+		height: 36px!important;
+		// border: 1px solid var(--divider-color)!important;
+		// background-color: color-mix(in srgb, var(--divider-color) 30%, transparent)!important;
+		@apply
+			rounded-3xl;
+	}
+
+	.pill-button:hover {
+		background-color: transparent!important;
+
+		@apply
+			rounded-xl
+			!bg-inherit
+			!shadow-none;
+	}
+
+	// ── FAB (floating action button) ──────────────────────────────────────────
+	// Sizes (width/height) are set by size modifiers in FabButton.vue.
+	.fab-button {
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		border: none;
+		transition:
+			background 150ms cubic-bezier(.4, 0, .2, 1),
+			box-shadow 150ms cubic-bezier(.4, 0, .2, 1);
+	}
+
+
+}

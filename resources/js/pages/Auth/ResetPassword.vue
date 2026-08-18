@@ -3,22 +3,22 @@
 	<AuthLayout page_name="Reset password">
 
 		<form @submit.prevent="submit">
-			<div class="ck-form-row">
-				<label class="ck-field-label">{{ $t ? $t('Email') : 'Email' }}</label>
-				<input type="email" class="ck-input" v-model="form.email" :class="{ 'is-invalid': errors.email }" autofocus>
-				<span v-if="errors.email" class="ck-error">{{ errors.email }}</span>
+			<div class="form-group">
+				<label class="form-label">{{ $t ? $t('Email') : 'Email' }}</label>
+				<input type="email" class="form-control" v-model="form.email" :class="{ 'is-invalid': errors.email }" autofocus>
+				<span v-if="errors.email" class="form-error">{{ errors.email }}</span>
 			</div>
 
-			<div class="ck-form-row">
-				<label class="ck-field-label">{{ $t ? $t('New password') : 'New password' }}</label>
-				<input type="password" class="ck-input" v-model="form.password" :class="{ 'is-invalid': errors.password }">
-				<span v-if="errors.password" class="ck-error">{{ errors.password }}</span>
+			<div class="form-group">
+				<label class="form-label">{{ $t ? $t('New password') : 'New password' }}</label>
+				<input type="password" class="form-control" v-model="form.password" :class="{ 'is-invalid': errors.password }">
+				<span v-if="errors.password" class="form-error">{{ errors.password }}</span>
 			</div>
 
-			<div class="ck-form-row">
-				<label class="ck-field-label">{{ $t ? $t('Confirm new password') : 'Confirm new password' }}</label>
-				<input type="password" class="ck-input" v-model="form.password_confirmation" :class="{ 'is-invalid': errors.password_confirmation }">
-				<span v-if="errors.password_confirmation" class="ck-error">{{ errors.password_confirmation }}</span>
+			<div class="form-group">
+				<label class="form-label">{{ $t ? $t('Confirm new password') : 'Confirm new password' }}</label>
+				<input type="password" class="form-control" v-model="form.password_confirmation" :class="{ 'is-invalid': errors.password_confirmation }">
+				<span v-if="errors.password_confirmation" class="form-error">{{ errors.password_confirmation }}</span>
 			</div>
 
 			<button type="submit" class="button primary-button w-full" :disabled="submitting">

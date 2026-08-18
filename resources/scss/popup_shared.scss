@@ -1,0 +1,53 @@
+// Подложка диалога кладётся поверх карточек-модалок и выезжающего бокового меню:
+// собственное значение библиотеки (1060) оставляло запрос подтверждения под ними.
+// Выше карточки (10001/10002), но ниже оверлея «в процессе» (100001).
+div.swal2-container {
+    z-index: 10003;
+}
+
+.popup {
+
+    background-color: var(--background-light-color)!important;
+    max-width: 90%;
+    @apply
+        space-y-3
+        sm:space-y-8;
+}
+
+.popup-header {    
+}
+
+.popup-title {
+    // font-size: var(--text-xl);
+    font-size: 22px!important;
+    padding-top: 0.25rem;
+    margin-bottom: 1rem;
+}
+
+
+.popup-body {
+    display: flex!important;
+    flex-direction: column;
+    
+    margin-bottom: 1rem;
+    font-size: var(--text-base);
+
+    @apply
+        text-xl
+        pt-0
+        space-y-3;
+}
+
+.popup-input {
+    width: auto!important;
+}
+
+.popup-footer {
+    @apply
+        p-0
+        !mt-8;
+}
+
+.popup-button {
+    min-width:100px;
+}

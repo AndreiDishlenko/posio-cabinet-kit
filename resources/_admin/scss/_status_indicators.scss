@@ -1,0 +1,46 @@
+.status-indicator.neworder {
+	background-color: #94A3B8;
+}
+.status-indicator.awaitingpayments {
+	background-color: #FBBF24;
+}
+.status-indicator.awaitingpickup {
+	background-color: #60A5FA;
+}
+
+// Packing
+.status-indicator.packing {
+	background-color: #60fafa;
+}
+
+// Delivery
+.status-indicator.awaitingdelivery {
+	background-color: #C084FC;
+}
+.status-indicator.outfordelivery {
+	background-color: #C561E7;
+}
+.status-indicator.ontheway {
+	background-color: #8A3FD1;
+}
+.status-indicator.arrived {
+	background-color: #7326B8;
+}
+.status-indicator.awaitingarrival {
+	background-color: #7326B8;
+}
+
+.status-indicator.finished {
+	background-color: #4ab66f;
+}
+
+// Фіскалізація чеків (сторінка роздрібу)
+.status-indicator.unfinished {
+	background-color: #94A3B8;
+}
+.status-indicator.tax-offline {
+	background-color: #F97316;
+}
+.status-indicator.tax-error {
+	background-color: #EF4444;
+}

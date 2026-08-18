@@ -59,3 +59,76 @@
 		}
 	}
 </script>
+
+<style lang="scss" scoped>
+
+	.form-label {
+		width: 140px;
+	}
+
+	.thumb {
+		width: 200px;
+	}
+
+	.license-row {
+		display: grid;
+		grid-template-columns: 1.3fr 0.9fr 1.1fr 0.7fr 1fr 0.9fr auto;
+		gap: 0.6rem;
+		align-items: center;
+		padding: 0.4rem 0;
+		border-top: 1px solid var(--card-border-color);
+		font-size: var(--text-sm);
+	}
+
+	// Заголовок колонок списка лицензий (только десктоп)
+	.license-head {
+		border-top: none;
+		color: var(--text-color-secondary);
+		font-size: var(--text-xs);
+		font-weight: 500;
+		padding-bottom: 0.15rem;
+	}
+
+	// Подпись ячейки для мобильной раскладки (label : value); на десктопе скрыта
+	.license-row > span::before {
+		content: attr(data-label);
+		display: none;
+	}
+
+	.guest-row {
+		display: flex;
+		align-items: center;
+		@include flex-gap(0.6rem);
+		padding: 0.4rem 0;
+		border-top: 1px solid var(--card-border-color);
+		font-size: var(--text-sm);
+	}
+
+	// Мобильная адаптация: строка лицензии → вертикальный стек «подпись : значение»
+	@media (max-width: 639px) {
+		.license-row {
+			position: relative;
+			grid-template-columns: 1fr;
+			gap: 0.15rem;
+			padding: 0.6rem 2rem 0.6rem 0;
+		}
+
+		.license-row > span {
+			display: flex;
+			justify-content: space-between;
+			@include flex-gap(0.75rem);
+			text-align: left;
+		}
+
+		.license-row > span::before {
+			display: block;
+			color: var(--text-color-secondary);
+		}
+
+		.license-remove {
+			position: absolute;
+			top: 0.5rem;
+			right: 0;
+		}
+	}
+</style>

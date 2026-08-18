@@ -1,0 +1,139 @@
+:root {
+	// иконка ≈ 50% высоты контейнера. В кнопке 40px → иконка 16–20px
+	--icon-xs: 		10px; // inline-индикаторы
+	--icon-sm: 		12px; // inline-индикаторы
+	--icon-md: 		16px; // внутри кнопок/инпутов (md, sm)
+	--icon-base: 	20px; // стандарт интерфейса, внутри lg-кнопок
+	--icon-lg: 		24px; // навигация, тулбары (Material default)
+	--icon-xl: 		32px; // крупные акценты, фичи
+	--icon-xxl:		40px; // крупные акценты, фичи
+	--icon-3xl:		48px; // крупные акценты, фичи
+	--icon-4xl:		64px; // иллюстративные
+}
+
+.icon-label {
+    @apply
+        flex
+        items-center
+        text-nowrap;
+
+    svg {
+        width: 1.15rem;
+        min-width: 1.15rem;
+        height: 1.15rem;
+        min-height: 1.15rem;
+
+        @apply
+            my-0
+            !me-2;
+    }
+}
+
+@layer components {
+	.icon {
+		width: 	 	var(--icon-base);
+		min-width: 	var(--icon-base);
+		height: 	var(--icon-base);
+		min-height: var(--icon-base); 
+		background-color: inherit!important;
+		fill: var(--icon-color, var(--text-color));
+	}
+
+    .icon-xs {
+		width:      var(--icon-xs)!important;
+        min-width:  var(--icon-xs)!important;
+        height:     var(--icon-xs)!important;
+        min-height: var(--icon-xs)!important;    
+    }
+
+	.icon-sm {
+		width:      var(--icon-sm)!important;
+        min-width:  var(--icon-sm)!important;
+        height:     var(--icon-sm)!important;
+        min-height: var(--icon-sm)!important;    
+    }
+
+    .icon-md {
+        // width:      22px!important;
+        // min-width:  22px!important;
+        // height:     22px!important;
+        // min-height: 22px!important;
+		width:      var(--icon-md)!important;
+        min-width:  var(--icon-md)!important;
+        height:     var(--icon-md)!important;
+        min-height: var(--icon-md)!important;    
+    }
+
+	.icon-base {
+        // width:      22px!important;
+        // min-width:  22px!important;
+        // height:     22px!important;
+        // min-height: 22px!important;
+		width:      var(--icon-base)!important;
+        min-width:  var(--icon-base)!important;
+        height:     var(--icon-base)!important;
+        min-height: var(--icon-base)!important;    
+    }
+
+    .icon-lg {
+		// width: 1.15rem!important;
+		// min-width: 1.15rem!important;
+		// height: 1.15rem!important;
+		// min-height: 1.15rem!important; 
+		width:      var(--icon-lg)!important;
+        min-width:  var(--icon-lg)!important;
+        height:     var(--icon-lg)!important;
+        min-height: var(--icon-lg)!important;    
+    }
+
+    .icon-xl {
+		width:      var(--icon-xl)!important;
+        min-width:  var(--icon-xl)!important;
+        height:     var(--icon-xl)!important;
+        min-height: var(--icon-xl)!important;    
+    }
+
+    .icon-xxl {
+		width:      var(--icon-xxl)!important;
+        min-width:  var(--icon-xxl)!important;
+        height:     var(--icon-xxl)!important;
+        min-height: var(--icon-xxl)!important;     
+    }
+
+    .icon-3xl {
+		width:      var(--icon-3xl)!important;
+        min-width:  var(--icon-3xl)!important;
+        height:     var(--icon-3xl)!important;
+        min-height: var(--icon-3xl)!important;     
+    }
+
+    .icon-4xl {
+		width:      var(--icon-4xl)!important;
+        min-width:  var(--icon-4xl)!important;
+        height:     var(--icon-4xl)!important;
+        min-height: var(--icon-4xl)!important;     
+    }
+
+    .icon-label-sm {
+        svg {
+            width: 12px!important;
+            min-width: 12px!important;
+            height: 12px!important;
+            min-height: 12px!important;  
+
+            @apply
+                my-0
+                !me-1;
+        }
+    }
+
+    .icon-label-lg {
+        svg {
+            width: 26px!important;
+            min-width: 26px!important;
+            height: 26px!important;
+            min-height: 26px!important;  
+            margin: 0.5rem 0.75rem 0.5rem 0rem!important;
+        }
+    }
+}

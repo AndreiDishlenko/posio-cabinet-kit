@@ -1,21 +1,21 @@
 <template>
 
-	<div class="ck-profile-tab">
+	<div class="space-y-5">
 
-		<div class="ck-card">
-			<h3 class="ck-card-title">{{ $t ? $t('Profile') : 'Profile' }}</h3>
+		<div class="card">
+			<h3 class="card-header">{{ $t ? $t('Profile') : 'Profile' }}</h3>
 
 			<form @submit.prevent="submitProfile">
-				<div class="ck-form-row">
-					<label class="ck-field-label">{{ $t ? $t('Name') : 'Name' }}</label>
-					<input type="text" class="ck-input" v-model="profileForm.name" :class="{ 'is-invalid': profileErrors.name }">
-					<span v-if="profileErrors.name" class="ck-error">{{ profileErrors.name }}</span>
+				<div class="form-group">
+					<label class="form-label">{{ $t ? $t('Name') : 'Name' }}</label>
+					<input type="text" class="form-control" v-model="profileForm.name" :class="{ 'is-invalid': profileErrors.name }">
+					<span v-if="profileErrors.name" class="form-error">{{ profileErrors.name }}</span>
 				</div>
 
-				<div class="ck-form-row">
-					<label class="ck-field-label">{{ $t ? $t('Email') : 'Email' }}</label>
-					<input type="email" class="ck-input" v-model="profileForm.email" :class="{ 'is-invalid': profileErrors.email }">
-					<span v-if="profileErrors.email" class="ck-error">{{ profileErrors.email }}</span>
+				<div class="form-group">
+					<label class="form-label">{{ $t ? $t('Email') : 'Email' }}</label>
+					<input type="email" class="form-control" v-model="profileForm.email" :class="{ 'is-invalid': profileErrors.email }">
+					<span v-if="profileErrors.email" class="form-error">{{ profileErrors.email }}</span>
 				</div>
 
 				<button type="submit" class="button primary-button button-sm" :disabled="savingProfile">
@@ -24,26 +24,26 @@
 			</form>
 		</div>
 
-		<div class="ck-card">
-			<h3 class="ck-card-title">{{ $t ? $t('Change password') : 'Change password' }}</h3>
+		<div class="card">
+			<h3 class="card-header">{{ $t ? $t('Change password') : 'Change password' }}</h3>
 
 			<form @submit.prevent="submitPassword">
-				<div class="ck-form-row">
-					<label class="ck-field-label">{{ $t ? $t('Current password') : 'Current password' }}</label>
-					<input type="password" class="ck-input" v-model="passwordForm.current_password" :class="{ 'is-invalid': passwordErrors.current_password }">
-					<span v-if="passwordErrors.current_password" class="ck-error">{{ passwordErrors.current_password }}</span>
+				<div class="form-group">
+					<label class="form-label">{{ $t ? $t('Current password') : 'Current password' }}</label>
+					<input type="password" class="form-control" v-model="passwordForm.current_password" :class="{ 'is-invalid': passwordErrors.current_password }">
+					<span v-if="passwordErrors.current_password" class="form-error">{{ passwordErrors.current_password }}</span>
 				</div>
 
-				<div class="ck-form-row">
-					<label class="ck-field-label">{{ $t ? $t('New password') : 'New password' }}</label>
-					<input type="password" class="ck-input" v-model="passwordForm.password" :class="{ 'is-invalid': passwordErrors.password }">
-					<span v-if="passwordErrors.password" class="ck-error">{{ passwordErrors.password }}</span>
+				<div class="form-group">
+					<label class="form-label">{{ $t ? $t('New password') : 'New password' }}</label>
+					<input type="password" class="form-control" v-model="passwordForm.password" :class="{ 'is-invalid': passwordErrors.password }">
+					<span v-if="passwordErrors.password" class="form-error">{{ passwordErrors.password }}</span>
 				</div>
 
-				<div class="ck-form-row">
-					<label class="ck-field-label">{{ $t ? $t('Confirm new password') : 'Confirm new password' }}</label>
-					<input type="password" class="ck-input" v-model="passwordForm.password_confirmation" :class="{ 'is-invalid': passwordErrors.password_confirmation }">
-					<span v-if="passwordErrors.password_confirmation" class="ck-error">{{ passwordErrors.password_confirmation }}</span>
+				<div class="form-group">
+					<label class="form-label">{{ $t ? $t('Confirm new password') : 'Confirm new password' }}</label>
+					<input type="password" class="form-control" v-model="passwordForm.password_confirmation" :class="{ 'is-invalid': passwordErrors.password_confirmation }">
+					<span v-if="passwordErrors.password_confirmation" class="form-error">{{ passwordErrors.password_confirmation }}</span>
 				</div>
 
 				<button type="submit" class="button primary-button button-sm" :disabled="savingPassword">
@@ -141,9 +141,5 @@
 </script>
 
 <style lang="scss" scoped>
-	.ck-profile-tab {
-		display: flex;
-		flex-direction: column;
-		gap: 1.25rem;
-	}
+    
 </style>

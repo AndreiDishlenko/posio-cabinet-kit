@@ -137,8 +137,8 @@
 			font-size: .8rem;
 			font-weight: 600;
 			padding: .5rem .6rem;
-			background: var(--ck-table-header-bg, #f6f7f9);
-			border-bottom: 1px solid var(--ck-table-border-color, #e5e7eb);
+			background: var(--table-header-background, #f6f7f9);
+			border-bottom: 1px solid var(--table-border-color, #e5e7eb);
 
 			&.is-sortable {
 				cursor: pointer;
@@ -147,7 +147,7 @@
 
 		td {
 			padding: .5rem .6rem;
-			border-bottom: 1px solid var(--ck-table-border-color, #ececef);
+			border-bottom: 1px solid var(--table-border-color, #ececef);
 		}
 	}
 
@@ -155,11 +155,11 @@
 		cursor: pointer;
 
 		&:hover {
-			background: var(--ck-table-hover-bg, #f6f7f9);
+			background: var(--table-body-background, #f6f7f9);
 		}
 
 		&.is-selected {
-			background: var(--ck-table-selection-bg, #eaf1fd);
+			background: var(--table-selection-color, #eaf1fd);
 		}
 	}
 

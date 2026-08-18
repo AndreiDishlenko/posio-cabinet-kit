@@ -1,0 +1,127 @@
+@layer utilities {
+
+	.card-shape {
+		background-color: var(--card-background);
+		border-color: var(--card-border-color);
+		@apply
+			p-4
+			rounded-lg;
+	}
+
+	.dark-card {
+		background-color: var(--table-body-background)!important;
+	}
+
+	.card {
+		color: var(--text-color);
+		background-color: var(--card-background);
+		border-color: var(--card-border-color);
+
+		display: flex;
+		flex-direction: column;
+		// overflow: hidden;
+		overflow-wrap: break-word;
+		position: relative;
+		text-decoration: none;
+		transition-duration: .28s;
+		transition-property: box-shadow, opacity, background;
+		transition-timing-function: cubic-bezier(.4,0,.2,1);
+		z-index: 0;  
+
+		@apply 
+			space-y-7
+			sm:space-y-9 
+			border 
+			rounded-lg 
+			shadow-lg      
+			p-7
+			sm:p-9
+			md:p-11;
+	}
+
+	.card-paddings {
+		@apply
+			p-7
+			sm:p-9
+			md:p-11;
+	}
+
+	// Карточка во всю доступную ширину: предел задаёт модалка (оставшаяся область
+	// справа от бокового меню), вне модалки — почти весь экран. Двойной селектор —
+	// чтобы перебить собственные минимумы карточки на широких экранах.
+	.card.wide-card {
+		min-width: var(--modal-max-width, 90vw);
+	}
+
+	.compact-card {
+		color: var(--text-color);
+		background-color: var(--card-background);
+		border-color: var(--card-border-color);
+
+		@apply
+			rounded-lg
+			p-5
+			sm:p-9
+			md:p-11;
+	}
+
+	.card-header {
+		font-size: var(--text-2xl);
+		
+		@apply 
+			w-full
+			flex
+			flex-col
+			justify-center
+			items-center
+			text-lg
+			space-y-0
+			leading-tight 
+			tracking-tight;
+	}
+
+	.card-body {
+		background-color: inherit!important;
+		// overflow-y: hidden;     // Scrolled modal cards limit height 95dvh
+
+		@apply
+			space-y-4
+			!leading-[1.75rem];
+	}
+
+	.card-footer {
+		@apply         
+			flex
+			items-center
+			justify-center
+			space-x-5
+			text-center 
+			!shadow-none;
+	}
+
+	.card-footer-text {
+		@apply
+			w-full
+			flex 
+			justify-between        
+			!py-1;
+	}
+
+	.card-row {
+		@apply px-5 py-3;
+	}
+
+	.card-success {
+		@apply
+			text-center 
+			mb-4 
+			text-green-600;
+	}
+
+	.card-error {
+		@apply
+			text-center
+			!m-0;
+	}
+
+}

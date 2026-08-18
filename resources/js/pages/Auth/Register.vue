@@ -3,34 +3,34 @@
 	<AuthLayout page_name="Create an account">
 
 		<form @submit.prevent="submit">
-			<div class="ck-form-row">
-				<label class="ck-field-label">{{ $t ? $t('Name') : 'Name' }}</label>
-				<input type="text" class="ck-input" v-model="form.name" :class="{ 'is-invalid': errors.name }" autofocus>
-				<span v-if="errors.name" class="ck-error">{{ errors.name }}</span>
+			<div class="form-group">
+				<label class="form-label">{{ $t ? $t('Name') : 'Name' }}</label>
+				<input type="text" class="form-control" v-model="form.name" :class="{ 'is-invalid': errors.name }" autofocus>
+				<span v-if="errors.name" class="form-error">{{ errors.name }}</span>
 			</div>
 
-			<div class="ck-form-row">
-				<label class="ck-field-label">{{ $t ? $t('Company name') : 'Company name' }}</label>
-				<input type="text" class="ck-input" v-model="form.company_name" :class="{ 'is-invalid': errors.company_name }">
-				<span v-if="errors.company_name" class="ck-error">{{ errors.company_name }}</span>
+			<div class="form-group">
+				<label class="form-label">{{ $t ? $t('Company name') : 'Company name' }}</label>
+				<input type="text" class="form-control" v-model="form.company_name" :class="{ 'is-invalid': errors.company_name }">
+				<span v-if="errors.company_name" class="form-error">{{ errors.company_name }}</span>
 			</div>
 
-			<div class="ck-form-row">
-				<label class="ck-field-label">{{ $t ? $t('Email') : 'Email' }}</label>
-				<input type="email" class="ck-input" v-model="form.email" :class="{ 'is-invalid': errors.email }">
-				<span v-if="errors.email" class="ck-error">{{ errors.email }}</span>
+			<div class="form-group">
+				<label class="form-label">{{ $t ? $t('Email') : 'Email' }}</label>
+				<input type="email" class="form-control" v-model="form.email" :class="{ 'is-invalid': errors.email }">
+				<span v-if="errors.email" class="form-error">{{ errors.email }}</span>
 			</div>
 
-			<div class="ck-form-row">
-				<label class="ck-field-label">{{ $t ? $t('Password') : 'Password' }}</label>
-				<input type="password" class="ck-input" v-model="form.password" :class="{ 'is-invalid': errors.password }">
-				<span v-if="errors.password" class="ck-error">{{ errors.password }}</span>
+			<div class="form-group">
+				<label class="form-label">{{ $t ? $t('Password') : 'Password' }}</label>
+				<input type="password" class="form-control" v-model="form.password" :class="{ 'is-invalid': errors.password }">
+				<span v-if="errors.password" class="form-error">{{ errors.password }}</span>
 			</div>
 
-			<div class="ck-form-row">
-				<label class="ck-field-label">{{ $t ? $t('Confirm password') : 'Confirm password' }}</label>
-				<input type="password" class="ck-input" v-model="form.password_confirmation" :class="{ 'is-invalid': errors.password_confirmation }">
-				<span v-if="errors.password_confirmation" class="ck-error">{{ errors.password_confirmation }}</span>
+			<div class="form-group">
+				<label class="form-label">{{ $t ? $t('Confirm password') : 'Confirm password' }}</label>
+				<input type="password" class="form-control" v-model="form.password_confirmation" :class="{ 'is-invalid': errors.password_confirmation }">
+				<span v-if="errors.password_confirmation" class="form-error">{{ errors.password_confirmation }}</span>
 			</div>
 
 			<button type="submit" class="button primary-button w-full" :disabled="submitting">

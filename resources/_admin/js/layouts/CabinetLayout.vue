@@ -2,10 +2,10 @@
 
     <Head :title="$t(page_name ? page_name : ($page.props.currentPage?.name || 'Cabinet'))"/>
 
-    <div class="ck-page-wrapper" :class="$inprogress.value ? 'disabled' : ''">
+    <div class="page-wrapper flex flex-row h-full overflow-y-hidden" :class="$inprogress.value ? 'disabled' : ''">
 		<!-- scrollbar-thin -->
 
-        <CabinetMenu class="ck-page-menu"
+        <CabinetMenu class="page-menu max-h-dvh-100 h-dvh-100 "
             :class="disable_menu ? 'disabled' : null"
             :disabled="disable_menu"
             ref="sideMenu"
@@ -13,16 +13,16 @@
             Menu
         </CabinetMenu>
 
-        <div class="ck-page-layout" >
+        <div class="page-layout relative grow min-w-0 flex flex-col" >
 
             <CabinetHeader class="min-h-0 px-3 sm:px-5" :page_name="page_name"/>
 
-			<div class="ck-page-content" 
+			<div class="page-content-wrapper p-2 lg:p-4 flex flex-col overflow-hidden "
 				:class="['space-y-'+space_y]"
 				>
 				<!-- scrollbar -->
 
-				<div class="ck-page-content-scroller"
+				<div class="page-content-inner-scroller grow overflow-y-hidden flex flex-col"
 					:class="{
 						'scrolled-wrapper scrollbar scrollbar-thin' : scrolled
 					}">
@@ -35,7 +35,7 @@
 				</div>
 
 			</div>
-                
+
             <!-- <CabinetBody ref="cabinet_body" class="max-h-full cabinet-body grow border-yellow"> -->
             <!-- </CabinetBody> -->
 
@@ -55,7 +55,7 @@
 
 <script>
     import { Head } from '@inertiajs/vue3';
-    
+
     import CabinetMenu      from "./CabinetMenu.vue"
     import CabinetHeader    from "./CabinetHeader.vue"
     import CabinetBody      from "./CabinetBody.vue"
@@ -63,7 +63,7 @@
     // import LoadingScreen    from "./LoadingScreen.vue"
 
     import Loader           from '@/js/Elements/PreloaderBars.vue';
-    
+
     // import ModalForm        from '@/js/Elements/ModalForm.vue';
     // import InitCard         from '../Initial/InitCard.vue';
 
@@ -103,7 +103,7 @@
         },
         mounted() {
             // this.$nextTick(() => {
-            //     if ( this.$page.props.user?.new_user ) 
+            //     if ( this.$page.props.user?.new_user )
             //         this.$refs.welcomeCard.open()
             // });
         },
@@ -117,13 +117,13 @@
 </script>
 
 <style lang="scss">
-	.ck-page-wrapper {
+	.page-wrapper {
 	// 	max-height: calc( 100dvh - 5px );
 	// 	// border: 1px solid red;
 		// height:100%;
 	}
 	
-	.ck-page-content {
+	.page-content-wrapper {
 		// Отступ под BottomTabBar — только когда бар виден (телефон в портретной ориентации, ширина < md)
 		@media (max-width: 767.98px) and (orientation: portrait) {
 			// height: calc( 100% + var(--bottom-tab-bar-height) );
@@ -133,6 +133,8 @@
 		}
 		// border: 1px solid red;
 		// padding-bottom: 200px;
+		height: 100%;
+		
 	}
 
 	.page-bottom-spacer {

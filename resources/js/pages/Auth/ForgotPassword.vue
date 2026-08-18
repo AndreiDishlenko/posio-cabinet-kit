@@ -5,10 +5,10 @@
 		<p v-if="sent" class="ck-status">{{ $t ? $t('If that email exists, a reset link has been sent.') : 'If that email exists, a reset link has been sent.' }}</p>
 
 		<form @submit.prevent="submit">
-			<div class="ck-form-row">
-				<label class="ck-field-label">{{ $t ? $t('Email') : 'Email' }}</label>
-				<input type="email" class="ck-input" v-model="form.email" :class="{ 'is-invalid': errors.email }" autofocus>
-				<span v-if="errors.email" class="ck-error">{{ errors.email }}</span>
+			<div class="form-group">
+				<label class="form-label">{{ $t ? $t('Email') : 'Email' }}</label>
+				<input type="email" class="form-control" v-model="form.email" :class="{ 'is-invalid': errors.email }" autofocus>
+				<span v-if="errors.email" class="form-error">{{ errors.email }}</span>
 			</div>
 
 			<button type="submit" class="button primary-button w-full" :disabled="submitting">

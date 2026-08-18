@@ -1,0 +1,101 @@
+@use '@/scss/tailwind';
+
+// Оформление диалогов подтверждения: пакет вшивает его в JS в обход сборщика,
+// поэтому подключается копия, прогнанная через сборщик под нижнюю планку.
+// Подключается до общих стилей — иначе поверх неё нечем править подложку диалога.
+@use '@/scss/vendor/sweetalert2';
+
+@use '@/scss/shared';
+
+@use 'fonts_admin';
+@use 'colors_admin';
+
+@use 'buttons_admin';
+@use 'badges_admin';
+@use 'cards_admin';
+@use 'forms_admin';
+@use 'popup_admin';
+
+@use '_datepicker_admin';
+@use '_status_indicators';
+
+:root {
+    --header-height: 60px;
+    --side-menu-width: 240px;
+	--bottom-tab-bar-height: 4rem;
+	/* Место, реально занятое нижним баром: на iPhone с индикатором жеста к его
+	   высоте добавляется безопасный отступ, иначе последняя строка контента
+	   уходит под индикатор, а нажатия по бару перехватывает система. */
+	--bottom-tab-bar-total: calc( var(--bottom-tab-bar-height) + env(safe-area-inset-bottom, 0px) );
+
+	/* ── Gemini-style side menu (gm-*) — размеры/тайминги ───────────────────
+	   Все значения продублированы CSS-переменными, чтобы калибровать под
+	   реальный Gemini в одном месте. Цвета — в colors_admin.scss. */
+	--gm-rail-width:      56px;   /* свёрнутый рельс (только иконки), центр иконки 28px */
+	--gm-expanded-width:  300px;  /* развёрнутое меню */
+	--gm-item-height:     40px;
+	--gm-item-radius:     20px;   /* pill: половина высоты пункта; предельно большие
+	                                значения радиуса некоторые мобильные GPU клипают
+	                                с артефактами, поэтому задаём конкретное */
+	--gm-panel-pad:       8px;    /* внутренний горизонтальный отступ панели */
+	--gm-font: 'Google Sans Flex', 'Google Sans', 'Google Sans Text', 'Roboto', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--gm-ease:     cubic-bezier(0.2, 0, 0, 1); /* Material standard easing */
+	--gm-ease-dur: 250ms;
+
+	// Высота вьюпорта одним значением. Парное объявление (статическая единица
+	// первой строкой) страхует только пока в декларации нет var(): значение с
+	// переменной проверяется уже после каскада, и там непонятый dvh не возвращает
+	// предыдущую строку, а обнуляет свойство — сброс, а не деградация. Поэтому
+	// единица подменяется по признаку поддержки, а не дублируется декларация.
+	--viewport-height: 100vh;
+}
+
+@supports (height: 100dvh) {
+	:root {
+		--viewport-height: 100dvh;
+	}
+}
+
+
+#app {
+	// Единственная опора высоты всего кабинета: html/body высоту не задают, поэтому
+	// цепочка потомков на процентной высоте считается отсюда. Динамическую единицу
+	// Apple понимает только с 15.4 — ниже декларация отбрасывается и вёрстка
+	// схлопывается, поэтому статическая единица идёт первой.
+	max-height: 100vh;
+    max-height: calc( 100dvh - 1px );
+	height: 100vh;
+	height: calc( 100dvh - 1px );
+
+	// border:1px solid red;
+	// @media (max-width: 768px) {
+	// 	max-height: calc( 100dvh - var(--bottom-tab-bar-height) - 1px );
+	// }
+	
+	// border: 1px solid red; 
+	overflow-y: hidden;
+}
+
+body {
+	// color:		var(--text-color);
+	// background: var(--background-color);
+	// overflow-x: hidden;
+	// overflow-y: hidden;
+}
+
+h1, .h1 {
+    font-family: var(--header-font);
+    font-weight: bold;
+    font-size: var(--text-2xl);
+}
+
+h2, .h2 {
+    font-size: var(--text-xl);
+    font-weight: bold;
+}
+
+h3, .h3 {
+    font-size: var(--text-lg);
+    // font-weight: bold;
+}
+

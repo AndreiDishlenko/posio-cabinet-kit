@@ -76,7 +76,7 @@
 		max-width: 95dvw;
 		max-height: 95dvh;
 		overflow: auto;
-		background: var(--ck-card-bg, #fff);
+		background: var(--card-bg, #fff);
 		border-radius: .5rem;
 		padding: 1.25rem;
 	}

@@ -1,0 +1,60 @@
+@layer components {
+	// Компактный статусный бейдж (активно/неактивно/помилка тощо).
+	// Колір — через модифікатор; фон завжди tint кольору тексту.
+	.status-badge {
+		display: inline-flex;
+		align-items: center;
+		// font-size: 0.7rem;
+		// font-weight: 600;
+		// line-height: 1.4;
+		padding: 0.25rem 0.75rem;
+		padding-top:5px;
+		border-radius: 999px;
+		white-space: nowrap;
+
+		@apply
+			text-sm;
+	}
+
+	// Первым объявлением идёт заранее посчитанный оттенок-токен: смешивание цветов
+	// средствами CSS Apple понимает только с 16.2, и без фолбэка бейдж оставался бы
+	// вовсе без фона — при том что цвет текста подобран именно под этот фон.
+	.badge-success {
+		background-color: var(--success-tint-25) !important;
+		background-color: color-mix(in srgb, var(--success-color) 25%, transparent) !important;
+		color: #22c55e !important; //var(--success-color) !important;
+		border-color: var(--success-tint-40) !important;
+		border-color: color-mix(in srgb, var(--success-color) 40%, transparent) !important;
+
+		&:not(:disabled):hover {
+			background-color: var(--success-tint-40) !important;
+			background-color: color-mix(in srgb, var(--success-color) 40%, transparent) !important;
+		}
+	}
+
+	.badge-error {
+		background-color: var(--error-tint-25) !important;
+		background-color: color-mix(in srgb, var(--error-color) 25%, transparent) !important;
+		color: var(--error-color) !important;
+		border-color: var(--error-tint-40) !important;
+		border-color: color-mix(in srgb, var(--error-color) 40%, transparent) !important;
+
+		&:not(:disabled):hover {
+			background-color: var(--error-tint-40) !important;
+			background-color: color-mix(in srgb, var(--error-color) 40%, transparent) !important;
+		}
+	}
+
+	.badge-muted {
+		background-color: var(--muted-tint-15) !important;
+		background-color: color-mix(in srgb, var(--text-color-secondary) 15%, transparent) !important;
+		color: var(--text-color-secondary) !important;
+		border-color: var(--muted-tint-30) !important;
+		border-color: color-mix(in srgb, var(--text-color-secondary) 30%, transparent) !important;
+
+		&:not(:disabled):hover {
+			background-color: var(--muted-tint-30) !important;
+			background-color: color-mix(in srgb, var(--text-color-secondary) 30%, transparent) !important;
+		}
+	}
+}

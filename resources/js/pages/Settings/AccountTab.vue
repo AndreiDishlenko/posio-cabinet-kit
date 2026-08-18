@@ -1,15 +1,15 @@
 <template>
 
-	<div class="ck-card">
-		<h3 class="ck-card-title">{{ $t ? $t('Account') : 'Account' }}</h3>
+	<div class="card">
+		<h3 class="card-header">{{ $t ? $t('Account') : 'Account' }}</h3>
 
-		<div class="ck-field-row">
-			<span class="ck-field-label">{{ $t ? $t('Name') : 'Name' }}</span>
+		<div class="form-group">
+			<span class="form-label">{{ $t ? $t('Name') : 'Name' }}</span>
 			<span>{{ account?.name }}</span>
 		</div>
 
-		<div class="ck-field-row">
-			<span class="ck-field-label">{{ $t ? $t('Expire') : 'Expire' }}</span>
+		<div class="form-group">
+			<span class="form-label">{{ $t ? $t('Expire') : 'Expire' }}</span>
 			<span>{{ account?.expire || '—' }}</span>
 		</div>
 	</div>
@@ -27,3 +27,7 @@
 		},
 	}
 </script>
+
+<style lang="scss" scoped>
+    
+</style>

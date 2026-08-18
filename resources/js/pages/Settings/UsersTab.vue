@@ -1,9 +1,9 @@
 <template>
 
-	<div class="ck-card">
-		<h3 class="ck-card-title">{{ $t ? $t('Users') : 'Users' }}</h3>
+	<div class="card">
+		<h3 class="card-header">{{ $t ? $t('Users') : 'Users' }}</h3>
 
-		<table class="ck-simple-table">
+		<table class="table table-sm">
 			<thead>
 				<tr>
 					<th>{{ $t ? $t('Name') : 'Name' }}</th>
@@ -14,12 +14,12 @@
 			</thead>
 			<tbody>
 				<tr v-for="member in members" :key="member.id">
-					<td>{{ member.name }} <span v-if="member.is_owner" class="ck-badge">{{ $t ? $t('Owner') : 'Owner' }}</span></td>
+					<td>{{ member.name }} <span v-if="member.is_owner" class="status-badge badge-muted">{{ $t ? $t('Owner') : 'Owner' }}</span></td>
 					<td>{{ member.email }}</td>
 					<td>
 						<span v-if="member.is_owner">{{ member.role || ownerRoleLabel }}</span>
 						<select v-else-if="can_manage_account"
-							class="ck-input ck-role-select"
+							class="form-control form-select"
 							:value="member.role"
 							@change="changeRole(member, $event.target.value)"
 							>
@@ -38,17 +38,17 @@
 			</tbody>
 		</table>
 
-		<form v-if="can_manage_account" class="ck-invite-form" @submit.prevent="inviteMember">
-			<h4 class="ck-card-subtitle">{{ $t ? $t('Invite a user') : 'Invite a user' }}</h4>
-			<div class="ck-invite-row">
+		<form v-if="can_manage_account" class="form-group" @submit.prevent="inviteMember">
+			<h4 class="card-header">{{ $t ? $t('Invite a user') : 'Invite a user' }}</h4>
+			<div class="flex flex-col sm:flex-row gap-3">
 				<input
 					type="email"
-					class="ck-input"
+					class="form-control"
 					v-model="invite.email"
 					:placeholder="$t ? $t('User email') : 'User email'"
 					maxlength="70"
 					>
-				<select class="ck-input ck-role-select" v-model="invite.role">
+				<select class="form-control form-select" v-model="invite.role">
 					<option v-for="role in roles" :key="role.name" :value="role.name">
 						{{ $t ? $t(role.name) : role.name }}
 					</option>
@@ -57,7 +57,7 @@
 					{{ $t ? $t('Invite') : 'Invite' }}
 				</button>
 			</div>
-			<span v-if="invite.error" class="ck-error">{{ invite.error }}</span>
+			<span v-if="invite.error" class="form-error">{{ invite.error }}</span>
 		</form>
 	</div>
 
@@ -144,53 +144,6 @@
 	}
 </script>
 
-<style lang="scss" scoped>
-	.ck-simple-table {
-		width: 100%;
-		border-collapse: collapse;
+<style lang="scss">
 
-		th, td {
-			text-align: start;
-			padding: .5rem;
-			border-bottom: 1px solid var(--ck-border-color, #e5e7eb);
-		}
-	}
-
-	.ck-badge {
-		font-size: .7rem;
-		opacity: .6;
-		margin-inline-start: .35rem;
-	}
-
-	.ck-role-select {
-		min-width: 150px;
-	}
-
-	.ck-invite-form {
-		margin-top: 1.25rem;
-		padding-top: 1rem;
-		border-top: 1px solid var(--ck-border-color, #e5e7eb);
-	}
-
-	.ck-card-subtitle {
-		font-size: .95rem;
-		font-weight: 600;
-		margin-bottom: .75rem;
-	}
-
-	.ck-invite-row {
-		display: flex;
-		flex-wrap: wrap;
-		gap: .75rem;
-		align-items: center;
-
-		.ck-input {
-			width: auto;
-		}
-
-		input.ck-input {
-			min-width: min(260px, 100%);
-			flex: 1 1 220px;
-		}
-	}
 </style>

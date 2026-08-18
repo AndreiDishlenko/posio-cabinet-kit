@@ -8,28 +8,28 @@
 //
 // Two ways to change how the kit looks:
 //
-// 1. Redefine a design token. Every color/size the kit paints with is a
-//    --ck-* custom property, and because custom properties pierce Vue's
-//    scoped styles, one override here reskins the whole kit — SideMenu,
-//    header, tables and all. See the full list in
-//    vendor/posio/cabinet-kit/resources/scss/colors_cabinet-kit.scss and the
-//    layout tokens in cabinet-kit.scss.
+// 1. Redefine one of the original cabinet CSS variables. The package ships
+//    the original shared/admin styles from posio.cabinet, so use the same
+//    variables/classes you would use there. Start with
+//    vendor/posio/cabinet-kit/resources/scss/colors_shared.scss,
+//    vendor/posio/cabinet-kit/resources/_admin/scss/colors_admin.scss and
+//    vendor/posio/cabinet-kit/resources/_admin/scss/admin.scss.
 //
 //      :root, html.light {
-//          --ck-brand-bg: #16a34a;      // primary buttons, active menu item
-//          --ck-sidemenu-bg: #ffffff;
+//          --primary-button-background: #16a34a;
+//          --sidemenu-bg: #ffffff;
 //      }
 //      html.dark {
-//          --ck-brand-bg: #22c55e;
+//          --primary-button-background: #22c55e;
 //      }
 //      :root {
-//          --ck-expanded-width: 280px;  // wider pinned side menu
+//          --gm-expanded-width: 280px;  // wider pinned side menu
 //      }
 //
 // 2. Restyle a specific element by re-declaring its class. Same specificity,
 //    but loaded later, so it wins:
 //
-//      .ck-card {
+//      .card {
 //          border-radius: 1rem;
 //          box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
 //      }

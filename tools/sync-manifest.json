@@ -13,42 +13,84 @@
       "mode": "manual",
       "source": "resources/_admin/scss/admin.scss",
       "target": "resources/scss/cabinet-kit.scss",
-      "notes": "Package entry must keep @use partials and --ck-* tokens. Port only generic base layout rules."
+      "notes": "Package entry points at the original admin.scss. The original admin entry loads shared before admin partials."
     },
     {
-      "id": "scss-buttons",
-      "mode": "manual",
+      "id": "scss-shared",
+      "mode": "copy",
+      "source": "resources/scss/shared.scss",
+      "target": "resources/scss/shared.scss",
+      "notes": "Original shared entry."
+    },
+    {
+      "id": "scss-admin",
+      "mode": "copy",
+      "source": "resources/_admin/scss/admin.scss",
+      "target": "resources/_admin/scss/admin.scss",
+      "notes": "Original admin entry."
+    },
+    {
+      "id": "scss-buttons-shared",
+      "mode": "copy",
+      "source": "resources/scss/buttons_shared.scss",
+      "target": "resources/scss/buttons_shared.scss",
+      "notes": "Original shared buttons."
+    },
+    {
+      "id": "scss-buttons-admin",
+      "mode": "copy",
       "source": "resources/_admin/scss/buttons_admin.scss",
-      "target": "resources/scss/buttons_cabinet-kit.scss",
-      "notes": "Port generic button styles only; keep class contract used by shipped Vue pages."
+      "target": "resources/_admin/scss/buttons_admin.scss",
+      "notes": "Original admin buttons."
     },
     {
-      "id": "scss-colors",
-      "mode": "manual",
+      "id": "scss-colors-shared",
+      "mode": "copy",
+      "source": "resources/scss/colors_shared.scss",
+      "target": "resources/scss/colors_shared.scss",
+      "notes": "Original shared colors."
+    },
+    {
+      "id": "scss-colors-admin",
+      "mode": "copy",
       "source": "resources/_admin/scss/colors_admin.scss",
-      "target": "resources/scss/colors_cabinet-kit.scss",
-      "notes": "Translate generic tokens to --ck-*; do not copy Posio product colors blindly."
+      "target": "resources/_admin/scss/colors_admin.scss",
+      "notes": "Original admin colors."
     },
     {
-      "id": "scss-cards",
-      "mode": "manual",
+      "id": "scss-cards-shared",
+      "mode": "copy",
+      "source": "resources/scss/cards_shared.scss",
+      "target": "resources/scss/cards_shared.scss",
+      "notes": "Original shared cards."
+    },
+    {
+      "id": "scss-cards-admin",
+      "mode": "copy",
       "source": "resources/_admin/scss/cards_admin.scss",
-      "target": "resources/scss/cards_cabinet-kit.scss",
-      "notes": "Port generic card/field shell classes only."
+      "target": "resources/_admin/scss/cards_admin.scss",
+      "notes": "Original admin cards."
     },
     {
-      "id": "scss-forms",
-      "mode": "manual",
+      "id": "scss-forms-shared",
+      "mode": "copy",
+      "source": "resources/scss/forms_shared.scss",
+      "target": "resources/scss/forms_shared.scss",
+      "notes": "Original shared forms."
+    },
+    {
+      "id": "scss-forms-admin",
+      "mode": "copy",
       "source": "resources/_admin/scss/forms_admin.scss",
-      "target": "resources/scss/forms_cabinet-kit.scss",
-      "notes": "Port generic form field styling only."
+      "target": "resources/_admin/scss/forms_admin.scss",
+      "notes": "Original admin forms."
     },
     {
       "id": "scss-icons",
-      "mode": "manual",
+      "mode": "copy",
       "source": "resources/scss/icons_shared.scss",
-      "target": "resources/scss/icons_cabinet-kit.scss",
-      "notes": "Port generic icon sizing helpers only; preserve ck prefix."
+      "target": "resources/scss/icons_shared.scss",
+      "notes": "Original shared icons."
     },
     {
       "id": "layout-cabinet-layout",

@@ -3,7 +3,7 @@
 	<Head :title="$t ? $t(page_name || 'Cabinet') : (page_name || 'Cabinet')"/>
 
 	<div class="ck-auth-wrapper flex items-center justify-center min-h-[100dvh] p-4">
-		<div class="ck-card ck-auth-card w-full max-w-sm">
+		<div class="card ck-auth-card w-full max-w-sm">
 			<h1 class="ck-auth-title">{{ $t ? $t(page_name || '') : page_name }}</h1>
 
 			<slot/>
@@ -29,7 +29,7 @@
 
 <style lang="scss" scoped>
 	.ck-auth-wrapper {
-		background: var(--ck-background-color, #f6f7f9);
+		background: var(--background-color, #f6f7f9);
 	}
 
 	.ck-auth-title {

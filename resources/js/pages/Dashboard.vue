@@ -2,8 +2,8 @@
 
 	<CabinetLayout page_name="Dashboard">
 
-		<div class="ck-card">
-			<h3 class="ck-card-title">{{ $t ? $t('Welcome') : 'Welcome' }}{{ account ? ' — ' + account.name : '' }}</h3>
+		<div class="card">
+			<h3 class="card-header">{{ $t ? $t('Welcome') : 'Welcome' }}{{ account ? ' — ' + account.name : '' }}</h3>
 			<p class="ck-hint">
 				This is the CabinetKit placeholder dashboard. Override it at
 				resources/_admin/overrides/pages/Dashboard.vue, or point

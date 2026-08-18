@@ -2,11 +2,11 @@
 
 	<CabinetLayout :page_name="activeTabLabel">
 
-		<div class="ck-tabs flex flex-row gap-2 border-b mb-4">
+		<div class="flex flex-row gap-2 border-b mb-4">
 			<button v-for="tab in tabs" :key="tab.id"
 				type="button"
-				class="ck-tab"
-				:class="{ 'is-active': tab.id === activeTab }"
+				class="button ghost-button button-sm"
+				:class="{ 'primary-button': tab.id === activeTab }"
 				@click="setActiveTab(tab.id)"
 				>
 				{{ $t ? $t(tab.label) : tab.label }}
@@ -104,16 +104,54 @@
 </script>
 
 <style lang="scss" scoped>
-	.ck-tab {
-		padding: .5rem .75rem;
-		font-size: .9rem;
-		opacity: .6;
-		border-bottom: 2px solid transparent;
 
-		&.is-active {
-			opacity: 1;
-			border-color: var(--ck-brand-bg, #3961E9);
-			font-weight: 600;
-		}
-	}
+    // Highlighted account name shown at the top of account-scoped tabs.
+    .account-scope-name {
+        @apply text-lg font-semibold self-start;
+        padding: 0.25rem 0.75rem;
+        border-left: 3px solid var(--primary-button-bg);
+        color: var(--text-color);
+    }
+
+    .user-avatar {
+        position: absolute;
+        top: 36px;
+        left: 30px;
+
+        font-size: var(--text-xl);
+        @apply
+            absolute 
+    }
+
+    .avatar-image {
+        border: 4px solid var(--background-color);
+    }
+
+    .photo-button {
+        position: absolute;
+        top: 15px;
+        right: 5px;
+        color: var(--text-color-secondary);
+        cursor: pointer;
+    }
+
+    // Desktop: floats in the bottom-right corner of the banner card.
+    .profile-since {
+        position: absolute;
+        bottom: 0.5rem;
+        right: 1rem;
+    }
+
+    // Mobile: drop into normal flow under the overhanging avatar so the date
+    // never overlaps it and the banner fully contains the avatar (no bleed
+    // into the profile form below).
+    @media (max-width: 639px) {
+        .profile-since {
+            position: static;
+            display: block;
+            margin-top: 3.25rem;
+            padding-right: 0.25rem;
+            text-align: right;
+        }
+    }
 </style>

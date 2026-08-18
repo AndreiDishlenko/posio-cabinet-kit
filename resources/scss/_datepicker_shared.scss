@@ -1,0 +1,58 @@
+@use '@vuepic/vue-datepicker/dist/main.css';
+
+:root {
+    // --dp-input-padding: 0.25rem 0.5rem 0.25rem 1.5rem;
+    --dp-font-family: var(--font-base);
+    --dp-font-size:   var(--text-base);
+    --dp-button-icon-height: 40px!important;
+}
+
+.dp__input {
+    // line-height: 1.5rem;
+    // padding-left: 2rem!important;
+    // vertical-align: middle;
+    // display: inline!important;
+    // display: flex;    
+    // color: var(--text-color)!important;
+    // background-color: var(--dp-background-color)!important;
+	@apply
+		form-control;
+}
+
+// .dp__input_focus {
+//     border-color: var(--form-control-border-color-focus);
+// }
+
+.dp__input:hover {
+    border-color: var(--form-control-border-color)!important;
+}
+
+.dp__input .form-control-sm {
+    font-size: var(--text-sm)!important;
+}
+
+// Поставляемые стили растягивают маску недоступного календаря сокращённой записью
+// четырёх сторон, а её Safari 13.1 отбрасывает — маска остаётся в потоке и календарь
+// не перекрывается. Через сборщик стили пакета не проходят, поэтому раскладка здесь.
+.dp__menu_disabled {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+}
+
+// Тем же способом пакет позиционирует иконку календаря и крестик очистки — по
+// логической оси, которая появилась позже планки. Объявление отбрасывается целиком,
+// и обе кнопки садятся в статическую позицию поверх текста поля.
+.dp__input_icon {
+    left: 0;
+}
+
+.dp--clear-btn {
+    right: 0;
+}
+
+.dp__overlay_row {
+    margin-left: auto;
+    margin-right: auto;
+}

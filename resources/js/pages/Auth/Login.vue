@@ -3,16 +3,16 @@
 	<AuthLayout page_name="Log in">
 
 		<form @submit.prevent="submit">
-			<div class="ck-form-row">
-				<label class="ck-field-label">{{ $t ? $t('Email') : 'Email' }}</label>
-				<input type="email" class="ck-input" v-model="form.email" :class="{ 'is-invalid': errors.email }" autofocus>
-				<span v-if="errors.email" class="ck-error">{{ errors.email }}</span>
+			<div class="form-group">
+				<label class="form-label">{{ $t ? $t('Email') : 'Email' }}</label>
+				<input type="email" class="form-control" v-model="form.email" :class="{ 'is-invalid': errors.email }" autofocus>
+				<span v-if="errors.email" class="form-error">{{ errors.email }}</span>
 			</div>
 
-			<div class="ck-form-row">
-				<label class="ck-field-label">{{ $t ? $t('Password') : 'Password' }}</label>
-				<input type="password" class="ck-input" v-model="form.password" :class="{ 'is-invalid': errors.password }">
-				<span v-if="errors.password" class="ck-error">{{ errors.password }}</span>
+			<div class="form-group">
+				<label class="form-label">{{ $t ? $t('Password') : 'Password' }}</label>
+				<input type="password" class="form-control" v-model="form.password" :class="{ 'is-invalid': errors.password }">
+				<span v-if="errors.password" class="form-error">{{ errors.password }}</span>
 			</div>
 
 			<label class="ck-remember">

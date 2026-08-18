@@ -1,0 +1,130 @@
+/* ─── UI size tokens + utility classes ──────────────────────────────────────
+   Apply to any interactive component: button, input, badge, pill, tag, etc.
+   Sets height · horizontal padding · font-size · border-radius · gap.
+   Use: <div class="ui-lg"> or compose: <button class="button ui-lg">
+   ─────────────────────────────────────────────────────────────────────────── */
+
+:root {
+    --ui-h-xs:     28px;
+    --ui-h-sm:     32px; //36px;
+    --ui-h-md:     36px; //44px;
+	--ui-h-base:   42px; //44px;
+    --ui-h-lg:     48px; //48px;
+    --ui-h-xl:     56px;
+	--ui-h-2xl:    64px;
+
+    --ui-px-xs:    0.75rem;
+    --ui-px-sm:    1rem;
+    --ui-px-md:    1.25rem;
+    --ui-px-lg:    1.75rem;
+    --ui-px-xl:    2.25rem;
+    --ui-px-2xl:   2.75rem;
+
+  // --ui-text-xs:  0.75rem;
+    // --ui-text-sm:  0.875rem;
+    // --ui-text-md:  0.9375rem;
+    // --ui-text-lg:  1rem;
+    // --ui-text-xl:  1.125rem;
+
+    --ui-radius-xs: 0.375rem;
+    --ui-radius-sm: 0.5rem;
+    --ui-radius-md: 0.625rem;
+    --ui-radius-lg: 0.75rem;
+    --ui-radius-xl: 1rem;
+    --ui-radius-2xl: 1.25rem;
+
+    --ui-gap-xs:   0.375rem;
+    --ui-gap-sm:   0.5rem;
+    --ui-gap-md:   0.625rem;
+    --ui-gap-lg:   0.75rem;
+    --ui-gap-xl:   1rem;
+    --ui-gap-2xl:  1.25rem;
+
+    /* Карточки, плавающие поверх страницы (напоминание о первых шагах, меню
+       профиля): одинаковый отступ от края экрана, скругление и тень — иначе
+       каждая всплывающая панель отбивается от края по-своему. */
+    --floating-panel-offset: 1rem;
+    --floating-panel-radius: 0.5rem;
+    --floating-panel-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
+}
+
+@layer components {
+    %ui-base {
+        display: inline-flex;
+        align-items: center;
+        box-sizing: border-box;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    .ui-xs {
+        @extend %ui-base;
+        height: var(--ui-h-xs);
+        padding-left: var(--ui-px-xs);
+        padding-right: var(--ui-px-xs);
+        font-size: var(--text-xs);
+        border-radius: var(--ui-radius-xs);
+        gap: var(--ui-gap-xs);
+    }
+
+    .ui-sm {
+        @extend %ui-base;
+        height: var(--ui-h-sm);
+        padding-left: var(--ui-px-sm);
+        padding-right: var(--ui-px-sm);
+        font-size: var(--text-sm);
+        border-radius: var(--ui-radius-sm);
+        gap: var(--ui-gap-sm);
+    }
+
+    .ui-md {
+        @extend %ui-base;
+        height: var(--ui-h-md);
+        padding-left: var(--ui-px-md);
+        padding-right: var(--ui-px-md);
+        font-size: var(--text-md);
+        border-radius: var(--ui-radius-md);
+        gap: var(--ui-gap-md);
+    }
+
+    .ui-lg {
+        @extend %ui-base;
+        height: var(--ui-h-lg);
+        padding-left: var(--ui-px-lg);
+        padding-right: var(--ui-px-lg);
+        font-size: var(--text-lg);
+        border-radius: var(--ui-radius-lg);
+        gap: var(--ui-gap-lg);
+    }
+
+    .ui-xl {
+        @extend %ui-base;
+        height: var(--ui-h-xl);
+        padding-left: var(--ui-px-xl);
+        padding-right: var(--ui-px-xl);
+        font-size: var(--text-xl);
+        border-radius: var(--ui-radius-xl);
+        gap: var(--ui-gap-xl);
+    }
+
+    // Отступ между элементами приходит из размерного класса, а не из утилиты,
+    // поэтому фолбэк сборщика сюда не достаёт: на Apple ниже 14.1 иконка и подпись
+    // слиплись бы. Раскладка этих классов всегда строчная.
+    html.no-flex-gap {
+
+        @each $size in xs, sm, md, lg, xl {
+            .ui-#{$size} > * + * {
+                margin-left: var(--ui-gap-#{$size});
+            }
+        }
+
+    }
+
+    .h-xs   { height: var(--ui-h-xs); }
+    .h-sm   { height: var(--ui-h-sm); }
+    .h-md   { height: var(--ui-h-md); }
+    .h-base { height: var(--ui-h-base); }
+    .h-lg   { height: var(--ui-h-lg); }
+    .h-xl   { height: var(--ui-h-xl); }
+    .h-2xl  { height: var(--ui-h-2xl); }
+}

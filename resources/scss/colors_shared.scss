@@ -1,0 +1,343 @@
+// html:not(.dark) {
+//     --text-color: #333333;
+//     --text-color-secondary: #444444;
+//     --text-color-disabled: rgba(110, 110, 110);
+//     --text-color-inverted: #dfdfd6;
+
+//     --background-color: #ffffff;
+
+//     --border-color: #212121;
+
+//     --sidemenu-background-color: #181818;
+//     --sidemenu-divider-color: #212121;
+
+//     // --success-color: #4ab66f;
+// 	--success-color: green;
+//     --warning-color: #fd7e14;
+//     --error-color: #be475d;
+
+//     --selection-color: #e9e9e9;
+    
+//     --card-background: #eeeeee;
+//     --card-border-color: rgba(0, 0, 0, 0.04);
+
+//     --form-control-background: #ffffff;
+    // --form-control-border-color: #e2e2e4;
+//     --form-control-border-color-focus: #c0c0c2;
+
+//     --button-background: #3E4246;
+//     --primary-button-background: #3961E9;
+//     --primary-button-hover-background: #4C81F5;
+//     --button-disabled-background: #333333;
+//     --button-text-color: var(--text-color-inverted);
+
+//     --dropdown-background-color: #999999;
+//     --dropdown-items-color: #888888;
+
+//     --divider-color: #e2e2e3;    
+// }
+
+html.dark {
+    --text-color: #dfdfd6;
+	--text-light-grey: rgba(255, 255, 255, .7);
+
+	// --text-color-secondary: #969696;
+    --text-color-secondary: #b6b6b6;
+    --text-color-disabled: #6e6e6e;
+    --text-color-inverted: #333333;
+	--text-color-hardtosee: #555555;
+    
+    --background-color: #181818;
+    --background-middle-color: #1c1c1c;
+    --background-light-color: #252525;
+    --background-inverse-color: #eeeeee;
+
+	--muted-foreground: 215 20.2% 65.1%;
+
+    --brand-background: #3961E9;
+    --brand-text-color: #ffffff;
+
+    --border-color: #212121;
+
+    --sidemenu-background-color: #161616;
+    --sidemenu-divider-color: #212121;
+    
+	--yellow-color: #F9B318;
+	--orange-color: #F89E4D;
+	--green-color: green;
+
+	--success-color: green;
+    --warning-color: #fd7e14;
+    --error-color: #883736;
+    
+    --selection-color: #1a1a1a;
+
+    --card-background: #212121;
+	--card-card-background: #262626;
+    --card-border-color: #212121;
+	--card-divider: #3e3b4d;
+
+	// Backgrounds
+	--burger-menu-bg: #292929;
+	--action-widget-bg: #292929;
+	--bottom-sheet-bg: var(--background-color);
+	--bottom-sheet-divider: #2e2e2e;
+
+    --form-control-background: inherit;
+    --autofill-background: #292929;
+    --form-control-border-color: #414141;
+    --form-control-border-color-focus: #616161;
+    --placeholder-color: #4e4e4e;
+
+	// Buttons
+	--button-text-color: var(--text-color);
+    --button-background: #434344;
+    --button-hover-background: rgb(53, 53, 53);
+
+    --primary-button-background: #31536C;
+    --primary-button-hover-background: #26475e;
+	// Полупрозрачные варианты основного цвета — фолбэк для браузеров без color-mix.
+	--primary-button-background-25: rgba(49, 83, 108, 0.25);
+	--primary-button-background-40: rgba(49, 83, 108, 0.40);
+
+	--button-disabled-background: #737374; //#333333;
+    
+	--fab-primary-bg: #3961E9;
+	--fab-primary-bg-hover: #4C81F5;
+	--fab-primary-bg-press: #1E3F95;
+	--fab-primary-fg: #ffffff;
+	--fab-primary-shadow: 0 4px 16px rgba(57, 97, 233, .45);
+
+	// Other
+    --selectable-background-color: #3a3a3a;
+    --selectable-hover-items: #4a4a4a;
+    
+    --dropdown-background-color: #2A2A2A;
+    --dropdown-items-color: #3A3A3A;    
+
+    --table-color: #ffffff;
+	--table-secondary-color: #cccccc;
+	--table-header-background: #262626;
+	--table-body-background: #181818;
+	--table-group-background: #1f1f1f;
+	--table-selection-color: #1d1d1d;
+    --table-border-color: #212121;
+	--table-header-border-color: #303030;
+	--table-selected-row-header-background: #2B475E;
+
+    --scrollbar-background: #1E2329;
+    --scrollbar-thumb-color: #211F29; //#272C32;
+    --scrollbar-thumb-hover-color: #332f3d;
+    --scrollbar-thumb-light-color: #4a4553;
+    --scrollbar-thumb-light-hover-color: #5c5768;
+
+    --mainmenu-background: #1F2329;
+
+    --divider-color: #2b2b2c;    
+    --divider-color-light: #212121;
+
+    --toggler-background: #544F54;
+}
+
+
+// Базовые (светлые) значения полосы прокрутки — для модулей без собственной
+// светлой темы; тематические блоки перебивают их по специфичности.
+:root {
+    --scrollbar-background:              #f6f7f9;
+    --scrollbar-thumb-color:             #d0d3d8;
+    --scrollbar-thumb-hover-color:       #b9bdc6;
+    --scrollbar-thumb-light-color:       #e2e5e9;
+    --scrollbar-thumb-light-hover-color: #d0d3d8;
+}
+
+
+// ── FabButton design tokens (shared between front & cabinet) ──
+:root {
+
+}
+
+
+// ── Готовые смеси цветов ────────────────────────────────────────────────────
+// Смешивание цветов средствами CSS Apple понимает только с 16.2, а объявление с
+// невалидным значением отбрасывается целиком — заливка пропадала бы вместе с ним.
+// Поэтому оттенки посчитаны заранее и живут токенами: компонент подставляет токен
+// как фолбэк, а смесь остаётся второй строкой для точности на новых браузерах.
+// Суффикс — доля основного цвета, остальное прозрачность.
+:root {
+	--success-tint-15: rgba(44, 138, 79, .15);
+	--success-tint-25: rgba(44, 138, 79, .25);
+	--success-tint-40: rgba(44, 138, 79, .40);
+
+	--error-tint-15:   rgba(192, 57, 43, .15);
+	--error-tint-25:   rgba(192, 57, 43, .25);
+	--error-tint-40:   rgba(192, 57, 43, .40);
+
+	--muted-tint-15:   rgba(74, 74, 74, .15);
+	--muted-tint-30:   rgba(74, 74, 74, .30);
+
+	--green-tint-25:   rgba(44, 138, 79, .25);
+
+	--danger-button-hover-background: #9a2e22;
+
+	// Подсветка строки-приёмника при перетаскивании — фиксированный синий, темой не правится.
+	--drop-into-row-background: rgba(59, 130, 246, .22);
+
+	--table-header-background-80:       rgba(246, 247, 249, .8);
+	--table-slave-accent:               rgba(28, 28, 28, .45);
+	--table-slave-color:                rgba(28, 28, 28, .65);
+	--table-parent-expanded-background: #f6f7f9;
+	--table-slave-background:           #f6f7f9;
+}
+
+html.dark {
+	--success-tint-15: rgba(0, 128, 0, .15);
+	--success-tint-25: rgba(0, 128, 0, .25);
+	--success-tint-40: rgba(0, 128, 0, .40);
+
+	--error-tint-15:   rgba(136, 55, 54, .15);
+	--error-tint-25:   rgba(136, 55, 54, .25);
+	--error-tint-40:   rgba(136, 55, 54, .40);
+
+	--muted-tint-15:   rgba(182, 182, 182, .15);
+	--muted-tint-30:   rgba(182, 182, 182, .30);
+
+	--green-tint-25:   rgba(0, 128, 0, .25);
+
+	--danger-button-hover-background: #6d2c2b;
+
+	--table-header-background-80:       rgba(38, 38, 38, .8);
+	--table-slave-accent:               rgba(255, 255, 255, .45);
+	--table-slave-color:                rgba(255, 255, 255, .65);
+	--table-parent-expanded-background: #1a1a1a;
+	--table-slave-background:           #191919;
+}
+
+// Фирменные цвета внешних сервисов — не зависят от темы.
+:root {
+	--telegram-color:       #229ED9;
+	--telegram-color-hover: #1b87ba;
+
+	// Акцент второстепенных иконок шапки кабинета (колокольчик, webchat).
+	--header-icon-accent-color: #F9AF5A;
+}
+
+body {
+  	color: var(--text-color);
+    background-color: var(--background-color);
+    border-color: var(--border-color);
+}
+
+*, ::before, ::after {
+    border-color: var(--border-color);
+}
+
+@layer utilities {
+
+	// -------------------------------------
+	// Texts colors
+	// -------------------------------------
+
+	.text-color {
+		color: var(--text-color)!important;
+	}
+	.text-lightgray {
+		color: var(--text-light-grey)!important;
+	}
+	.text-secondary {
+		color: var(--text-color-secondary)!important;
+	}
+	.text-muted-foreground {
+		color: hsl(var(--muted-foreground));
+	}
+	.text-disabled {
+		color: var(--text-color-disabled)!important;
+	}
+	.text-success {
+		color: var(--success-color)!important;
+	}
+
+	.text-green {
+		color: var(--green-color)!important;
+	}
+	.text-success, .success {
+		color: var(--green-color)!important;
+	}
+	.text-warning, .warning {
+		color: var(--warning-color)!important;
+	}
+	.text-error, .danger {
+		color: var(--error-color)!important;
+	}
+
+	.text-yellow {
+		color: var(--yellow-color)!important;
+	}
+
+	// -------------------------------------
+	// Backgrounds
+	// -------------------------------------
+
+	.bg-background {
+		background-color: var(--background-color);
+	}
+
+	.card-background {
+		background-color: var(--card-background);
+	}
+
+	.card-card-background {
+		background-color: var(--card-card-background)!important;
+	}
+
+
+	.main-background {
+		background-color: var(--background-color);
+	}
+
+	.header-background {
+		background-color: var(--tab-panel-background);
+	}
+
+	.inverted-bg {
+		background-color: var(--text-color);
+		color: var(--background-color);
+	}
+
+	*, ::before, ::after {
+		border-color: var(--border-color);
+	}
+
+	// -------------------------------------
+	// Borders colors
+	// -------------------------------------
+
+	.border-red    	{ border: 1px solid red !important; }
+	.border-blue   	{ border: 1px solid blue !important; }
+	.border-test  	{ border: 1px solid green !important; }
+	.brd  			{ border: 1px solid green !important; }
+	.border-orange 	{ border: 1px solid orange !important; }
+	.border-purple 	{ border: 1px solid purple !important; }
+	.border-pink   	{ border: 1px solid hotpink !important; }
+	.border-yellow 	{ border: 1px solid yellow !important; }
+	.border-cyan   	{ border: 1px solid cyan !important; }
+
+	.border-1 {
+		border: 1px solid var(--text-color);
+	}
+
+
+	// -------------------------------------
+	// Other colors
+	// -------------------------------------
+
+	hr {
+		border: none;
+		border-top: 1px solid var(--divider-color);
+		margin-bottom: 1rem;
+	}
+
+	.text-inverted {
+		color: var(--text-color-inverted)!important;
+	}
+}
+

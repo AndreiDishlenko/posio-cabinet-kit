@@ -1,0 +1,197 @@
+.v-flex {
+    display: flex;
+    flex-direction: column;
+}
+
+.d-center {
+    display: flex;
+    /* flex-direction: column; */
+    justify-content: center;
+    align-items: center;
+}
+
+.v-center {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+// Ряд с переносом описывается утилитами `wrap-gap-*` — их выдаёт плагин сборщика
+// стилей, чтобы работали адаптивные варианты. Раньше пара значений жила здесь.
+
+.scrolled-wrapper {
+  overflow-x: hidden;
+  overflow-y: scroll;
+  // Удержание прокрутки внутри — с Safari 16; ниже прокрутка протекает на подложку.
+  overscroll-behavior-y: contain;
+//   scrollbar-color: #222 transparent;
+}
+
+// .scrolled-wrapper::-webkit-scrollbar-button {
+//   	display: none;
+// }
+
+
+// ── Полоса прокрутки ─────────────────────────────────────────────────────────
+// Контейнер прокрутки красит полосу в оформление сервиса сам; отдельный базовый
+// класс нужен там, где прокручивается элемент без этой роли. Модификатор — только
+// сужает, поэтому идёт ниже базовых правил и перебивает их шириной.
+// Chromium отключает ::-webkit-scrollbar-* на элементе, у которого стандартные
+// scrollbar-width / scrollbar-color заданы нестандартным значением, поэтому
+// стандартные свойства применяются ниже отдельно — только там, где
+// webkit-псевдоэлементов нет (Firefox).
+.scrolled-wrapper,
+.scrollbar {
+	&::-webkit-scrollbar {
+		width:  14px;
+	}
+	&::-webkit-scrollbar-thumb {
+		border-radius: 8px;
+	}
+}
+
+// Запас справа нужен только там, где полосу включают поверх чужой раскладки;
+// у контейнера прокрутки место под неё уже учтено, и лишнее поле проступает
+// полосой фона подложки вдоль правого края содержимого.
+.scrollbar:not(.scrolled-wrapper),
+.scrollbar-thin:not(.scrolled-wrapper),
+.scrollbar-thin-x:not(.scrolled-wrapper) {
+	padding-right: 0.3rem;
+}
+
+.scrolled-wrapper,
+.scrollbar,
+.scrollbar-thin,
+.scrollbar-thin-x {
+	// Возвращает полосу контейнерам прокрутки, которые прячут её по умолчанию.
+	scrollbar-width: auto;
+	// border:1px solid green;
+
+	&::-webkit-scrollbar {
+		// width:  11px;
+		height: 11px;
+	}
+
+	&::-webkit-scrollbar-track,
+	&::-webkit-scrollbar-corner {
+		background: transparent;
+	}
+
+	// Прозрачная рамка с обрезкой фона по padding-box даёт отступ бегунка от края.
+	&::-webkit-scrollbar-thumb {
+		background-color: var(--scrollbar-thumb-color);
+		background-clip: padding-box;
+		border: 3px solid transparent;
+		// border-radius: 9999px;
+	}
+
+	&::-webkit-scrollbar-thumb:hover {
+		background-color: var(--scrollbar-thumb-hover-color);
+	}
+}
+
+.scrollbar-thin {
+	&::-webkit-scrollbar {
+		width:  8px;
+		height: 8px;
+	}
+
+	&::-webkit-scrollbar-thumb {
+		border-width: 2px;
+	}
+}
+
+.scrollbar-thin-x {
+	&::-webkit-scrollbar {
+		width:  11px;
+		height: 8px;
+	}
+
+	&::-webkit-scrollbar-thumb {
+		border-width: 2px;
+	}
+}
+
+// Осветлённый бегунок — для поверхностей, где обычный сливается с фоном.
+// Подменяет токен на самом контейнере, поэтому работает с любым из классов выше.
+.scrollbar-light {
+	--scrollbar-thumb-color:       var(--scrollbar-thumb-light-color);
+	--scrollbar-thumb-hover-color: var(--scrollbar-thumb-light-hover-color);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+
+	.scrolled-wrapper,
+	.scrollbar,
+	.scrollbar-thin,
+	.scrollbar-thin-x {
+		scrollbar-color: var(--scrollbar-thumb-color) transparent;
+	}
+
+	.scrollbar-thin,
+	.scrollbar-thin-x {
+		scrollbar-width: thin;
+	}
+
+}
+
+.hover-scrollbar {
+  	overflow: hidden; /* по умолчанию скрыт */
+}
+
+.hover-scrollbar:hover {
+  	overflow-y: auto; /* появляется при наведении */
+}
+
+.overlay-scrollbar {
+	overflow: auto;
+	/* Резервирует место под полосу, чтобы не прыгала ширина. Apple понимает
+	   с 16 — ниже прыжок остаётся, но это единственная деградация. */
+	scrollbar-gutter: stable;
+}
+
+// .scrollbar-thin::-webkit-scrollbar {
+//     width: 2px;
+//     height: 12px;
+// }
+
+// .scrolled-wrapper::-webkit-scrollbar-track {
+//   background: transparent;
+// }
+
+// .scrolled-wrapper::-webkit-scrollbar-thumb {
+//   background: #888;
+//   border-radius: 10px;
+
+//   /* Отступ слева 3px, справа 0 */
+//   border-left: 3px solid transparent;
+//   border-right: 0px solid transparent;
+//   background-clip: padding-box;
+// }
+
+/* Скрытие скроллбара, когда он не активен */
+// .hide-scrollbar {
+    // scrollbar-width: auto; /* Для Firefox */
+//     background: transparent;
+// }
+
+/* Для Webkit-браузеров (Chrome, Safari) */
+// .hide-scrollbar::-webkit-scrollbar {
+    // width: 0;
+    // background: transparent;
+// }
+
+// .hide-scrollbar:hover::-webkit-scrollbar {
+//   width: 2px; /* Показывать при наведении */
+// }
+
+// Disable scrollbar
+.no-scrollbar::-webkit-scrollbar {
+    display: none; /* Скрывает скроллбар в Webkit браузерах */
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none; /* Скрывает скроллбар в IE и Edge */
+    scrollbar-width: none; /* Скрывает скроллбар в Firefox */
+}

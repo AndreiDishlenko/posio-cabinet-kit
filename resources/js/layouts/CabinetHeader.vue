@@ -138,6 +138,10 @@
 		align-items: center;
 	}
 
+	.webchat-item .icon {
+		color: var(--header-icon-accent-color);
+	}
+
 	// .page-title {
 	// 	max-width: 100px;
 	// }

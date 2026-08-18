@@ -1,0 +1,80 @@
+@use 'tailwind';
+
+@use 'uisizes';
+
+@use 'colors_shared.scss';
+@use 'fonts_shared.scss';
+
+@use 'layouts_shared.scss';
+@use 'buttons_shared.scss';
+@use 'forms_shared.scss';
+@use 'table_shared.scss';
+@use 'icons_shared.scss';
+@use 'cards_shared.scss';
+@use 'popup_shared.scss';
+
+@use '_disabled_shared.scss';
+@use '_status_indicator_shared.scss';
+@use '_datepicker_shared.scss';
+
+// ── Базовый слой сборщика без селектора отношения ────────────────────────────
+// Safari 13.1 и Chrome 87 не знают такого псевдокласса, а неизвестный псевдокласс
+// обесценивает весь список селекторов, а не только свою часть. Из-за этого три
+// правила базового слоя отбрасываются целиком; здесь они повторены простыми
+// селекторами. Убрать вместе с подъёмом нижней планки до 14.1 / Chrome 88.
+@layer base {
+
+	// Без этого все кнопки получают системный фон поверх оформления сервиса.
+	button,
+	input[type='button'],
+	input[type='reset'],
+	input[type='submit'] {
+		-webkit-appearance: button;
+		background-color: transparent;
+		background-image: none;
+	}
+
+	abbr[title] {
+		text-decoration: underline dotted;
+	}
+
+	// Значение until-found само по себе появляется только в новых браузерах,
+	// поэтому исключать его на старой планке нечего.
+	[hidden] {
+		display: none;
+	}
+
+}
+
+// Утилита растяжения по четырём сторонам выдаётся сборщиком сокращённой записью,
+// а её Safari 13.1 отбрасывает — оверлеи и подложки перестают перекрывать экран.
+// Переопределение здесь избавляет от правки полутора десятков шаблонов; убрать
+// вместе с подъёмом нижней планки до 14.1.
+@layer utilities {
+
+	.inset-0 {
+		top: 0;
+		right: 0;
+		bottom: 0;
+		left: 0;
+	}
+
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    width: 100%;
+	background-color: var(--background-color);
+    // min-width: 320px;
+    // min-height: 100dvh;
+}
+
+// Изображения и иконки никогда не несут смысловой фокус (интерактивность —
+// у обёртки-кнопки/ссылки), поэтому рамка фокуса на них всегда лишняя.
+img, svg {
+    outline: none;
+}

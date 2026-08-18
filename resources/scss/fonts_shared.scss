@@ -1,0 +1,38 @@
+:root {
+	// Tailwind defaults
+	--text-xxs:  10px; // not tailwind calc( 11px + 2 * (100vw - 320px) / 1600 );
+	--text-xs: 	 12px; // calc( 11px + 2 * (100vw - 320px) / 1600 );
+	--text-sm: 	 14px; // calc( 11px + 3 * (min(100vw, 1280px) - 320px) / 960 ); // calc( 12px + 2 * (100vw - 320px) / 1600 );
+    --text-md:   15px; // not tailwind calc( 13px + 3 * (min(100vw, 1280px) - 320px) / 960 ); // -3
+    --text-base: 16px; // 16px calc( 13px + 3 * (min(100vw, 1280px) - 320px) / 960 ); // -3
+	--text-lg: 	 16px; // calc( 15px + 3 * (100vw - 320px) / 1600 );
+	--text-xl: 	 20px; // calc( 17px + 3 * (100vw - 320px) / 1600 );
+    --text-2xl:  24px; // calc( 19px + 3 * (100vw - 320px) / 1600 );
+    --text-3xl:  30px;
+    --text-4xl:  36px;
+    --text-5xl:  48px;
+    --text-6xl:  60px;
+    --text-7xl:  72px;
+    --text-8xl:  96px;
+	--text-9xl:  128px;
+	
+	--leading-tight: 1.2rem;
+	--leading-snug: 1.3rem;
+	--leading-base: 1.4rem;
+	--leading-loose: 1.75rem;
+}
+
+body {
+    font-family:    var(--font-base);
+    font-size:      var(--text-base);
+	font-synthesis: style;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale
+}
+
+// @layer utilities {
+// 	.leading-tight {
+// 		line-height: var(--leading-tight);
+// 	}
+// }

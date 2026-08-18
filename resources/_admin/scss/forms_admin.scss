@@ -1,0 +1,21 @@
+// Admin-specific form overrides.
+// Checkboxes use the shared .form-control styling (border + check) — no overrides here.
+
+// iOS Safari масштабирует страницу при фокусе в поле, где текст мельче 16px, и
+// обратно не отъезжает; запрет масштабирования в meta он игнорирует с 10-й версии.
+// Единственная защита — держать на телефоне ровно 16px, поэтому правило перебивает
+// и размерные модификаторы полей, которые опускают текст до 11–13px.
+@media (max-width: 767px) {
+
+	input,
+	select,
+	textarea,
+	.form-control {
+		font-size: 16px !important;
+	}
+
+	.form-control::placeholder {
+		font-size: 16px;
+	}
+
+}

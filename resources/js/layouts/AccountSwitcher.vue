@@ -91,8 +91,8 @@
 
 	.ck-account-menu {
 		min-width: 200px;
-		background: var(--ck-card-bg, #fff);
-		border: 1px solid var(--ck-border-color, #e5e7eb);
+		background: var(--card-bg, #fff);
+		border: 1px solid var(--border-color, #e5e7eb);
 		border-radius: .5rem;
 		box-shadow: 0 8px 24px rgba(0, 0, 0, .12);
 		padding: .35rem;
@@ -114,7 +114,7 @@
 		font-size: .9rem;
 
 		&:hover {
-			background: var(--ck-item-hover-bg, #f0f1f3);
+			background: var(--gm-item-hover-bg, #f0f1f3);
 		}
 
 		&.is-active {
@@ -124,7 +124,7 @@
 
 	.ck-account-menu-divider {
 		height: 1px;
-		background: var(--ck-border-color, #e5e7eb);
+		background: var(--border-color, #e5e7eb);
 		margin: .35rem 0;
 	}
 </style>

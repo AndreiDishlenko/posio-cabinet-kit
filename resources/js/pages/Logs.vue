@@ -1,7 +1,7 @@
 <template>
 	<CabinetLayout page_name="Logs">
-		<div class="ck-card">
-			<h1 class="ck-card-title">{{ $t ? $t('Logs') : 'Logs' }}</h1>
+		<div class="card">
+			<h1 class="card-header">{{ $t ? $t('Logs') : 'Logs' }}</h1>
 			<p class="text-secondary">
 				{{ $t ? $t('No log viewer is configured for this CabinetKit installation.') : 'No log viewer is configured for this CabinetKit installation.' }}
 			</p>

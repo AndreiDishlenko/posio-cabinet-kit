@@ -1,0 +1,13 @@
+.lightblue-button {
+	@apply
+		text-white
+		!bg-blue-600;
+}
+
+.transparent-button {
+	@apply
+		px-4
+		!bg-transparent 
+		!shadow-none 
+		hover:!shadow-none;
+}

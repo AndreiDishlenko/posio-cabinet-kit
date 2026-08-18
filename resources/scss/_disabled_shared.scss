@@ -1,0 +1,50 @@
+@layer utilities {
+
+	.disabled {    
+		cursor: auto!important;   
+	}
+
+	.disabled:not(.modal-content) {
+		opacity: 0.5!important;
+	}
+
+	.disabled.modal-content::before {
+		content: "";
+		position: absolute;
+		// Сокращённая запись четырёх сторон отбрасывается на Safari 13.1, и маска
+		// недоступного окна перестаёт его перекрывать.
+		top: 0;
+		right: 0;
+		bottom: 0;
+		left: 0;
+		background: rgba(0, 0, 0, 0.3); /* или тёмное затемнение */
+		pointer-events: none;
+		z-index: 100001;
+	}
+
+	.disabled::not(button) {
+		color: var(--text-color-disabled)!important;
+	}
+
+	.disabled, .disabled input, .disabled textarea, .disabled a, .disabled button, .disabled .button, .disabled svg, .disabled div {
+		pointer-events: none!important; /* Отключает клики */
+		cursor: not-allowed!important; /* Курсор "запрещено" */
+	}
+
+	.disabled:hover {
+		background-color: inherit!important;
+	}
+
+	/* Исключение: элементы с прокруткой внутри disabled */
+	.disabled[data-scrollable] {
+		pointer-events: auto !important;  /* разрешаем pointer-events для скролла */
+		cursor: default !important;
+		overflow-y: scroll !important;    /* принудительно оставляем скролл */
+	}
+
+	/* Но клики внутри всё равно блокируем */
+	.disabled[data-scrollable] * {
+		pointer-events: none !important;
+	}
+
+}
