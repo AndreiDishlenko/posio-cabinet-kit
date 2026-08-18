@@ -1,6 +1,7 @@
 import { createInertiaApp } from '@inertiajs/vue3';
 import dayjs from 'dayjs';
 import { createApp, h } from 'vue';
+import { createVfm } from 'vue-final-modal';
 import { route as ziggyRoute } from 'ziggy-js';
 
 import { createEmitter } from './emitter.js';
@@ -21,6 +22,7 @@ import '@fontsource/open-sans';
 import '@fontsource/inter-tight';
 import '@fontsource/pt-sans/700.css';
 import '@vuepic/vue-datepicker/dist/main.css';
+import 'vue-final-modal/style.css';
 import '../scss/cabinet-kit.scss';
 
 export function createCabinetKitApp({ overrides = {}, title, progress, setup: hostSetup } = {}) {
@@ -46,6 +48,7 @@ export function createCabinetKitApp({ overrides = {}, title, progress, setup: ho
             installRouteHelper(app);
             app.use(i18n);
             app.use(Helpers);
+            app.use(createVfm());
             app.config.globalProperties.$emitter = emitter;
             app.config.globalProperties.$dayjs = dayjs;
             app.config.globalProperties.$locRoute = localizedRoute;

@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.24 — Modals rendered behind the page
+
+**Fixed**
+- Every modal (`ModalForm.vue` and everything built on `vue-final-modal`)
+  rendered inline in normal document flow instead of as a fixed overlay, so
+  it sat behind the side menu and page content no matter what `z-index` was
+  set on it. The original bootstrap installs the library's Vue plugin and
+  loads its stylesheet (`vfm--fixed`/`vfm--inset` come from there — that's
+  what actually pins the overlay to the viewport); extraction dropped both.
+  `createApp.js` now calls `app.use(createVfm())` and imports
+  `vue-final-modal/style.css`, matching `admin.js` in the source project.
+
 ## v0.3.23 — Missing app globals (`$H`, `$dayjs`, pause state) restored
 
 **Fixed**
