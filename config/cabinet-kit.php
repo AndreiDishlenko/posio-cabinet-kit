@@ -43,6 +43,13 @@ return [
     // Host override components. Paths are relative to resource_path().
     'overrides_path' => '_admin/overrides',
 
+    // JSON translations exposed to Vue as $t(). By default CabinetKit reads
+    // the host's Laravel JSON file: lang/{locale}.json.
+    'translations' => [
+        'json_paths' => [lang_path()],
+        'fallback_locale' => null,
+    ],
+
     // Built-in users created during installation. Existing users are kept as-is:
     // passwords are only written when the user row is first created.
     'system_team_id' => 0,

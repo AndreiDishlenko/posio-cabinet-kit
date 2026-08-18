@@ -40,6 +40,7 @@ class InstallCommand extends Command
         $this->patchViteConfig($entry);
         $this->patchTailwindConfig();
         $this->patchUserModel();
+        $this->publishPermissionMigrations();
 
         $this->info('Running migrations (permission tables, accounts, user settings)...');
         $this->call('migrate');
@@ -77,19 +78,63 @@ class InstallCommand extends Command
 
         $path = config_path('permission.php');
         $contents = File::get($path);
-        $updated = preg_replace("/'teams'\\s*=>\\s*false/", "'teams' => true", $contents, 1, $count);
+        $updated = $this->patchPermissionConfig($contents);
 
-        if ($count > 0 && $this->confirmPatch($path, "Enable Spatie Permission teams in config/permission.php?")) {
+        if ($updated !== $contents) {
+            if (! $this->confirmPatch($path, 'Patch config/permission.php for CabinetKit role tables and teams?')) {
+                $this->error('CabinetKit requires Spatie Permission teams and user_has_* pivot tables.');
+                return false;
+            }
+
             $this->backupAndPut($path, $updated);
-            $this->info("Enabled 'teams' => true in config/permission.php.");
+            $this->info('Patched config/permission.php.');
         }
+
+        $this->applyPermissionRuntimeConfig();
 
         return true;
     }
 
+    protected function patchPermissionConfig(string $contents): string
+    {
+        $replacements = [
+            "/'model_has_permissions'\\s*=>\\s*'[^']+'/" => "'model_has_permissions' => 'user_has_permissions'",
+            "/'model_has_roles'\\s*=>\\s*'[^']+'/" => "'model_has_roles' => 'user_has_roles'",
+            "/'model_morph_key'\\s*=>\\s*'[^']+'/" => "'model_morph_key' => 'user_id'",
+            "/'teams'\\s*=>\\s*false/" => "'teams' => true",
+        ];
+
+        foreach ($replacements as $pattern => $replacement) {
+            $contents = preg_replace($pattern, $replacement, $contents, 1);
+        }
+
+        return $contents;
+    }
+
+    protected function publishPermissionMigrations(): void
+    {
+        $this->call('vendor:publish', [
+            '--provider' => 'Spatie\\Permission\\PermissionServiceProvider',
+            '--tag' => 'permission-migrations',
+        ]);
+    }
+
+    protected function applyPermissionRuntimeConfig(): void
+    {
+        config([
+            'permission.table_names.model_has_permissions' => 'user_has_permissions',
+            'permission.table_names.model_has_roles' => 'user_has_roles',
+            'permission.column_names.model_morph_key' => 'user_id',
+            'permission.teams' => true,
+        ]);
+    }
+
     protected function permissionTablesWereMigratedWithoutTeams(): bool
     {
-        $tables = ['model_has_roles', 'model_has_permissions'];
+        $tables = [
+            config('permission.table_names.model_has_roles', 'user_has_roles'),
+            config('permission.table_names.model_has_permissions', 'user_has_permissions'),
+        ];
 
         foreach ($tables as $table) {
             if (Schema::hasTable($table) && ! Schema::hasColumn($table, 'team_id')) {
@@ -372,6 +417,11 @@ MD);
 
         (new \Posio\CabinetKit\Database\Seeders\CabinetKitRolesSeeder())->run();
         $this->info('Roles and permissions seeded.');
+
+        if ($this->confirm('Seed CabinetKit system users and assign their roles?', true)) {
+            (new \Posio\CabinetKit\Database\Seeders\CabinetKitSystemUsersSeeder())->run();
+            $this->info('System users seeded.');
+        }
     }
 
     protected function setCabinetConfigValue(string $key, mixed $value): void

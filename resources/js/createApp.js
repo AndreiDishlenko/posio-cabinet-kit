@@ -21,9 +21,43 @@ export function createCabinetKitApp({ overrides = {}, title, progress, setup: ho
             app.use(plugin);
             app.use(ZiggyVue);
             app.config.globalProperties.$emitter = createEmitter();
+            app.config.globalProperties.$t = translate;
+            app.config.globalProperties.$i18n = createI18nContext(app);
 
             hostSetup?.(app);
             app.mount(el);
         },
     });
+}
+
+function translate(key, replacements = {}) {
+    const messages = this?.$page?.props?.cabinetKitI18n?.messages ?? {};
+    const translated = messages[key] ?? key;
+
+    return interpolate(translated, replacements);
+}
+
+function interpolate(message, replacements) {
+    return Object.entries(replacements ?? {}).reduce((value, [key, replacement]) => (
+        value
+            .replaceAll(`:${key}`, replacement)
+            .replaceAll(`{${key}}`, replacement)
+    ), String(message));
+}
+
+function createI18nContext(app) {
+    return {
+        get locale() {
+            return app.config.globalProperties.$page?.props?.cabinetKitI18n?.locale;
+        },
+        get fallbackLocale() {
+            return app.config.globalProperties.$page?.props?.cabinetKitI18n?.fallbackLocale;
+        },
+        get messages() {
+            return app.config.globalProperties.$page?.props?.cabinetKitI18n?.messages ?? {};
+        },
+        get locales() {
+            return app.config.globalProperties.$page?.props?.cabinetKitI18n?.locales ?? [];
+        },
+    };
 }

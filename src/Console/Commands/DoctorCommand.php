@@ -27,7 +27,8 @@ class DoctorCommand extends Command
         $this->check($this->userModelLooksReady(), 'User model uses IsCabinetKitUser', 'Add Posio\\CabinetKit\\Traits\\IsCabinetKitUser to app/Models/User.php.');
         $this->check(File::exists(config_path('permission.php')), 'config/permission.php is published', 'Publish Spatie Permission config before running migrations.');
         $this->check((bool) config('permission.teams'), "Spatie Permission 'teams' is true", "Set 'teams' => true in config/permission.php before migrating.");
-        $this->check($this->permissionTablesLookReady(), 'Permission role tables include team_id when present', 'Rollback/recreate Spatie Permission migrations with teams enabled.');
+        $this->check($this->permissionConfigLooksReady(), 'Spatie Permission table config matches CabinetKit', 'Set model_has_roles=user_has_roles, model_has_permissions=user_has_permissions and model_morph_key=user_id.');
+        $this->check($this->permissionTablesLookReady(), 'Permission role tables exist and include team_id when present', 'Run php artisan migrate after CabinetKit patches config/permission.php.');
         $this->check(Schema::hasTable('accounts') && Schema::hasTable('user_has_accounts'), 'CabinetKit account tables exist', 'Run php artisan migrate.');
         $this->check($this->routeNamesDoNotCollide(), 'Route names can be cached', "Set 'auth_routes' => false or remove duplicate auth route names.");
         $this->check($this->packageJsonHas('ziggy-js'), 'package.json contains ziggy-js', 'Run npm install ziggy-js.');
@@ -90,13 +91,44 @@ class DoctorCommand extends Command
 
     protected function permissionTablesLookReady(): bool
     {
-        foreach (['model_has_roles', 'model_has_permissions'] as $table) {
-            if (Schema::hasTable($table) && ! Schema::hasColumn($table, 'team_id')) {
+        foreach ($this->permissionTables() as $table) {
+            if (! Schema::hasTable($table)) {
+                return false;
+            }
+        }
+
+        foreach ($this->permissionPivotTables() as $table) {
+            if (! Schema::hasColumn($table, config('permission.column_names.team_foreign_key', 'team_id'))) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    protected function permissionConfigLooksReady(): bool
+    {
+        return config('permission.table_names.model_has_roles') === 'user_has_roles'
+            && config('permission.table_names.model_has_permissions') === 'user_has_permissions'
+            && config('permission.column_names.model_morph_key') === 'user_id';
+    }
+
+    protected function permissionPivotTables(): array
+    {
+        return [
+            config('permission.table_names.model_has_roles', 'user_has_roles'),
+            config('permission.table_names.model_has_permissions', 'user_has_permissions'),
+        ];
+    }
+
+    protected function permissionTables(): array
+    {
+        return [
+            config('permission.table_names.permissions', 'permissions'),
+            config('permission.table_names.roles', 'roles'),
+            ...$this->permissionPivotTables(),
+            config('permission.table_names.role_has_permissions', 'role_has_permissions'),
+        ];
     }
 
     protected function routeNamesDoNotCollide(): bool

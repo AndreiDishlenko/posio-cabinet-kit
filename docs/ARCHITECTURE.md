@@ -119,7 +119,9 @@ CabinetKit provides its own auth (see above). It still expects:
    HTTPS/HMR config.
 5. `resources/_admin/js/cabinet.ts` uses `createCabinetKitApp()` from the
    package. The factory registers `ZiggyVue`, the package page resolver,
-   package styles, and the built-in `$emitter` bus.
+   package styles, the built-in `$emitter` bus, and the global `$t()`
+   translation helper fed by Laravel JSON translations shared through
+   Inertia.
 6. Tailwind config uses `vendor/posio/cabinet-kit/tailwind-preset.cjs`, which
    contributes the package Vue content glob.
 7. (Optional) `implements MustVerifyEmail` on the host's `User` model if

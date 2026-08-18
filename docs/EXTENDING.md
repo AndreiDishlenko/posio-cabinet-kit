@@ -116,6 +116,22 @@ If a host installed before this file existed, rerun `php artisan
 cabinet-kit:install` or create it by hand and import it from
 `resources/_admin/js/cabinet.ts` after `createCabinetKitApp`.
 
+## Translating Vue text
+
+CabinetKit registers the same global `$t()` helper its extracted Vue code
+expects. Add Laravel JSON translation files in the host app:
+
+```json
+{
+  "Settings": "Налаштування",
+  "Log in": "Увійти"
+}
+```
+
+The helper reads `lang/{app()->getLocale()}.json` and falls back to
+`config('app.fallback_locale')`. Extra JSON directories can be configured in
+`config/cabinet-kit.php` under `translations.json_paths`.
+
 ## Adding a new permission / role
 
 1. Add the permission/role in your own seeder (don't edit
