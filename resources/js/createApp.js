@@ -123,7 +123,7 @@ function createSettingsService() {
         try {
             return JSON.parse(value);
         } catch {
-            return fallback;
+            return fallback; 
         }
     };
     const write = (key, value) => {
