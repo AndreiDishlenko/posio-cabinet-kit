@@ -96,14 +96,6 @@
                 </div>
             </template>
 
-            <!-- Cash flow items (Статті ДДС) -->
-            <template #cashflow_items>
-                <div class="v-flex h-full space-y-4">
-                    <h2 v-if="account_name" class="account-scope-name">{{ account_name }}</h2>
-                    <CashflowItemsTab />
-                </div>
-            </template>
-
         </Tabs>
 
     </CabinetLayout>
@@ -124,7 +116,6 @@
     import AccountTab   	from './Settings/CabinetSettingsAccountTab.vue';
     import AccountUsersTab     from './Settings/CabinetSettingsAccountUsersTab.vue';
     import IntegrationsTab   from './Settings/CabinetSettingsIntegrationsTab.vue';
-    import CashflowItemsTab from './Settings/CabinetSettingsCashflowItemsTab.vue';
 
     // import AccountUsersProfile   from '../../../../_backup/AccountUsersProfile.vue';
     import GuestAccounts    from './Settings/GuestAccounts.vue';
@@ -133,7 +124,7 @@
 
     export default {
         mixins: [sharedMixins],
-        components: { Icon, CabinetLayout, Tabs, UserProfileTab, AccountTab, AccountUsersTab, IntegrationsTab, CashflowItemsTab, GuestAccounts, Avatar },
+        components: { Icon, CabinetLayout, Tabs, UserProfileTab, AccountTab, AccountUsersTab, IntegrationsTab, GuestAccounts, Avatar },
         props: {
             profile: {
                 type: Object,
@@ -194,8 +185,7 @@
                 const tab = this.tabs.find(t => t.id === this.active_tab);
                 return tab ? tab.label : '';
             },
-            // Account-scoped tabs (Users, Integrations, Cash flow items, Cash
-            // accounts) surface the account name as a highlighted heading at the
+            // Account-scoped tabs surface the account name as a highlighted heading at the
             // top of the tab content instead of in the page header / Title.
             account_name() {
                 return this.own_account?.name;

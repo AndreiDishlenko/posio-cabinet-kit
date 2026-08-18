@@ -20,7 +20,6 @@ export function buildSettingsTabs(canManageMembers = false) {
 		tabs.push(
 			{ id: 'users',          label: 'Users' },
 			{ id: 'integrations',   label: 'Integrations' },
-			{ id: 'cashflow_items', label: 'Cash flow items' },
 		);
 	}
 
