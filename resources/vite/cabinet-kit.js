@@ -12,7 +12,19 @@ export default function cabinetKit(options = {}) {
         config() {
             const config = {
                 resolve: {
-                    alias: { '@cabinet-kit': path.join(packageDir, 'resources/js') },
+                    alias: {
+                        '@cabinet-kit': path.join(packageDir, 'resources/js'),
+                        '@/_admin': path.join(packageDir, 'resources/_admin'),
+                        '@/js/Components': path.join(packageDir, 'resources/js/Components'),
+                        '@/js': path.join(packageDir, 'resources/js'),
+                    },
+                },
+                css: {
+                    preprocessorOptions: {
+                        scss: {
+                            additionalData: `@use "${path.join(packageDir, 'resources/scss/_flexgap_shared.scss').replace(/\\/g, '/')}" as *;`,
+                        },
+                    },
                 },
                 server: { fs: { allow: [root, packageDir] } },
             };

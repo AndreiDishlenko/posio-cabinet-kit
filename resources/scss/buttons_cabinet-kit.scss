@@ -1,43 +1,187 @@
-// Buttons — additive to the host's own .button classes if it has them;
-// otherwise this is a complete, standalone button style.
 .button {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	gap: .35rem;
-	border-radius: .4rem;
-	padding: .45rem .9rem;
-	font-size: .9rem;
-	background: var(--ck-button-bg);
-	color: var(--ck-text-color);
+	gap: var(--ui-gap-md, .625rem);
+	width: auto;
+	min-width: 0;
+	height: 40px;
+	border: 0;
+	border-radius: var(--ui-radius-sm, .5rem);
+	padding: 0 1.5rem 1px;
+	background: var(--button-background, var(--ck-button-bg));
+	color: var(--button-text-color, var(--ck-text-color));
+	box-shadow: 0 1px 2px rgba(0, 0, 0, .28);
 	cursor: pointer;
-	transition: background-color .15s ease;
-
-	&:hover {
-		background: var(--ck-button-hover-bg);
-	}
+	font-size: var(--text-md, 15px);
+	line-height: 1;
+	text-align: center;
+	text-decoration: none;
+	white-space: nowrap;
+	outline: none;
+	transition:
+		color .15s ease-in-out,
+		background-color .15s ease-in-out,
+		border-color .15s ease-in-out,
+		box-shadow .15s ease-in-out,
+		filter .15s ease-in-out;
 }
 
-.primary-button {
-	background: var(--ck-brand-bg);
-	color: var(--ck-brand-color);
-
-	&:hover {
-		filter: brightness(1.1);
-	}
+.button:focus {
+	outline: none;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, .28);
 }
 
-.ghost-button {
-	background: transparent;
+.button:not(:disabled):hover {
+	background: var(--button-hover-background, var(--ck-button-hover-bg));
+	box-shadow:
+		0 3px 3px -1px rgba(0, 0, 0, .2),
+		0 2px 4px 1px rgba(0, 0, 0, .14),
+		0 1px 7px 1px rgba(0, 0, 0, .12);
+}
+
+.button:disabled,
+.button.disabled {
+	opacity: .5;
+	cursor: default !important;
+	background: var(--button-disabled-background, var(--ck-button-bg));
 	box-shadow: none;
 }
 
+.button-xs {
+	height: var(--ui-h-xs);
+	min-height: var(--ui-h-xs);
+	max-height: var(--ui-h-xs);
+	padding: 0 var(--ui-px-xs);
+	border-radius: var(--ui-radius-xs);
+	gap: var(--ui-gap-xs);
+	font-size: var(--text-xs) !important;
+}
+
 .button-sm {
-	font-size: .8rem;
-	padding: .3rem .6rem;
+	height: var(--ui-h-sm);
+	min-height: var(--ui-h-sm);
+	max-height: var(--ui-h-sm);
+	padding: 0 var(--ui-px-sm);
+	border-radius: var(--ui-radius-sm);
+	gap: var(--ui-gap-sm);
+	font-size: var(--text-sm);
+}
+
+.button-md {
+	height: var(--ui-h-md);
+	min-height: var(--ui-h-md);
+	max-height: var(--ui-h-md);
+	padding: 0 var(--ui-px-md);
+	border-radius: var(--ui-radius-md);
+	gap: var(--ui-gap-md);
+	font-size: var(--text-md);
 }
 
 .button-lg {
-	font-size: 1rem;
-	padding: .6rem 1.1rem;
+	height: var(--ui-h-lg);
+	min-height: var(--ui-h-lg);
+	max-height: var(--ui-h-lg);
+	padding: 0 var(--ui-px-lg);
+	border-radius: var(--ui-radius-lg);
+	gap: var(--ui-gap-lg);
+	font-size: var(--text-lg);
+}
+
+.button-xl {
+	height: var(--ui-h-xl);
+	min-height: var(--ui-h-xl);
+	max-height: var(--ui-h-xl);
+	padding: 0 var(--ui-px-xl);
+	border-radius: var(--ui-radius-xl);
+	gap: var(--ui-gap-xl);
+	font-size: var(--text-xl);
+}
+
+.button-2xl {
+	height: var(--ui-h-2xl);
+	min-height: var(--ui-h-2xl);
+	max-height: var(--ui-h-2xl);
+	padding: 0 var(--ui-px-2xl);
+	border-radius: var(--ui-radius-2xl);
+	gap: var(--ui-gap-2xl);
+	font-size: var(--text-2xl);
+}
+
+.button-square,
+.btn--icon-only {
+	aspect-ratio: 1 / 1;
+	padding-left: 0;
+	padding-right: 0;
+}
+
+.primary-button {
+	background: var(--primary-button-background, var(--ck-brand-bg)) !important;
+	color: var(--primary-button-text, var(--ck-brand-color)) !important;
+}
+
+.primary-button:not(:disabled):hover {
+	background: var(--primary-button-hover-background, var(--ck-brand-bg)) !important;
+}
+
+.danger-button {
+	background: var(--error-color, #dc2626) !important;
+	color: #fff !important;
+}
+
+.danger-button:not(:disabled):hover {
+	background: var(--danger-button-hover-background, #991b1b) !important;
+}
+
+.outline-button {
+	background: transparent !important;
+	border: 1px solid var(--form-control-border-color, var(--ck-border-color)) !important;
+	box-shadow: none;
+}
+
+.ghost-button {
+	background: var(--ghost-button-bg, transparent) !important;
+	color: var(--ghost-button-fg, var(--ck-text-color));
+	border: 1px solid var(--ghost-button-border, transparent);
+	box-shadow: none;
+}
+
+.ghost-button:not(:disabled):hover {
+	background: var(--form-control-border-color, var(--ck-button-hover-bg)) !important;
+	box-shadow: none;
+}
+
+.transparent-button,
+.link-button {
+	background: transparent !important;
+	border-color: transparent !important;
+	box-shadow: none !important;
+}
+
+.badge-button {
+	border-radius: 999px !important;
+	background: var(--primary-button-background-25, rgba(57, 97, 233, .25)) !important;
+	color: var(--primary-button-background, var(--ck-brand-bg)) !important;
+	box-shadow: none !important;
+	font-weight: 600;
+}
+
+.badge-button:not(:disabled):hover {
+	background: var(--primary-button-background-40, rgba(57, 97, 233, .4)) !important;
+	box-shadow: none;
+}
+
+.pill-button {
+	height: 36px !important;
+	border-radius: 999px !important;
+}
+
+.fab-button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	border: 0;
+	cursor: pointer;
+	transition: background 150ms cubic-bezier(.4, 0, .2, 1), box-shadow 150ms cubic-bezier(.4, 0, .2, 1);
 }

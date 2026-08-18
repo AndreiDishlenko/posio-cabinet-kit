@@ -99,7 +99,7 @@ return [
                 ['id' => 'users', 'label' => 'Користувачі', 'icon' => 'ph:users', 'route' => 'cabinet-kit.users', 'permission' => 'sysper-users'],
                 ['id' => 'permissions', 'label' => 'Дозволи', 'icon' => 'fluent-mdl2:permissions', 'route' => 'cabinet-kit.permissions', 'permission' => 'sysper-roles'],
                 ['id' => 'permissions-account', 'label' => 'Ролі акаунту', 'icon' => 'fluent-mdl2:permissions', 'route' => 'cabinet-kit.permissions.account', 'permission' => 'sysper-roles'],
-                ['id' => 'logs', 'label' => 'Logs', 'icon' => 'ix:log', 'route' => 'cabinet-kit.logs', 'permission' => 'sysper-log-view'],
+                ['id' => 'logs', 'label' => 'Logs', 'icon' => 'ix:log', 'link' => '/admin/log-viewer', 'permission' => 'sysper-log-view'],
                 ['id' => 'settings', 'label' => 'Settings', 'icon' => 'proicons:settings', 'route' => 'cabinet-kit.settings', 'permission' => null],
             ],
         ],

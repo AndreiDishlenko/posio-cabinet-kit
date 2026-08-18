@@ -15,7 +15,7 @@ class UsersController extends Controller
 {
     public function index(Request $request)
     {
-        return Inertia::render('pages/Admin/Users', [
+        return Inertia::render('pages/UsersAdmin', [
             'users' => $this->users($request),
             'roles' => Role::query()
                 ->where('is_system', 1)
@@ -71,7 +71,7 @@ class UsersController extends Controller
             $target->setSystemRole($role->name);
         }
 
-        return back();
+        return response()->json($this->userPayload($target));
     }
 
     protected function users(Request $request)
@@ -113,6 +113,23 @@ class UsersController extends Controller
             $query->addSelect("{$usersTable}.is_finished");
         }
 
-        return $query->get();
+        return $query->get()->map(function ($user) {
+            $user->registered = $user->created_at ? date('d.m.Y', strtotime($user->created_at)) : null;
+
+            return $user;
+        });
+    }
+
+    protected function userPayload($user): array
+    {
+        return [
+            'id' => $user->getKey(),
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone ?? null,
+            'registered' => optional($user->created_at)->format('d.m.Y'),
+            'role_id' => $user->roles->first()?->id,
+            'role_name' => $user->roles->first()?->name,
+        ];
     }
 }

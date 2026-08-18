@@ -30,6 +30,10 @@ class CabinetKitServiceProvider extends ServiceProvider
             __DIR__.'/../database/migrations' => database_path('migrations'),
         ], 'cabinet-kit-migrations');
 
+        $this->publishes([
+            __DIR__.'/../public/cabinet-assets' => public_path('cabinet-assets'),
+        ], 'cabinet-kit-assets');
+
         if ($this->app->runningInConsole()) {
             $this->commands([
                 DoctorCommand::class,

@@ -13,18 +13,12 @@ class PermissionsController extends Controller
 {
     public function system(Request $request)
     {
-        return Inertia::render('pages/Admin/Permissions', $this->matrix(true, 'SAdmin') + [
-            'title' => 'Permissions',
-            'is_system' => true,
-        ]);
+        return Inertia::render('pages/Permissions', $this->matrix(true, 'SAdmin'));
     }
 
     public function account(Request $request)
     {
-        return Inertia::render('pages/Admin/Permissions', $this->matrix(false, config('cabinet-kit.roles.owner_role')) + [
-            'title' => 'Account roles',
-            'is_system' => false,
-        ]);
+        return Inertia::render('pages/PermissionsAccount', $this->matrix(false, config('cabinet-kit.roles.owner_role')));
     }
 
     public function toggle(Request $request)
@@ -52,7 +46,7 @@ class PermissionsController extends Controller
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        return back();
+        return response()->json(['ok' => true]);
     }
 
     public function store(Request $request)
@@ -63,13 +57,13 @@ class PermissionsController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:80', 'unique:permissions,name'],
-            'is_system' => ['required', 'boolean'],
+            'is_system' => ['sometimes', 'boolean'],
         ]);
 
         $permission = Permission::create([
             'name' => $validated['name'],
             'guard_name' => 'web',
-            'is_system' => $validated['is_system'],
+            'is_system' => $validated['is_system'] ?? true,
         ]);
 
         Role::query()->where('name', 'SAdmin')->first()?->givePermissionTo($permission);
@@ -79,7 +73,10 @@ class PermissionsController extends Controller
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        return back();
+        return response()->json([
+            'permission' => $permission,
+            'super_admin_role_id' => (int) (Role::query()->where('name', 'SAdmin')->value('id') ?? 0),
+        ]);
     }
 
     public function rename(Request $request)
@@ -96,7 +93,9 @@ class PermissionsController extends Controller
         Permission::query()->whereKey($validated['id'])->update(['name' => $validated['name']]);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        return back();
+        return response()->json([
+            'permission' => Permission::query()->find($validated['id']),
+        ]);
     }
 
     protected function matrix(bool $isSystem, ?string $protectedRole): array

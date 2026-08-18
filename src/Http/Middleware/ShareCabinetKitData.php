@@ -24,10 +24,14 @@ class ShareCabinetKitData
         Inertia::share('cabinetKitI18n', fn () => $this->i18nPayload());
 
         if ($user) {
+            $menu = fn () => app(MenuService::class)->menuFor($user);
+
             Inertia::share([
                 'account' => fn () => $user->currentAccount()?->info(),
                 'accounts' => fn () => $user->accessibleAccounts()->map->only(['id', 'name', 'owner_id']),
-                'cabinetKitMenu' => fn () => app(MenuService::class)->menuFor($user),
+                'cabinetKitMenu' => $menu,
+                'cabinetMenu' => $menu,
+                'user' => fn () => $this->userPayload($user),
             ]);
 
             // SideMenu highlights the item whose id matches currentPage.id.
@@ -111,5 +115,21 @@ class ShareCabinetKitData
         }
 
         return app(MenuService::class)->currentPage($routeName, $user);
+    }
+
+    protected function userPayload($user): array
+    {
+        $account = $user->currentAccount();
+
+        return [
+            'id' => $user->getKey(),
+            'name' => $user->name,
+            'email' => $user->email,
+            'avatar' => $user->avatar ?? null,
+            'account' => $user->ownAccount()?->id,
+            'can_manage_members' => $account ? $user->can('manage-members') : false,
+            'can_manage_account' => $account ? $user->can('manage-account') : false,
+            'tour_done' => method_exists($user, 'getSetting') ? (bool) $user->getSetting('tour_done') : true,
+        ];
     }
 }

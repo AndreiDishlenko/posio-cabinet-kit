@@ -20,6 +20,7 @@ class InstallCommand extends Command
     public function handle(): int
     {
         $this->call('vendor:publish', ['--tag' => 'cabinet-kit-config']);
+        $this->call('vendor:publish', ['--tag' => 'cabinet-kit-assets', '--force' => true]);
 
         if (! $this->ensurePermissionConfig()) {
             return self::FAILURE;

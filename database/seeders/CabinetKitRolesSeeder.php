@@ -73,15 +73,10 @@ class CabinetKitRolesSeeder extends Seeder
         $accountPermissions = [
             'manage-members',
             'manage-account',
-            'manage-poses',
-            'manage-cashboxes',
             'manage-cashiers',
-            'manage-prices',
             'manage-integrations',
-            'manage-catalog',
             'manage-orders',
             'manage-docs',
-            'manage-buyers',
             'view-reports',
             'view-owner-reports',
         ];

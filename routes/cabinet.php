@@ -65,6 +65,7 @@ Route::middleware(['web', UseCabinetKitRootView::class])
                 Route::middleware(CanSystemPermission::class.':sysper-users')->group(function () {
                     Route::get('/users', [UsersController::class, 'index'])->name('users');
                     Route::put('/users', [UsersController::class, 'update'])->name('users.update');
+                    Route::post('/users', [UsersController::class, 'update'])->name('users.update.post');
                 });
 
                 Route::middleware(CanSystemPermission::class.':sysper-roles')->group(function () {
@@ -73,6 +74,7 @@ Route::middleware(['web', UseCabinetKitRootView::class])
                     Route::post('/permissions/toggle', [PermissionsController::class, 'toggle'])->name('permissions.toggle');
                     Route::post('/permissions', [PermissionsController::class, 'store'])->name('permissions.store');
                     Route::put('/permissions', [PermissionsController::class, 'rename'])->name('permissions.rename');
+                    Route::post('/permissions/rename', [PermissionsController::class, 'rename'])->name('permissions.rename.post');
                 });
 
                 Route::middleware(CanSystemPermission::class.':sysper-log-view')->group(function () {
@@ -80,6 +82,8 @@ Route::middleware(['web', UseCabinetKitRootView::class])
                 });
 
                 Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+                Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update.post');
+                Route::post('/profile/avatar', [ProfileController::class, 'avatar'])->name('profile.avatar');
                 Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
                 Route::post('/account/set', [AccountController::class, 'set'])->name('account.set');
