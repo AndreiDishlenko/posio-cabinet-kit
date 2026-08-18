@@ -1,6 +1,6 @@
 export function buildSettingsTabs(canManageAccount = false) {
     const tabs = [
-        { id: 'account', label: 'Account' },
+        // { id: 'account', label: 'Account' },
         { id: 'profile', label: 'Profile' },
     ];
 
