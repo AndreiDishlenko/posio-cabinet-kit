@@ -3,8 +3,9 @@
 Base admin-panel scaffolding extracted from `posio.cabinet`: multi-tenant
 accounts, per-account roles/permissions (Spatie Permission teams), bundled
 auth (login, register, logout, password reset, email verification), a
-Settings shell, a collapsible side-menu layout, and a small Vue 3 UI kit —
-for bootstrapping a new Laravel + Inertia + Vue 3 project's admin part.
+Settings shell, a log viewer, a collapsible side-menu layout, and a small
+Vue 3 UI kit — for bootstrapping a new Laravel + Inertia + Vue 3 project's
+admin part.
 
 Not a finished product — a **shell** you extend per project. See
 `docs/ARCHITECTURE.md` and `docs/EXTENDING.md`.
@@ -13,7 +14,8 @@ Not a finished product — a **shell** you extend per project. See
 
 - Laravel 11/12, PHP 8.2+
 - Inertia.js (Laravel adapter) + Vue 3, Options API
-- `spatie/laravel-permission` (pulled in automatically)
+- `spatie/laravel-permission`, `opcodesio/log-viewer` (pulled in
+  automatically)
 - `tightenco/ziggy` (composer) + npm: `vue`, `@inertiajs/vue3`, `ziggy-js`,
   `@iconify/vue`, `@headlessui/vue`, `@vuepic/vue-datepicker`,
   `vue-final-modal`, `vee-validate`, `vue-i18n`, `dayjs`, `axios`,
@@ -64,7 +66,7 @@ working untouched.
 
 ## Customizing
 
-- Menu items, Settings tabs, assignable roles → `config/cabinet-kit.php`
+- Menu items, assignable roles, log-viewer path → `config/cabinet-kit.php`
   (survives updates for free).
 - Styles → `resources/_admin/scss/cabinet-kit-overrides.scss` (scaffolded by
   install, loaded after the kit so your rules win; redefine `--ck-*` tokens or

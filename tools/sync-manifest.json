@@ -208,7 +208,7 @@
       "id": "package-provider",
       "mode": "package_only",
       "target": "src/CabinetKitServiceProvider.php",
-      "notes": "Composer package integration: migrations/routes/views/config/Inertia paths."
+      "notes": "Composer package integration: migrations/routes/views/config/Inertia paths. Also carries the log-viewer wiring that lives in the source app's AppServiceProvider: the sysper-log-view auth callback, ported as-is, plus the route_path the source keeps in its published config/log-viewer.php (the package cannot publish that file, so it sets the value at runtime from cabinet-kit.log_viewer.route_path)."
     },
     {
       "id": "package-install-command",

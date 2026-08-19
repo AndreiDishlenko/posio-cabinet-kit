@@ -2,8 +2,11 @@
 
 namespace Posio\CabinetKit;
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Opcodes\LogViewer\Facades\LogViewer;
 use Posio\CabinetKit\Console\Commands\DoctorCommand;
 use Posio\CabinetKit\Console\Commands\InstallCommand;
 use Posio\CabinetKit\Console\Commands\SyncConfigCommand;
@@ -13,6 +16,8 @@ class CabinetKitServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/cabinet-kit.php', 'cabinet-kit');
+
+        $this->mountLogViewer();
     }
 
     public function boot(): void
@@ -23,6 +28,7 @@ class CabinetKitServiceProvider extends ServiceProvider
 
         $this->registerInertiaPagePaths();
         $this->registerSocialAuth();
+        $this->registerLogViewerAuth();
 
         $this->publishes([
             __DIR__.'/../config/cabinet-kit.php' => config_path('cabinet-kit.php'),
@@ -43,6 +49,53 @@ class CabinetKitServiceProvider extends ServiceProvider
                 SyncConfigCommand::class,
             ]);
         }
+    }
+
+    /**
+     * The bundled log viewer is a plain page of its own, not an Inertia one:
+     * the Logs menu item is a bare href at the path set here, so both have to
+     * agree. Its own config file is never published (only cabinet-kit.php is),
+     * hence the path is written straight into the runtime config — before the
+     * viewer's provider boots and reads it. A host that did publish that config
+     * owns the setting and is left alone.
+     */
+    protected function mountLogViewer(): void
+    {
+        if (file_exists(config_path('log-viewer.php'))) {
+            return;
+        }
+
+        $path = trim((string) config('cabinet-kit.log_viewer.route_path', ''), '/');
+
+        if ($path === '') {
+            return;
+        }
+
+        config(['log-viewer.route_path' => $path]);
+    }
+
+    /**
+     * Reading the application log is a platform-operator power, so it is gated
+     * by the same system permission as the menu item leading to it. A host that
+     * decides access for itself keeps that decision.
+     */
+    protected function registerLogViewerAuth(): void
+    {
+        if (LogViewer::hasAuthCallback() || Gate::has('viewLogViewer')) {
+            return;
+        }
+
+        LogViewer::auth(function (): bool {
+            $user = Auth::user();
+
+            if (! $user) {
+                return false;
+            }
+
+            return method_exists($user, 'canSystem')
+                ? $user->canSystem('sysper-log-view')
+                : $user->can('sysper-log-view');
+        });
     }
 
     /**

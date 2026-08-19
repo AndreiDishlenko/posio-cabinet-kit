@@ -1,5 +1,34 @@
 # Changelog
 
+## Unreleased — Logs section taken over from the source cabinet
+
+**Breaking**
+- The `cabinet-kit.logs` route, `LogsController` and the `pages/Logs.vue`
+  placeholder are gone. The Logs menu item now points straight at the
+  bundled log viewer with a plain href (`/admin/log-viewer`), exactly as in
+  `posio.cabinet`. A host that linked to `route('cabinet-kit.logs')` or
+  overrode `pages/Logs.vue` has to drop it.
+
+**Added**
+- `opcodesio/log-viewer` is a hard dependency (`^3.22` — the source project
+  constrains `^3.19` but runs 3.22, and the auth wiring here uses APIs only
+  verified there) and is mounted by the package itself: the service provider
+  writes `log-viewer.route_path` from the new
+  `cabinet-kit.log_viewer.route_path` key (default `admin/log-viewer`) before
+  the viewer's provider reads it, so nothing has to be published into
+  `config/log-viewer.php`. A host that does publish that file owns the
+  setting and CabinetKit keeps its hands off. Version 3.19+ serves its assets
+  from the vendor directory, so there is no asset-publishing step either.
+- Log-viewer access is gated by the `sysper-log-view` system permission —
+  the same one the menu item is gated by — through `LogViewer::auth()`. A
+  host that registers its own callback or a `viewLogViewer` gate wins.
+- Migration repointing an existing `Logs` row in `admin_links` from the
+  removed route to the viewer's href; the links seeder does the same before
+  re-seeding so the item is not duplicated.
+- `cabinet-kit:doctor` fails when the viewer is disabled or mounted at a path
+  the Logs menu item does not point at — otherwise the only symptom is a
+  404 behind the menu item.
+
 ## Unreleased — Settings page taken over from the source cabinet
 
 **Breaking**

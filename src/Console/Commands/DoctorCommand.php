@@ -34,6 +34,7 @@ class DoctorCommand extends Command
         $this->check(Schema::hasTable('admin_links'), 'CabinetKit admin_links table exists', 'Run php artisan migrate.');
         $this->check($this->routeNamesDoNotCollide(), 'Route names can be cached', "Set 'auth_routes' => false or remove duplicate auth route names.");
         $this->check($this->socialAuthLooksReady(), 'Configured social sign-in providers have their driver installed', 'Run composer require laravel/socialite (and socialiteproviders/apple for Apple), or clear the credentials in config/cabinet-kit.php.');
+        $this->check($this->logViewerLooksReady(), 'Log viewer is mounted where the Logs menu item points', 'Align log-viewer route_path with cabinet-kit.log_viewer.route_path, or drop the Logs menu item.');
         foreach (FrontendDependencies::PACKAGES as $package => $version) {
             $this->check($this->packageJsonHas($package), "package.json contains {$package}", "Run npm install {$package}@\"{$version}\".");
         }
@@ -167,6 +168,21 @@ class DoctorCommand extends Command
         }
 
         return true;
+    }
+
+    // The Logs menu item is a bare href, so nothing links it to the viewer's own
+    // path: publishing the viewer's config, or disabling it, turns that item
+    // into a 404 with no other symptom.
+    protected function logViewerLooksReady(): bool
+    {
+        $expected = trim((string) config('cabinet-kit.log_viewer.route_path', ''), '/');
+
+        if ($expected === '') {
+            return true;
+        }
+
+        return (bool) config('log-viewer.enabled', true)
+            && trim((string) config('log-viewer.route_path', ''), '/') === $expected;
     }
 
     protected function packageJsonHas(string $package): bool

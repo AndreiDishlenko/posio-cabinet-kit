@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Cookie;
-use Posio\CabinetKit\Http\Controllers\Admin\LogsController;
 use Posio\CabinetKit\Http\Controllers\Admin\PermissionsController;
 use Posio\CabinetKit\Http\Controllers\Admin\UsersController;
 use Posio\CabinetKit\Http\Controllers\AccountController;
@@ -119,10 +118,6 @@ Route::middleware(['web', UseCabinetKitRootView::class])
                     Route::post('/permissions', [PermissionsController::class, 'store'])->name('permissions.store');
                     Route::put('/permissions', [PermissionsController::class, 'rename'])->name('permissions.rename');
                     Route::post('/permissions/rename', [PermissionsController::class, 'rename'])->name('permissions.rename.post');
-                });
-
-                Route::middleware(CanSystemPermission::class.':sysper-log-view')->group(function () {
-                    Route::get('/logs', [LogsController::class, 'index'])->name('logs');
                 });
 
                 Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');

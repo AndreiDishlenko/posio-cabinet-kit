@@ -91,8 +91,11 @@ return new class extends Migration
                 'order_id' => 50,
                 'name' => 'Logs',
                 'icon' => 'ix:log',
-                'link' => null,
-                'route' => 'cabinet-kit.logs',
+                // Absolute href, not a route name: the log viewer is a plain
+                // page, and an Inertia visit would open it in the modal frame
+                // with its own asset paths resolved against the wrong base.
+                'link' => '/admin/log-viewer',
+                'route' => null,
                 'permissions' => 'sysper-log-view',
                 'is_header' => false,
                 'is_published' => true,

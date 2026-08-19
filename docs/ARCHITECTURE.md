@@ -101,6 +101,28 @@ middleware's redirect-to-login, `EmailVerificationRequest`) look those exact
 names up. Only the *authenticated* users/settings/account route group
 uses the `cabinet-kit.` name prefix.
 
+## Logs
+
+The one section of the cabinet that is **not** an Inertia page: reading the
+application log is `opcodesio/log-viewer`, mounted by the package's service
+provider at `cabinet-kit.log_viewer.route_path` (default `admin/log-viewer`,
+deliberately outside the cabinet's own route prefix — the viewer registers a
+catch-all under its path). The path is written into the viewer's runtime
+config during `register()`, before its provider reads it, because only
+`config/cabinet-kit.php` is ever published; a host that publishes
+`config/log-viewer.php` takes the setting over and CabinetKit stands down.
+
+Access is the `sysper-log-view` system permission, checked through
+`LogViewer::auth()` — the same permission that gates the menu item, granted
+to `SAdmin` and to `System administrator` by the roles seeder. A host that
+registers its own callback or a `viewLogViewer` gate keeps it.
+
+Because it is a plain page, the menu item carries `link`, not `route`:
+`SideMenu.vue` renders `link` items as a bare `<a>`, since an Inertia visit
+would pull the page into the modal frame and the viewer would then resolve
+its own API base path against the wrong URL. This is also why the item never
+highlights as the current page — current-page matching goes by route name.
+
 ## Rendering pipeline (who owns which layer)
 
 - **Blade root view** — the package's own `cabinet-kit::app`

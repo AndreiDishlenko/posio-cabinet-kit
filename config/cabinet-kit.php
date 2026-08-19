@@ -116,6 +116,15 @@ return [
         'assignable_roles' => ['Administrator', 'Manager', 'User'],
     ],
 
+    // Where the bundled log viewer (opcodesio/log-viewer) is mounted. CabinetKit
+    // writes this into the viewer's own runtime config, which is never published
+    // — unless you publish config/log-viewer.php, and then that file wins and
+    // this key is ignored. Access is gated by the `sysper-log-view` system
+    // permission. Keep the Logs menu item below pointing at the same path.
+    'log_viewer' => [
+        'route_path' => 'admin/log-viewer',
+    ],
+
     // Side menu groups. Each item needs either a `route` name (Inertia visit)
     // or a `link` (plain href). `permission` gates visibility (null = always shown).
     'menu' => [
@@ -125,7 +134,10 @@ return [
                 ['id' => 'users', 'label' => 'Користувачі', 'icon' => 'ph:users', 'route' => 'cabinet-kit.users', 'permission' => 'sysper-users'],
                 ['id' => 'permissions', 'label' => 'Дозволи', 'icon' => 'fluent-mdl2:permissions', 'route' => 'cabinet-kit.permissions', 'permission' => 'sysper-roles'],
                 ['id' => 'permissions-account', 'label' => 'Ролі акаунту', 'icon' => 'fluent-mdl2:permissions', 'route' => 'cabinet-kit.permissions.account', 'permission' => 'sysper-roles'],
-                ['id' => 'logs', 'label' => 'Logs', 'icon' => 'ix:log', 'route' => 'cabinet-kit.logs', 'permission' => 'sysper-log-view'],
+                // Plain href on purpose: the log viewer is not an Inertia page,
+                // and an Inertia visit would render it inside the modal frame
+                // instead of navigating there. Path mirrors `log_viewer` above.
+                ['id' => 'logs', 'label' => 'Logs', 'icon' => 'ix:log', 'link' => '/admin/log-viewer', 'permission' => 'sysper-log-view'],
                 ['id' => 'settings', 'label' => 'Settings', 'icon' => 'proicons:settings', 'route' => 'cabinet-kit.settings', 'permission' => null],
             ],
         ],
