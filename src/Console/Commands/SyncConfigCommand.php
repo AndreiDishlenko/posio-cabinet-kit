@@ -6,29 +6,34 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Posio\CabinetKit\Support\FrontendDependencies;
+use Posio\CabinetKit\Support\HostTailwindConfig;
 
 /**
- * Package config values that live in the host's own config/cabinet-kit.php
- * never get overwritten on `composer update` (nothing publishes over them).
- * This command only diagnoses drift after an update added new top-level
- * keys — it never rewrites the host's file, to avoid clobbering comments
- * or values a human wrote.
+ * What `composer update` cannot bring along: the wiring the package needs
+ * inside the host's own files. npm dependencies and the Tailwind content glob
+ * are repaired in place; config/cabinet-kit.php is only diagnosed, never
+ * rewritten, so no hand-written value or comment there is ever clobbered.
+ *
+ * The installer registers this command as a composer post-update hook, so it
+ * must never fail the surrounding `composer update` — everything it cannot do
+ * is reported as a warning and it always exits successfully.
  */
 class SyncConfigCommand extends Command
 {
     protected $signature = 'cabinet-kit:sync-config';
-    protected $description = 'List config/cabinet-kit.php keys the installed package version added that are missing locally.';
+    protected $description = 'Re-apply CabinetKit wiring in the host project (npm deps, Tailwind content) and report new config keys.';
 
     public function handle(): int
     {
         $this->syncPackageJsonDependencies();
+        $this->syncTailwindContent();
 
         $hostPath = config_path('cabinet-kit.php');
         $packagePath = __DIR__.'/../../../config/cabinet-kit.php';
 
         if (! File::exists($hostPath)) {
             $this->warn('config/cabinet-kit.php is not published yet — run cabinet-kit:install first.');
-            return self::FAILURE;
+            return self::SUCCESS;
         }
 
         $hostConfig = require $hostPath;
@@ -49,6 +54,31 @@ class SyncConfigCommand extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    // A stale glob here has no visible symptom other than package templates
+    // rendering unstyled, so it is repaired without asking.
+    protected function syncTailwindContent(): void
+    {
+        $path = HostTailwindConfig::path();
+        if (! $path) {
+            return;
+        }
+
+        $contents = File::get($path);
+        if (HostTailwindConfig::contentCoversPackage($contents)) {
+            return;
+        }
+
+        $updated = HostTailwindConfig::withPackageContentGlob($contents);
+        if ($updated === null) {
+            $this->warn("Could not patch the tailwind.config content array — add '".HostTailwindConfig::CONTENT_GLOB."' to it manually, or package templates stay unstyled.");
+            return;
+        }
+
+        $this->backupAndPut($path, $updated);
+        $this->info('Patched '.basename($path).' with the CabinetKit content glob.');
+        $this->warn('Rebuild your assets: npm run dev/build.');
     }
 
     protected function syncPackageJsonDependencies(): void
@@ -83,12 +113,17 @@ class SyncConfigCommand extends Command
 
         ksort($json['dependencies']);
 
+        $this->backupAndPut($path, json_encode($json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES).PHP_EOL);
+        $this->info('Patched package.json with CabinetKit npm dependencies: '.implode(', ', $added).'.');
+        $this->warn('Run npm install before npm run dev/build.');
+    }
+
+    protected function backupAndPut(string $path, string $contents): void
+    {
         if (! File::exists($path.'.bak')) {
             File::copy($path, $path.'.bak');
         }
 
-        File::put($path, json_encode($json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES).PHP_EOL);
-        $this->info('Patched package.json with CabinetKit npm dependencies: '.implode(', ', $added).'.');
-        $this->warn('Run npm install before npm run dev/build.');
+        File::put($path, $contents);
     }
 }

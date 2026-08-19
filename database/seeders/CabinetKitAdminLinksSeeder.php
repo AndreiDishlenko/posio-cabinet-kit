@@ -11,7 +11,7 @@ class CabinetKitAdminLinksSeeder extends Seeder
     {
         $items = [
             [
-                'order_id' => 10,
+                'order_id' => 0,
                 'name' => 'Administration',
                 'icon' => null,
                 'link' => null,
@@ -21,7 +21,7 @@ class CabinetKitAdminLinksSeeder extends Seeder
                 'is_published' => true,
             ],
             [
-                'order_id' => 20,
+                'order_id' => 1,
                 'name' => 'Користувачі',
                 'icon' => 'ph:users',
                 'link' => null,
@@ -31,7 +31,7 @@ class CabinetKitAdminLinksSeeder extends Seeder
                 'is_published' => true,
             ],
             [
-                'order_id' => 30,
+                'order_id' => 2,
                 'name' => 'Дозволи',
                 'icon' => 'fluent-mdl2:permissions',
                 'link' => null,
@@ -41,7 +41,7 @@ class CabinetKitAdminLinksSeeder extends Seeder
                 'is_published' => true,
             ],
             [
-                'order_id' => 40,
+                'order_id' => 3,
                 'name' => 'Ролі акаунту',
                 'icon' => 'fluent-mdl2:permissions',
                 'link' => null,
@@ -51,7 +51,7 @@ class CabinetKitAdminLinksSeeder extends Seeder
                 'is_published' => true,
             ],
             [
-                'order_id' => 50,
+                'order_id' => 4,
                 'name' => 'Logs',
                 'icon' => 'ix:log',
                 'link' => '/admin/log-viewer',
@@ -61,7 +61,7 @@ class CabinetKitAdminLinksSeeder extends Seeder
                 'is_published' => true,
             ],
             [
-                'order_id' => 60,
+                'order_id' => 5,
                 'name' => 'Settings',
                 'icon' => 'proicons:settings',
                 'link' => null,

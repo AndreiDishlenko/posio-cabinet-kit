@@ -40,7 +40,7 @@ return new class extends Migration
 
         return [
             [
-                'order_id' => 10,
+                'order_id' => 0,
                 'name' => 'Administration',
                 'icon' => null,
                 'link' => null,
@@ -52,7 +52,7 @@ return new class extends Migration
                 'updated_at' => $now,
             ],
             [
-                'order_id' => 20,
+                'order_id' => 1,
                 'name' => 'Користувачі',
                 'icon' => 'ph:users',
                 'link' => null,
@@ -64,7 +64,7 @@ return new class extends Migration
                 'updated_at' => $now,
             ],
             [
-                'order_id' => 30,
+                'order_id' => 2,
                 'name' => 'Дозволи',
                 'icon' => 'fluent-mdl2:permissions',
                 'link' => null,
@@ -76,7 +76,7 @@ return new class extends Migration
                 'updated_at' => $now,
             ],
             [
-                'order_id' => 40,
+                'order_id' => 3,
                 'name' => 'Ролі акаунту',
                 'icon' => 'fluent-mdl2:permissions',
                 'link' => null,
@@ -88,7 +88,7 @@ return new class extends Migration
                 'updated_at' => $now,
             ],
             [
-                'order_id' => 50,
+                'order_id' => 4,
                 'name' => 'Logs',
                 'icon' => 'ix:log',
                 // Absolute href, not a route name: the log viewer is a plain
@@ -103,7 +103,7 @@ return new class extends Migration
                 'updated_at' => $now,
             ],
             [
-                'order_id' => 60,
+                'order_id' => 5,
                 'name' => 'Settings',
                 'icon' => 'proicons:settings',
                 'link' => null,

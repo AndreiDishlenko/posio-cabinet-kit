@@ -19,10 +19,13 @@ const dynamicViewportHeights = function ({ addUtilities }) {
 };
 
 module.exports = {
-    // Утилиты Tailwind внутри шаблонов пакета иначе просто не генерируются.
+    // Запасной путь, а не основной: Tailwind v3 не сливает `content` пресета с
+    // хостовым — при наличии `content` у хоста этот список не применяется вовсе.
+    // Рабочий glob живёт в конфиге хоста и поддерживается установщиком
+    // (`cabinet-kit:install`) и командой обновления (`cabinet-kit:sync-config`);
+    // менять его здесь — значит менять и константу в этих командах.
     content: [
-        './vendor/posio/cabinet-kit/resources/js/**/*.vue',
-        './vendor/posio/cabinet-kit/resources/_admin/js/**/*.vue',
+        './vendor/posio/cabinet-kit/resources/**/*.{vue,js,ts}',
     ],
 
     // Тема кабинета переключается признаком на корне документа, а не системной

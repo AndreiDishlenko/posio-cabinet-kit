@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Posio\CabinetKit\Support\FrontendDependencies;
+use Posio\CabinetKit\Support\HostTailwindConfig;
 
 class DoctorCommand extends Command
 {
@@ -25,6 +26,7 @@ class DoctorCommand extends Command
         $this->check($this->entryUsesFactory($entry), 'Vite entry uses createCabinetKitApp()', 'Replace the entry with the CabinetKit stub or import createCabinetKitApp().');
         $this->check($this->viteConfigLooksReady($entry), 'vite.config contains CabinetKit plugin and entry', "Add cabinetKit() and '{$entry}' to laravel-vite-plugin input.");
         $this->check($this->tailwindConfigLooksReady(), 'tailwind.config contains CabinetKit preset', 'Add vendor/posio/cabinet-kit/tailwind-preset.cjs.');
+        $this->check($this->tailwindContentLooksReady(), 'tailwind.config scans CabinetKit templates', "Add '".HostTailwindConfig::CONTENT_GLOB."' to the content array, or run php artisan cabinet-kit:sync-config.");
         $this->check($this->userModelLooksReady(), 'User model uses IsCabinetKitUser', 'Add Posio\\CabinetKit\\Traits\\IsCabinetKitUser to app/Models/User.php.');
         $this->check(File::exists(config_path('permission.php')), 'config/permission.php is published', 'Publish Spatie Permission config before running migrations.');
         $this->check((bool) config('permission.teams'), "Spatie Permission 'teams' is true", "Set 'teams' => true in config/permission.php before migrating.");
@@ -83,10 +85,27 @@ class DoctorCommand extends Command
 
     protected function tailwindConfigLooksReady(): bool
     {
-        $contents = $this->firstExistingContents(base_path('tailwind.config.ts'), base_path('tailwind.config.js'), base_path('tailwind.config.cjs'));
+        $contents = $this->tailwindConfigContents();
 
         return $contents !== null
             && str_contains($contents, 'tailwind-preset.cjs');
+    }
+
+    // The preset alone proves nothing: Tailwind v3 drops a preset's `content`
+    // in favour of the host's, so the package glob has to be in the host list.
+    protected function tailwindContentLooksReady(): bool
+    {
+        $contents = $this->tailwindConfigContents();
+
+        return $contents !== null
+            && HostTailwindConfig::contentCoversPackage($contents);
+    }
+
+    protected function tailwindConfigContents(): ?string
+    {
+        $path = HostTailwindConfig::path();
+
+        return $path === null ? null : File::get($path);
     }
 
     protected function userModelLooksReady(): bool

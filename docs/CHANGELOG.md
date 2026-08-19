@@ -1,5 +1,39 @@
 # Changelog
 
+## Unreleased — Package templates are actually scanned by Tailwind
+
+**Fixed**
+- Tailwind v3 does not merge `content` from presets: the resolved config keeps
+  the first `content` it finds, which is always the host's own, so the globs in
+  `tailwind-preset.cjs` never applied to a real host while the theme from the
+  same preset did. Every class only the package templates use — `space-x-*` in
+  `CabinetHeader.vue` being the visible one — compiled to nothing, with no
+  error anywhere. The glob now belongs to the host config and is written there
+  by the package.
+- `cabinet-kit:install` adds `./vendor/posio/cabinet-kit/resources/**/*.{vue,js,ts}`
+  to the host's `content` array (replacing narrower package globs a previous
+  version told hosts to add), and no longer skips the whole Tailwind patch when
+  the preset import is already present.
+- One glob for all package resources instead of a per-folder list: moving
+  templates between `resources/js` and `resources/_admin/js` can no longer
+  leave a folder unscanned.
+
+**Added**
+- `cabinet-kit:sync-config` repairs the Tailwind content glob in place (with a
+  `.bak` copy) next to the npm dependencies it already synced, and never fails
+  the process it runs in.
+- `cabinet-kit:install` registers `@php artisan cabinet-kit:sync-config --ansi`
+  in the host's `composer.json` `post-update-cmd`, so wiring that lives inside
+  host files is re-applied by `composer update` itself.
+- `cabinet-kit:doctor` checks that the host `content` array covers the package,
+  separately from the preset check — the preset alone never proved it.
+
+**Upgrading**
+- Run `php artisan cabinet-kit:sync-config` once after updating (it is
+  automatic from the next update onwards), then rebuild assets. Drop the old
+  `vendor/posio/cabinet-kit/resources/js/**/*.vue` glob if the command did not
+  already replace it.
+
 ## Unreleased — Logs section taken over from the source cabinet
 
 **Breaking**

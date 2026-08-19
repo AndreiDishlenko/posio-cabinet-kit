@@ -55,9 +55,15 @@ no separate account-creation step for a brand-new install.
 
 ```bash
 composer update posio/cabinet-kit
-php artisan cabinet-kit:sync-config   # reports any new config keys to add by hand
+php artisan cabinet-kit:sync-config   # re-applies host wiring, reports new config keys
 php artisan cabinet-kit:doctor        # verifies frontend/backend wiring
 ```
+
+`cabinet-kit:install` registers `sync-config` in your `composer.json`
+`post-update-cmd`, so from then on `composer update` runs it for you: it keeps
+the npm dependency list and the Tailwind `content` glob for the package
+templates current, and only *reports* new `config/cabinet-kit.php` keys (that
+file is never rewritten). Rebuild assets afterwards if it patched anything.
 
 Vue/SCSS/routes/migrations are read straight from `vendor/posio/cabinet-kit/`
 — nothing was copied into your project, so there's nothing to merge.

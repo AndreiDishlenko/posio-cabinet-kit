@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Posio\CabinetKit\Support\FrontendDependencies;
+use Posio\CabinetKit\Support\HostTailwindConfig;
 
 class InstallCommand extends Command
 {
@@ -42,6 +43,7 @@ class InstallCommand extends Command
         $this->patchViteConfig($entry);
         $this->patchTailwindConfig();
         $this->patchPackageJson();
+        $this->patchComposerScripts();
         $this->patchUserModel();
         $this->publishPermissionMigrations();
 
@@ -336,17 +338,47 @@ MD);
 
     protected function patchTailwindConfig(): void
     {
-        $path = $this->firstExisting(base_path('tailwind.config.ts'), base_path('tailwind.config.js'), base_path('tailwind.config.cjs'));
+        $path = HostTailwindConfig::path();
         if (! $path) {
             $this->warn('tailwind.config.js/ts was not found. Add the CabinetKit preset manually if you use Tailwind.');
             return;
         }
 
         $contents = File::get($path);
-        if (str_contains($contents, 'tailwind-preset.cjs')) {
+        $updated = $contents;
+
+        if (! str_contains($updated, 'tailwind-preset.cjs')) {
+            $withPreset = $this->withCabinetKitPreset($updated);
+
+            if ($withPreset === null) {
+                $this->warn('Could not patch tailwind.config. Add presets: [cabinetKitPreset] manually.');
+            } else {
+                $updated = $withPreset;
+            }
+        }
+
+        if (! HostTailwindConfig::contentCoversPackage($updated)) {
+            $withContent = HostTailwindConfig::withPackageContentGlob($updated);
+
+            if ($withContent === null) {
+                $this->warn("Could not patch the tailwind.config content array. Add '".HostTailwindConfig::CONTENT_GLOB."' to it manually.");
+            } else {
+                $updated = $withContent;
+            }
+        }
+
+        if ($updated === $contents) {
             return;
         }
 
+        if ($this->confirmPatch($path, 'Patch tailwind.config with the CabinetKit preset and content glob?')) {
+            $this->backupAndPut($path, $updated);
+            $this->info('Patched '.basename($path).'.');
+        }
+    }
+
+    protected function withCabinetKitPreset(string $contents): ?string
+    {
         $usesCommonJs = str_contains($contents, 'module.exports');
         $updated = $usesCommonJs
             ? "const cabinetKitPreset = require('./vendor/posio/cabinet-kit/tailwind-preset.cjs');\n".$contents
@@ -364,15 +396,44 @@ MD);
             );
         }
 
-        if (($count ?? 0) === 0) {
-            $this->warn('Could not patch tailwind.config. Add presets: [cabinetKitPreset] manually.');
+        return ($count ?? 0) === 0 ? null : $updated;
+    }
+
+    // Wiring inside the host's own files (Tailwind content, npm dependencies)
+    // can go stale with any package release, and nothing in composer re-runs a
+    // library's installer. The host's own update hook is the only place from
+    // which the package can repair that on its own.
+    protected function patchComposerScripts(): void
+    {
+        $path = base_path('composer.json');
+        if (! File::exists($path)) {
+            $this->warn('composer.json was not found. Run php artisan cabinet-kit:sync-config after every composer update.');
             return;
         }
 
-        if ($this->confirmPatch($path, 'Patch tailwind.config with CabinetKit preset?')) {
-            $this->backupAndPut($path, $updated);
-            $this->info('Patched '.basename($path).'.');
+        $json = json_decode(File::get($path), true);
+        if (! is_array($json)) {
+            $this->warn('composer.json could not be parsed. Run php artisan cabinet-kit:sync-config after every composer update.');
+            return;
         }
+
+        $hooks = (array) data_get($json, 'scripts.post-update-cmd', []);
+
+        foreach ($hooks as $hook) {
+            if (is_string($hook) && str_contains($hook, 'cabinet-kit:sync-config')) {
+                return;
+            }
+        }
+
+        $hooks[] = '@php artisan cabinet-kit:sync-config --ansi';
+        $json['scripts']['post-update-cmd'] = array_values($hooks);
+
+        if (! $this->confirmPatch($path, 'Run cabinet-kit:sync-config automatically after every composer update?')) {
+            return;
+        }
+
+        $this->backupAndPut($path, json_encode($json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).PHP_EOL);
+        $this->info('Patched composer.json with the CabinetKit post-update hook.');
     }
 
     protected function patchPackageJson(): void

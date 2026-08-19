@@ -162,12 +162,19 @@ CabinetKit provides its own auth (see above). It still expects:
    translation helper fed by Laravel JSON translations shared through
    Inertia.
 6. Tailwind config uses `vendor/posio/cabinet-kit/tailwind-preset.cjs`, which
-   contributes the package Vue content globs *and* the theme those templates
-   are written against: font sizes bound to the `--text-*` variables (incl.
-   the non-stock `md`/`xxs`/`xxl` steps), the `xs` and `lt-*` breakpoints,
-   class-based dark mode, and the `h-dvh-*`/`max-h-dvh-*` utilities. Without
-   the preset those classes compile to nothing and the cabinet loses its
-   typography and its height.
+   contributes the theme the package templates are written against: font sizes
+   bound to the `--text-*` variables (incl. the non-stock `md`/`xxs`/`xxl`
+   steps), the `xs` and `lt-*` breakpoints, class-based dark mode, and the
+   `h-dvh-*`/`max-h-dvh-*` utilities. Without the preset those classes compile
+   to nothing and the cabinet loses its typography and its height.
+   The **content glob** cannot come from the preset: Tailwind v3 keeps the
+   first `content` it resolves — the host's own — and silently ignores the
+   preset's. So `./vendor/posio/cabinet-kit/resources/**/*.{vue,js,ts}` has to
+   sit in the host's `content` array; `cabinet-kit:install` writes it there,
+   `cabinet-kit:sync-config` keeps it current, and `cabinet-kit:doctor` checks
+   it. Miss it and every class only the package uses compiles to nothing,
+   while the preset's theme keeps working — which is why the failure looks
+   like a handful of broken layouts rather than a missing preset.
 7. (Optional) `implements MustVerifyEmail` on the host's `User` model if
    email verification should actually be enforced elsewhere — the
    verify/resend routes work regardless, they just don't block anything on
