@@ -1,5 +1,41 @@
 # Changelog
 
+## Unreleased — Real cabinet services instead of the placeholder ones
+
+**Breaking**
+- `$apiClient`, `$toast`, `$popup` and `$dictionaries` are now the services the
+  source cabinet ships, not the placeholders of earlier versions. Host code
+  that relied on placeholder behaviour must be checked: requests resolve with
+  a `{statusCode, error, message, errors, data}` envelope instead of throwing
+  on 4xx, `$popup.confirm_yn()` resolves `1`/`0` from a styled dialog instead
+  of a boolean from `window.confirm()`, and `$dictionaries` no longer carries
+  a hard-coded currency list.
+- New npm dependencies: `sweetalert2`, `vue3-toastify`, `date-fns`. Run
+  `php artisan cabinet-kit:sync-config` (or `cabinet-kit:install`) and
+  `npm install` after updating.
+
+**Added**
+- `resources/js/posio/system/`: `AxiosApiClientClass.js`, `DictionariesClass.js`,
+  `ToastMessages.js`, `Popup.js`, `ConsoleService.js`, `Emitter.js`, plus
+  `classes/PropObjectClass.js` and the `posio/index.js` barrel. Validation
+  errors now reach the form (`errors` on the response envelope), saving a
+  dictionary row works (`$dictionaries.save()` / `.update()`), messages are
+  visible toasts, and confirmations are the cabinet's own dialog.
+- `resources/_admin/js/services/CabinetApiClient.js` — configures the api
+  client for the cabinet (`/api/v1/`, cookie auth).
+- `createCabinetKitApp()` options `dictionariesRoute` (route name or list of
+  names for the host's dictionaries endpoint, default
+  `cabinet-kit.api.dictionaries` then `cabinet.api.dictionaries`) and
+  `dictionariesStorage` (local storage key, default `dict_cabinet`). The
+  package owns no such endpoint: when no name resolves, dictionaries stay
+  empty and the console says so instead of the app failing to start.
+- `$settings` gained `getGlobalState` / `setGlobalState` / `mergeGlobalState` —
+  the per-account slice shared across pages that the filter panel remembers
+  the point of sale in.
+- Components: `components/patterns/BlockList.vue` (responsive card grid with
+  an add tile), `components/ui/Filters.vue` (filter panel above a list) and
+  `components/ui/CategoryIconPicker.vue` (icon grid for editable categories).
+
 ## Unreleased — Package templates are actually scanned by Tailwind
 
 **Fixed**

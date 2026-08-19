@@ -160,7 +160,13 @@ CabinetKit provides its own auth (see above). It still expects:
    package. The factory registers `ZiggyVue`, the package page resolver,
    package styles, the built-in `$emitter` bus, and the global `$t()`
    translation helper fed by Laravel JSON translations shared through
-   Inertia.
+   Inertia. It also wires the cabinet services every ported page and mixin
+   expects: `$apiClient` (axios client answering with the
+   `{statusCode, error, message, errors, data}` envelope), `$toast`,
+   `$popup`, `$settings` and `$dictionaries`. The dictionaries endpoint
+   itself belongs to the host — name it with the `dictionariesRoute` option
+   when it is not `cabinet-kit.api.dictionaries` or
+   `cabinet.api.dictionaries`; without it dictionaries simply stay empty.
 6. Tailwind config uses `vendor/posio/cabinet-kit/tailwind-preset.cjs`, which
    contributes the theme the package templates are written against: font sizes
    bound to the `--text-*` variables (incl. the non-stock `md`/`xxs`/`xxl`

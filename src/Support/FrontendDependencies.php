@@ -15,11 +15,14 @@ final class FrontendDependencies
         '@inertiajs/vue3' => '^2.0.0',
         '@vuepic/vue-datepicker' => '^11.0.3',
         'axios' => '^1.7.9',
+        'date-fns' => '^4.1.0',
         'dayjs' => '^1.11.13',
+        'sweetalert2' => '^11.17.2',
         'vee-validate' => '^4.15.0',
         'vue' => '^3.5.13',
         'vue-final-modal' => '^4.5.5',
         'vue-i18n' => '^9.14.2',
-        'ziggy-js' => '^2.4.2', 
+        'vue3-toastify' => '^0.2.8',
+        'ziggy-js' => '^2.4.2',
     ];
 }

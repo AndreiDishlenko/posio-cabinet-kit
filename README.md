@@ -19,11 +19,13 @@ Not a finished product — a **shell** you extend per project. See
 - `tightenco/ziggy` (composer) + npm: `vue`, `@inertiajs/vue3`, `ziggy-js`,
   `@iconify/vue`, `@headlessui/vue`, `@vuepic/vue-datepicker`,
   `vue-final-modal`, `vee-validate`, `vue-i18n`, `dayjs`, `axios`,
+  `sweetalert2`, `vue3-toastify`, `date-fns`,
   `@fontsource/inter`, `@fontsource/roboto`, `@fontsource/open-sans`,
   `@fontsource/inter-tight`, `@fontsource/pt-sans` — package pages resolve
   URLs through `route()` and use Iconify icons/date inputs with bundled
-  fonts. `php artisan cabinet-kit:install` adds them to `package.json` for
-  you; `cabinet-kit:doctor` re-checks the list.
+  fonts, confirmation dialogs and toasts. `php artisan cabinet-kit:install`
+  adds them to `package.json` for you; `cabinet-kit:doctor` re-checks the
+  list.
 - A `User` model with `password`/`email_verified_at` columns (Laravel's
   default `users` migration already has both)
 

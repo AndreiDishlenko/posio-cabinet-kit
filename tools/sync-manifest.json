@@ -297,7 +297,91 @@
       "mode": "manual",
       "source": "resources/js/pauseApplication.js",
       "target": "resources/js/pauseApplication.js",
-      "notes": "Ported as-is except init(): the package has no module-level Emitter singleton, so createApp.js hands it the app emitter."
+      "notes": "Ported as-is except init(): createApp.js hands it the module-level Emitter singleton (resources/js/posio/system/Emitter.js), which is also what the api client emits pause events on."
+    },
+    {
+      "id": "system-emitter",
+      "mode": "manual",
+      "source": "resources/js/posio/system/Emitter.js",
+      "target": "resources/js/posio/system/Emitter.js",
+      "notes": "Same module-level singleton contract as the source, built on the package's own resources/js/emitter.js instead of the mitt npm package — host projects must not need an extra dependency for it."
+    },
+    {
+      "id": "system-api-client",
+      "mode": "copy",
+      "source": "resources/js/posio/system/AxiosApiClientClass.js",
+      "target": "resources/js/posio/system/AxiosApiClientClass.js",
+      "notes": "Verbatim copy. Returns the {statusCode, error, message, errors, data} envelope the card/table mixins read — a plain fetch wrapper that throws on 4xx cannot replace it."
+    },
+    {
+      "id": "system-toast",
+      "mode": "copy",
+      "source": "resources/js/posio/system/ToastMessages.js",
+      "target": "resources/js/posio/system/ToastMessages.js",
+      "notes": "Verbatim copy. Registered with app.use(Toast); colors come from --success-color/--error-color already shipped in colors_shared.scss."
+    },
+    {
+      "id": "system-popup",
+      "mode": "copy",
+      "source": "resources/js/posio/system/Popup.js",
+      "target": "resources/js/posio/system/Popup.js",
+      "notes": "Verbatim copy. createApp.js calls useAccentedDialogs(); the dialog classes it names already ship in popup_shared.scss / popup_admin.scss, and the bundled sweetalert2 stylesheet is resources/scss/vendor/_sweetalert2.scss."
+    },
+    {
+      "id": "system-dictionaries",
+      "mode": "copy",
+      "source": "resources/js/posio/system/DictionariesClass.js",
+      "target": "resources/js/posio/system/DictionariesClass.js",
+      "notes": "Verbatim copy. The endpoint belongs to the host: createApp.js resolves the first route name of its dictionariesRoute option and passes null (with a console warning) when none is registered."
+    },
+    {
+      "id": "system-console",
+      "mode": "copy",
+      "source": "resources/js/posio/system/ConsoleService.js",
+      "target": "resources/js/posio/system/ConsoleService.js",
+      "notes": "Verbatim copy. createApp.js only imports it — instantiation is what defines console.msg/console.wrn that ported code calls; the source app additionally silences the original console in production."
+    },
+    {
+      "id": "classes-prop-object",
+      "mode": "copy",
+      "source": "resources/js/posio/classes/PropObjectClass.js",
+      "target": "resources/js/posio/classes/PropObjectClass.js",
+      "notes": "Verbatim copy. Base class of the dictionaries store; writes through _proxy so the reactive wrapper sees changes."
+    },
+    {
+      "id": "posio-barrel",
+      "mode": "manual",
+      "source": "resources/js/posio/index.js",
+      "target": "resources/js/posio/index.js",
+      "notes": "Same barrel as the source minus SettingsClass, which is not ported — the package keeps its own settings service factory in createApp.js. Add an export here when porting its module."
+    },
+    {
+      "id": "service-cabinet-api-client",
+      "mode": "copy",
+      "source": "resources/_admin/js/services/CabinetApiClient.js",
+      "target": "resources/_admin/js/services/CabinetApiClient.js",
+      "notes": "Verbatim copy. Factory that configures the api client for the cabinet (origin + /api/v1/, cookie auth)."
+    },
+    {
+      "id": "pattern-block-list",
+      "mode": "copy",
+      "source": "resources/_admin/js/components/patterns/BlockList.vue",
+      "target": "resources/_admin/js/components/patterns/BlockList.vue",
+      "notes": "Verbatim copy. Responsive card grid with a trailing add tile; card content comes from the slot."
+    },
+    {
+      "id": "ui-filters",
+      "mode": "copy",
+      "source": "resources/_admin/js/components/ui/Filters.vue",
+      "target": "resources/_admin/js/components/ui/Filters.vue",
+      "notes": "Verbatim copy, Posio filter registry included: entries whose dictionary the host does not ship simply never render — a page only gets the filters it asks for. Needs $settings global/page state and the real $dictionaries."
+    },
+    {
+      "id": "ui-category-icon-picker",
+      "mode": "copy",
+      "source": "resources/_admin/js/components/ui/CategoryIconPicker.vue",
+      "target": "resources/_admin/js/components/ui/CategoryIconPicker.vue",
+      "notes": "Verbatim copy. Icon grid for editable categories; no dependencies beyond Iconify."
     }
   ]
 }

@@ -1,16 +1,23 @@
 import { createInertiaApp } from '@inertiajs/vue3';
 import dayjs from 'dayjs';
-import { createApp, h } from 'vue';
+import { createApp, h, reactive } from 'vue';
 import { createVfm } from 'vue-final-modal';
 import { route as ziggyRoute } from 'ziggy-js';
 
-import { createEmitter } from './emitter.js';
+import CabinetApiClient from '../_admin/js/services/CabinetApiClient.js';
 import { i18n } from './i18n.config.js';
 import { applyLocale, browserLocale, storedLocale } from './localeSync.js';
 import { $inprogress, $modal_inprogress, $pauseApplication } from './pauseApplication.js';
 import Helpers from './posio/helpers.js';
+import { DictionariesClass } from './posio/system/DictionariesClass.js';
+import { Emitter } from './posio/system/Emitter.js';
+import { Popup } from './posio/system/Popup.js';
+import { Toast } from './posio/system/ToastMessages.js';
 import { resolveCabinetKitPage } from './resolvePage.js';
 import './vee-validator.js';
+// Перенесённый код кабинета пишет в журнал через console.msg / console.wrn —
+// подключение модуля их и определяет.
+import './posio/system/ConsoleService.js';
 import '@fontsource/inter/400.css';
 import '@fontsource/inter/500.css';
 import '@fontsource/inter/600.css';
@@ -25,7 +32,16 @@ import '@vuepic/vue-datepicker/dist/main.css';
 import 'vue-final-modal/style.css';
 import '../scss/cabinet-kit.scss';
 
-export function createCabinetKitApp({ overrides = {}, title, progress, setup: hostSetup } = {}) {
+export function createCabinetKitApp({
+    overrides = {},
+    title,
+    progress,
+    setup: hostSetup,
+    // Эндпоинт справочников принадлежит хосту: пакет только знает, под каким
+    // именем маршрута его искать (первое найденное имя выигрывает).
+    dictionariesRoute = ['cabinet-kit.api.dictionaries', 'cabinet.api.dictionaries'],
+    dictionariesStorage = 'dict_cabinet',
+} = {}) {
     return createInertiaApp({
         title,
         progress: progress ?? { color: '#4B5563' },
@@ -42,28 +58,35 @@ export function createCabinetKitApp({ overrides = {}, title, progress, setup: ho
             hydrateI18n(props.initialPage?.props?.cabinetKitI18n);
 
             const app = createApp({ render: () => h(App, props) });
-            const emitter = createEmitter();
+            const emitter = Emitter;
 
             app.use(plugin);
             installRouteHelper(app);
             app.use(i18n);
             app.use(Helpers);
             app.use(createVfm());
+            app.use(Toast);
+
+            const settings = createSettingsService();
+            const apiClient = CabinetApiClient(settings);
+
+            // Диалоги кабинета оформлены акцентно (см. оформление в стилях кабинета).
+            Popup.useAccentedDialogs();
+
             app.config.globalProperties.$emitter = emitter;
             app.config.globalProperties.$dayjs = dayjs;
             app.config.globalProperties.$locRoute = localizedRoute;
-            app.config.globalProperties.$apiClient = createApiClient();
-            app.config.globalProperties.$toast = createToast();
-            app.config.globalProperties.$popup = createPopup();
+            app.config.globalProperties.$apiClient = apiClient;
+            app.config.globalProperties.$popup = Popup;
             app.config.globalProperties.$accountService = createAccountService();
-            app.config.globalProperties.$settings = createSettingsService();
+            app.config.globalProperties.$settings = settings;
             app.config.globalProperties.$pauseApplication = $pauseApplication;
             app.config.globalProperties.$inprogress = $inprogress;
             app.config.globalProperties.$modal_inprogress = $modal_inprogress;
             $pauseApplication.init(emitter);
             app.config.globalProperties.$is_mobile = { value: typeof window !== 'undefined' ? window.innerWidth <= 640 : false };
             app.config.globalProperties.$is_tablet = { value: typeof window !== 'undefined' ? window.innerWidth <= 1024 : false };
-            app.config.globalProperties.$dictionaries = createDictionaries();
+            app.config.globalProperties.$dictionaries = createDictionaries(apiClient, dictionariesRoute, dictionariesStorage);
 
             hostSetup?.(app);
             app.mount(el);
@@ -174,64 +197,6 @@ function localizedRoute(name, locale, params = {}, absolute = undefined) {
     }
 }
 
-function createApiClient() {
-    const csrf = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    const request = async (method, url, data) => {
-        if (method === 'GET' && data && Object.keys(data).length) {
-            const query = new URLSearchParams(data).toString();
-            url = `${url}${url.includes('?') ? '&' : '?'}${query}`;
-        }
-
-        const response = await fetch(url, {
-            method,
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                ...(csrf() ? { 'X-CSRF-TOKEN': csrf() } : {}),
-            },
-            body: method === 'GET' || data === undefined ? undefined : JSON.stringify(data),
-        });
-
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok) throw payload;
-
-        return { data: payload };
-    };
-
-    return {
-        get: (url, data) => request('GET', url, data),
-        post: (url, data) => request('POST', url, data),
-        setCustomHeader: () => {},
-    };
-}
-
-function createToast() {
-    return {
-        success: (message) => console.info(message),
-        error: (message) => console.error(message),
-    };
-}
-
-// Подтверждение необратимых действий. Оформленный диалог — дело хоста: он может
-// подменить помощник своим, поэтому здесь только браузерный запрос как основа.
-function createPopup() {
-    let open = false;
-
-    return {
-        confirm_yn: async (message) => {
-            if (typeof window === 'undefined') return false;
-
-            open = true;
-            const result = window.confirm(message);
-            open = false;
-
-            return result;
-        },
-        isOpen: () => open,
-    };
-}
-
 function createAccountService() {
     return {
         setAccount: () => {},
@@ -262,6 +227,9 @@ function createSettingsService() {
 
         return `page_state:${account}:${pageKey}`;
     };
+    // Общий для всех страниц срез состояния аккаунта: выбранное здесь (точка
+    // продаж) переезжает между страницами вместе с пользователем.
+    const globalStateKey = (accountId = null) => `global_state:${String(accountId ?? 'default')}`;
 
     return {
         getSetting: read,
@@ -280,17 +248,44 @@ function createSettingsService() {
                 ...partial,
             });
         },
+        getGlobalState: (accountId = null) => read(globalStateKey(accountId), {}),
+        setGlobalState: (accountId = null, state = {}) => write(globalStateKey(accountId), state),
+        mergeGlobalState: (accountId = null, partial = {}) => {
+            const current = read(globalStateKey(accountId), {});
+
+            write(globalStateKey(accountId), {
+                ...current,
+                ...partial,
+            });
+        },
     };
 }
 
-function createDictionaries() {
-    return {
-        currencies: [
-            { id: 'UAH', name: 'UAH' },
-            { id: 'USD', name: 'USD' },
-            { id: 'EUR', name: 'EUR' },
-        ],
-    };
+// Справочники читаются через реактивную обёртку: экземпляр должен писать в неё
+// же, иначе обновление из другой вкладки до шаблонов не доходит.
+function createDictionaries(apiClient, routeNames, storageName) {
+    const instance = new DictionariesClass(storageName, apiClient, firstResolvableRoute(routeNames));
+    const dictionaries = reactive(instance);
+
+    instance._proxy = dictionaries;
+
+    return dictionaries;
+}
+
+// Маршрута справочников у пакета своего нет — отсутствие имени в списке хоста
+// не повод ронять загрузку кабинета.
+function firstResolvableRoute(names) {
+    for (const name of [].concat(names)) {
+        try {
+            return route(name);
+        } catch {
+            continue;
+        }
+    }
+
+    console.warn('[cabinet-kit] Dictionaries endpoint is not registered — dictionaries stay empty.');
+
+    return null;
 }
 
 function applyDefaultTheme() {
