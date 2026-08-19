@@ -1,113 +1,104 @@
 <template>
+    <AuthLayout title="Registration" :back_href="route('login')">
 
-	<AuthLayout page_name="Create an account">
+        <div ref="form" class="card-body">
 
-		<form @submit.prevent="submit">
-			<div class="form-group">
-				<label class="form-label">{{ $t ? $t('Name') : 'Name' }}</label>
-				<input type="text" class="form-control" v-model="form.name" :class="{ 'is-invalid': errors.name }" autofocus>
-				<span v-if="errors.name" class="form-error">{{ errors.name }}</span>
+
+			<div class="v-flex space-y-2">
+				<div class="label-group">
+					<!-- <label class="form-label">{{ $t('First Name')}}</label> -->
+					<input ref="name" type="text" v-model="form_data.name" class="form-control md:form-control-lg" :placeholder="$t('First Name')"/>
+					<p v-if="form_data_errors.name" class="form-error" >{{ form_data_errors.name }}</p>
+				</div>
+				<div class="label-group">
+					<!-- <label class="form-label">{{ $t('Your email')}}</label> -->
+					<input ref="email" type="text" v-model="form_data.email" class="form-control md:form-control-lg" :placeholder="$t('Your email')"/>
+					<p v-if="form_data_errors.email" class="form-error" >{{ form_data_errors.email }}</p>
+				</div>
+				<div class="label-group">
+					<label class="form-label">{{ $t('Password')}}</label>
+					<input ref="password" type="password" v-model="form_data.password" class="form-control md:form-control-lg"/>
+					<p v-if="form_data_errors.password" class="form-error" >{{ form_data_errors.password }}</p>
+				</div>
+				<div class="label-group">
+					<label class="form-label">{{ $t('Confirmation')}}</label>
+					<input ref="password_confirmation" type="password" v-model="form_data.password_confirmation" class="form-control md:form-control-lg"  @keydown.enter="submit()"/>
+					<p v-if="form_data_errors.password_confirmation" class="form-error" >{{ form_data_errors.password_confirmation }}</p>
+				</div>
+
+				<button
+					class="w-full button primary-button button-lg text-md !mt-4"
+					:class="$inprogress.value && 'spinner'"
+					@click.stop.prevent="submit"
+					>{{ $t('Sign up')}}
+				</button>
 			</div>
 
-			<div class="form-group">
-				<label class="form-label">{{ $t ? $t('Company name') : 'Company name' }}</label>
-				<input type="text" class="form-control" v-model="form.company_name" :class="{ 'is-invalid': errors.company_name }">
-				<span v-if="errors.company_name" class="form-error">{{ errors.company_name }}</span>
-			</div>
+			<!-- Divider -->
+            <div class="relative flex justify-center items-center w-full !my-5">
+				<div class="absolute inset-0 flex items-center">
+					<div data-orientation="horizontal" role="none" data-slot="separator" class="shrink-0 bg-[var(--form-control-border-color)] data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px w-full"></div>
+				</div>
+                <!-- <div class="relative text-xs uppercase bg-card">
+                    <span class="px-3 text-sm text-secondary">{{ $t('Continue with') }}</span>
+                </div> -->
+            </div>
 
-			<div class="form-group">
-				<label class="form-label">{{ $t ? $t('Email') : 'Email' }}</label>
-				<input type="email" class="form-control" v-model="form.email" :class="{ 'is-invalid': errors.email }">
-				<span v-if="errors.email" class="form-error">{{ errors.email }}</span>
-			</div>
+			<!-- Register with Google / Apple -->
+			<SocialAuthButtons />
 
-			<div class="form-group">
-				<label class="form-label">{{ $t ? $t('Password') : 'Password' }}</label>
-				<input type="password" class="form-control" v-model="form.password" :class="{ 'is-invalid': errors.password }">
-				<span v-if="errors.password" class="form-error">{{ errors.password }}</span>
-			</div>
+        </div>
 
-			<div class="form-group">
-				<label class="form-label">{{ $t ? $t('Confirm password') : 'Confirm password' }}</label>
-				<input type="password" class="form-control" v-model="form.password_confirmation" :class="{ 'is-invalid': errors.password_confirmation }">
-				<span v-if="errors.password_confirmation" class="form-error">{{ errors.password_confirmation }}</span>
-			</div>
-
-			<button type="submit" class="button primary-button w-full" :disabled="submitting">
-				{{ $t ? $t('Create account') : 'Create account' }}
-			</button>
-
-			<div class="ck-auth-links">
-				<Link :href="route('login')">{{ $t ? $t('Already have an account? Log in') : 'Already have an account? Log in' }}</Link>
-			</div>
-		</form>
-
-	</AuthLayout>
-
+    </AuthLayout>
 </template>
 
 <script>
-	import { Link, router } from '@inertiajs/vue3';
+    import { Link, router } from '@inertiajs/vue3';      
 
-	import AuthLayout from '../../layouts/AuthLayout.vue';
+    import sharedMixins     from '@/js/_sharedMixins.js'
+    import _formMixins     from '@/js/_formMixins';
 
-	export default {
-		name: 'Register',
-		components: { AuthLayout, Link },
-		data() {
-			return {
-				form: {
-					name: '',
-					company_name: '',
-					email: '',
-					password: '',
-					password_confirmation: '',
-				},
-				errors: {},
-				submitting: false,
-			}
-		},
-		methods: {
-			validateForm() {
-				this.errors = {};
+    import AuthLayout          from '../../Layouts/AuthLayout.vue';
+    import SocialAuthButtons   from '@/_main/js/Pages/Auth/SocialAuthButtons.vue';
 
-				if (!this.form.name.trim())
-					this.errors.name = this.$t ? this.$t('This field is required') : 'This field is required';
+    export default {
+        mixins: [sharedMixins, _formMixins],
+        components: { AuthLayout, Link, SocialAuthButtons },
+        data() {
+            return {
+                validationRules: {
+                    name:                   'required|min:6',
+                    email:                  'required|email',
+                    password:               'required|password',
+                    password_confirmation:  'required|confirmed:password'
+                },
+            }
+        },
+        mounted() {
+            this.$nextTick(() => {
+                // this.$refs.name.focus();
+            });
+            // this.form_data.name="Andrew"
+            // this.form_data.email="sergps7@gmail.com"
+            // this.form_data.password="12345678"
+            // this.form_data.password_confirmation="12345678"
+        },
+        methods: {
+            submit: async function(e) {
+                if ( !await this.validateForm() )
+                    return false;
 
-				if (!this.form.company_name.trim())
-					this.errors.company_name = this.$t ? this.$t('This field is required') : 'This field is required';
-
-				if (!/^\S+@\S+\.\S+$/.test(this.form.email))
-					this.errors.email = this.$t ? this.$t('Enter a valid email') : 'Enter a valid email';
-
-				if (!this.form.password || this.form.password.length < 8)
-					this.errors.password = this.$t ? this.$t('Password must be at least 8 characters') : 'Password must be at least 8 characters';
-
-				if (this.form.password !== this.form.password_confirmation)
-					this.errors.password_confirmation = this.$t ? this.$t('Passwords do not match') : 'Passwords do not match';
-
-				return Object.keys(this.errors).length === 0;
-			},
-			submit() {
-				if (!this.validateForm())
-					return;
-
-				this.submitting = true;
-
-				router.post(route('register'), this.form, {
-					onError: (errors) => { this.errors = errors; },
-					onFinish: () => { this.submitting = false; },
-				});
-			},
-		},
-	}
+                this.form_data.locale = this.$i18n.locale;
+                router.post( route('register'), this.form_data, {
+                    onError: (errors) => {
+                        if (errors.error)
+                            this.$toast.error(errors.error);
+                        this.outputErrors(errors);                   
+                    },
+                    preserveScroll: true,
+                    preserveState: true,
+                });
+            }
+        }
+    }
 </script>
-
-<style lang="scss" scoped>
-	.ck-auth-links {
-		display: flex;
-		justify-content: center;
-		font-size: .8rem;
-		margin-top: 1rem;
-	}
-</style>

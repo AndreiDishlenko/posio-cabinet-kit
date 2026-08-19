@@ -33,6 +33,7 @@ class DoctorCommand extends Command
         $this->check(Schema::hasTable('accounts') && Schema::hasTable('user_has_accounts'), 'CabinetKit account tables exist', 'Run php artisan migrate.');
         $this->check(Schema::hasTable('admin_links'), 'CabinetKit admin_links table exists', 'Run php artisan migrate.');
         $this->check($this->routeNamesDoNotCollide(), 'Route names can be cached', "Set 'auth_routes' => false or remove duplicate auth route names.");
+        $this->check($this->socialAuthLooksReady(), 'Configured social sign-in providers have their driver installed', 'Run composer require laravel/socialite (and socialiteproviders/apple for Apple), or clear the credentials in config/cabinet-kit.php.');
         foreach (FrontendDependencies::PACKAGES as $package => $version) {
             $this->check($this->packageJsonHas($package), "package.json contains {$package}", "Run npm install {$package}@\"{$version}\".");
         }
@@ -142,6 +143,27 @@ class DoctorCommand extends Command
             app('router')->getRoutes()->toSymfonyRouteCollection();
         } catch (\LogicException) {
             return false;
+        }
+
+        return true;
+    }
+
+    // Credentials without the driver behind them is the one silent failure of
+    // social sign-in: the buttons render, the route answers 404, nothing says why.
+    protected function socialAuthLooksReady(): bool
+    {
+        foreach (array_keys((array) config('cabinet-kit.social_auth', [])) as $provider) {
+            if (blank(config("services.{$provider}.client_id"))) {
+                continue;
+            }
+
+            if (! class_exists(\Laravel\Socialite\Facades\Socialite::class)) {
+                return false;
+            }
+
+            if ($provider === 'apple' && ! class_exists(\SocialiteProviders\Apple\Provider::class)) {
+                return false;
+            }
         }
 
         return true;

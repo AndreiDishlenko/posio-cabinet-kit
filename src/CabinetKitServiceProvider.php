@@ -2,6 +2,7 @@
 
 namespace Posio\CabinetKit;
 
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Posio\CabinetKit\Console\Commands\DoctorCommand;
 use Posio\CabinetKit\Console\Commands\InstallCommand;
@@ -21,6 +22,7 @@ class CabinetKitServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'cabinet-kit');
 
         $this->registerInertiaPagePaths();
+        $this->registerSocialAuth();
 
         $this->publishes([
             __DIR__.'/../config/cabinet-kit.php' => config_path('cabinet-kit.php'),
@@ -40,6 +42,39 @@ class CabinetKitServiceProvider extends ServiceProvider
                 InstallCommand::class,
                 SyncConfigCommand::class,
             ]);
+        }
+    }
+
+    /**
+     * Bridge the bundled social sign-in credentials into the shape Socialite
+     * reads, so a consumer only fills in env vars — config/services.php is the
+     * host's file and this package never publishes into it. Anything the host
+     * already declares there wins and is left alone.
+     */
+    protected function registerSocialAuth(): void
+    {
+        $prefix = trim((string) config('cabinet-kit.route_prefix', 'cabinet'), '/');
+
+        foreach ((array) config('cabinet-kit.social_auth', []) as $provider => $credentials) {
+            $credentials = (array) $credentials;
+
+            if (blank($credentials['client_id'] ?? null) || filled(config("services.{$provider}.client_id"))) {
+                continue;
+            }
+
+            if (blank($credentials['redirect'] ?? null)) {
+                $credentials['redirect'] = '/'.ltrim($prefix.'/auth/'.$provider.'/callback', '/');
+            }
+
+            config(["services.{$provider}" => array_merge((array) config("services.{$provider}", []), $credentials)]);
+        }
+
+        // Apple is not one of Socialite's own drivers — hook up the community
+        // one when the host has pulled it in.
+        if (class_exists(\SocialiteProviders\Apple\Provider::class)) {
+            Event::listen(function (\SocialiteProviders\Manager\SocialiteWasCalled $event) {
+                $event->extendSocialite('apple', \SocialiteProviders\Apple\Provider::class);
+            });
         }
     }
 

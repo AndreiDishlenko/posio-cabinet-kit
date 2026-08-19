@@ -1,98 +1,183 @@
 <template>
 
-	<AuthLayout page_name="Log in">
+    <AuthLayout title="Sign in account"
+        :show_header="false">
 
-		<form @submit.prevent="submit">
-			<div class="form-group">
-				<label class="form-label">{{ $t ? $t('Email') : 'Email' }}</label>
-				<input type="email" class="form-control" v-model="form.email" :class="{ 'is-invalid': errors.email }" autofocus>
-				<span v-if="errors.email" class="form-error">{{ errors.email }}</span>
+        <div class="card-body">
+
+			<!-- Итог перехода по ссылке из письма: подтверждение почты или протухшее письмо -->
+			<div v-if="status"
+				class="text-center text-sm mb-10"
+				:class="status_is_error ? 'text-error' : 'text-secondary'">
+				{{ $t(status) }}
 			</div>
 
-			<div class="form-group">
-				<label class="form-label">{{ $t ? $t('Password') : 'Password' }}</label>
-				<input type="password" class="form-control" v-model="form.password" :class="{ 'is-invalid': errors.password }">
-				<span v-if="errors.password" class="form-error">{{ errors.password }}</span>
+			<!-- Continue with email -->
+			<div class="v-flex space-y-2">
+				
+				<div class="label-group">
+					<!-- <label class="form-label">{{ $t('Continue with Email')}}</label> -->
+					<input ref="email" type="email" autocomplete="email" v-model="form_data.email" class="form-control md:form-control-lg" @change.stop.prevent="nextField('email', 'password')"/>
+					<p v-if="form_data_errors.email" class="form-error" >{{ $t(form_data_errors.email) }}</p>
+				</div>
+
+				<div class="label-group">
+					<input class="w-full form-control md:form-control-lg"  
+						ref="password"
+						type="password"
+						autocomplete="off"
+						v-model="form_data.password"
+						maxlength="20"
+						@keydown.enter="submit()"
+						:placeholder="'********'"
+						/>
+					<p v-if="form_data_errors.password" class="form-error" >{{ $t(form_data_errors.password) }}</p>
+				</div>
+
+				<button
+					class="w-full button primary-button button-lg text-md"
+					:class="$inprogress.value && 'spinner'"
+					@click.stop.prevent="submit"
+					>{{ $t('Continue')}}
+				</button>
+
 			</div>
 
-			<label class="ck-remember">
-				<input type="checkbox" v-model="form.remember">
-				{{ $t ? $t('Remember me') : 'Remember me' }}
-			</label>
+			<!-- Forgot / Register links -->
+            <div class="card-footer-text sm:px-4 text-secondary">
+                <Link as="button" :href="route('password.request')" class="hover:underline ">{{ $t('Forgot password?')}}</Link>
+                <Link as="button" :href="route('register')" class="hover:underline ">{{ $t('Sign up')}}</Link>
+            </div>
 
-			<button type="submit" class="button primary-button w-full" :disabled="submitting">
-				{{ $t ? $t('Log in') : 'Log in' }}
-			</button>
+			<!-- Divider -->
+            <div class="relative flex justify-center items-center w-full !my-5">
+				<div class="absolute inset-0 flex items-center">
+					<div data-orientation="horizontal" role="none" data-slot="separator" class="shrink-0 bg-[var(--form-control-border-color)] data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px w-full"></div>
+				</div>
+                <!-- <div class="relative text-xs uppercase bg-card">
+                    <span class="px-3 text-sm text-secondary">{{ $t('Continue with') }}</span>
+                </div> -->
+            </div>
 
-			<div class="ck-auth-links">
-				<Link :href="route('password.request')">{{ $t ? $t('Forgot your password?') : 'Forgot your password?' }}</Link>
-				<Link :href="route('register')">{{ $t ? $t('Create an account') : 'Create an account' }}</Link>
-			</div>
-		</form>
+			<!-- Login with Google / Apple -->
+			<SocialAuthButtons />
 
-	</AuthLayout>
+        </div>
+
+    </AuthLayout>
 
 </template>
 
 <script>
-	import { Link, router } from '@inertiajs/vue3';
+    import { Link, router } from '@inertiajs/vue3';
+    import axios            from 'axios'; 
 
-	import AuthLayout from '../../layouts/AuthLayout.vue';
+    import sharedMixins     from '@/js/_sharedMixins.js'
+    import _formMixins     from '@/js/_formMixins';
 
-	export default {
-		name: 'Login',
-		components: { AuthLayout, Link },
-		data() {
-			return {
-				form: {
-					email: '',
-					password: '',
-					remember: false,
-				},
-				errors: {},
-				submitting: false,
-			}
-		},
-		methods: {
-			validateForm() {
-				this.errors = {};
+    import AuthLayout          from '@/_main/js/Layouts/AuthLayout.vue';
+    import SocialAuthButtons   from '@/_main/js/Pages/Auth/SocialAuthButtons.vue';
 
-				if (!/^\S+@\S+\.\S+$/.test(this.form.email))
-					this.errors.email = this.$t ? this.$t('Enter a valid email') : 'Enter a valid email';
+    export default {
+        mixins: [sharedMixins, _formMixins],
+        components: { AuthLayout, Link, SocialAuthButtons },
+        props: {
+            email: {
+                type: String,
+                default: ''
+            },
+            status: {
+                type: String,
+                default: ''
+            },
 
-				if (!this.form.password)
-					this.errors.password = this.$t ? this.$t('This field is required') : 'This field is required';
+        },
+        data() {
+            return {
+                validationRules: {
+                    email: 'required|email',
+                    password: 'required'
+                },
+                responseInterceptor: null
+            }
+        },
+        computed: {
+            status_is_error() {
+                return ['verification-link-invalid', 'verification-link-broken', 'social-auth-failed'].includes(this.status);
+            }
+        },
+        mounted() {
+            // console.log('login.mnt', this.email);
+            // Email autocomplete
+            if (this.email)
+                var lastemail = this.email
+            else
+                var lastemail = localStorage.getItem('lastemail');
 
-				return Object.keys(this.errors).length === 0;
-			},
-			submit() {
-				if (!this.validateForm())
-					return;
+            if (lastemail) {
+                this.form_data.email = lastemail;
+                // this.$nextTick(() => {
+                //     this.$refs.password.focus();
+                // });
+            } else {
+                this.$nextTick(() => {
+                    // this.$refs.email.focus();
+                });
+            }
 
-				this.submitting = true;
+            // Clear browser-autofilled password — Chrome fills DOM directly, bypassing Vue
+            this.$nextTick(() => {
+                setTimeout(() => {
+                    if (this.$refs.password) {
+                        this.$refs.password.value = '';
+                        this.$refs.password.dispatchEvent(new Event('input'));
+                    }
+                }, 200);
+            });
 
-				router.post(route('login'), this.form, {
-					onError: (errors) => { this.errors = errors; },
-					onFinish: () => { this.submitting = false; },
-				});
-			},
-		},
-	}
+            // Catch 409 redirect and save email
+            this.responseInterceptor = axios.interceptors.response.use(
+                response => response,
+                error => {
+                    if (error.response && error.response.status === 409) 
+                        this.saveEmail();
+                    return Promise.reject(error);
+                }
+            );
+        },
+        beforeUnmount() {
+            // Disable 409 check
+            if (this.responseInterceptor !== null) 
+                axios.interceptors.response.eject(this.responseInterceptor);
+        },
+        methods: {
+            saveEmail() {
+                localStorage.setItem('lastemail', this.form_data.email);
+            },
+            submit: async function(e) {
+                // console.log('submit', this.validateForm());
+                if ( !await this.validateForm() )
+                    return false;
+
+                this.saveEmail();
+                router.post( route('login'), { ...this.form_data, remember: true }, {
+                    onError: (errors) => {
+                        if (errors.error) {
+                            this.$toast.error(this.$t(errors.error));
+                            this.form_data.password='';
+                            this.$refs.password.focus();
+                        }
+                        this.outputErrors(errors)
+                        return false;  
+                    },
+                })
+            }
+        }
+    }
 </script>
 
 <style lang="scss" scoped>
-	.ck-remember {
-		display: flex;
-		align-items: center;
-		gap: .4rem;
-		font-size: .85rem;
-		margin-bottom: 1rem;
-	}
-
-	.ck-auth-links {
-		display: flex;
-		justify-content: space-between;
-		font-size: .8rem;
-		margin-top: 1rem;
+	.bg-card {
+		background-color: #292929;
 	}
 </style>

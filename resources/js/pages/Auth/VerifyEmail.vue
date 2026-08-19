@@ -1,69 +1,103 @@
 <template>
+    <AuthLayout title="Email Verification">
 
-	<AuthLayout page_name="Verify your email">
+        <div class="card-body">
+            <div v-if="status === 'verification-link-sent'" class="text-center">
+                {{ $t('A new verification link has been sent to the email address you provided during registration.') }}
+            </div>
+            <div v-else-if="error" class="text-center text-error">
+                {{ $i18n.tNumbered(error) }}
+            </div>
+            <div v-else class="text-center text-secondary text-sm">
+                {{ $t('hellow-message') }}
+            </div>
+        </div>
 
-		<p class="ck-verify-text">
-			{{ $t ? $t('We sent a verification link to your email address. Click it to activate your account.') : 'We sent a verification link to your email address. Click it to activate your account.' }}
-		</p>
+        <div class="card-footer !flex-col !space-x-0 space-y-5">
+            <button
+                class="w-full button button-lg text-md"
+                :class="[
+                    $inprogress.value && 'spinner',
+                    (status === 'verification-link-sent' || cooldownRemaining > 0) ? 'disabled' : ''
+                ]"
+                @click.stop.prevent="resendVerification"
+                >
+                <span v-if="cooldownRemaining > 0">{{ $t('Resend Verification Email')}} ({{ cooldownFormatted }})</span>
+                <span v-else>{{ $t('Resend Verification Email')}}</span>
+            </button>
+            <div class="card-footer-text !justify-center">
+                <Link as="button" :href="route('logout')">
+                    {{ $t('Logout')}}
+                </Link>
+            </div>
+        </div>
 
-		<p v-if="sent" class="ck-status">{{ $t ? $t('A new verification link has been sent.') : 'A new verification link has been sent.' }}</p>
-
-		<button type="button" class="button primary-button w-full" :disabled="sending" @click="resend">
-			{{ $t ? $t('Resend verification email') : 'Resend verification email' }}
-		</button>
-
-		<div class="ck-auth-links">
-			<Link :href="route('logout')" method="post" as="button">{{ $t ? $t('Log out') : 'Log out' }}</Link>
-		</div>
-
-	</AuthLayout>
-
+    </AuthLayout>
 </template>
 
 <script>
-	import { Link, router } from '@inertiajs/vue3';
+    import { Link, router } from '@inertiajs/vue3';
 
-	import AuthLayout from '../../layouts/AuthLayout.vue';
+    import sharedMixins     from '@/js/_sharedMixins.js'
+    
+    import AuthLayout      from '../../Layouts/AuthLayout.vue';
 
-	export default {
-		name: 'VerifyEmail',
-		components: { AuthLayout, Link },
-		data() {
-			return {
-				sending: false,
-				sent: false,
-			}
-		},
-		methods: {
-			resend() {
-				this.sending = true;
-
-				router.post(route('verification.send'), {}, {
-					onSuccess: () => { this.sent = true; },
-					onFinish: () => { this.sending = false; },
-				});
-			},
-		},
-	}
+    export default {
+        mixins: [sharedMixins],
+        components: { Link, AuthLayout },
+        props: {
+            status: {
+                type: String,
+                default: ''
+            },
+            error: {
+                type: String,
+                default: ''
+            },
+        },
+        data: function() {
+            return {
+                cooldownRemaining: 120,
+                cooldownTimer: null,
+            }
+        },
+        computed: {
+            cooldownFormatted() {
+                const m = Math.floor(this.cooldownRemaining / 60);
+                const s = this.cooldownRemaining % 60;
+                return m + ':' + String(s).padStart(2, '0');
+            }
+        },
+        mounted() {
+            this.startCooldown();
+        },
+        beforeUnmount() {
+            clearInterval(this.cooldownTimer);
+        },
+        methods: {
+            startCooldown() {
+                clearInterval(this.cooldownTimer);
+                this.cooldownRemaining = 120;
+                this.cooldownTimer = setInterval(() => {
+                    this.cooldownRemaining--;
+                    if (this.cooldownRemaining <= 0) {
+                        this.cooldownRemaining = 0;
+                        clearInterval(this.cooldownTimer);
+                    }
+                }, 1000);
+            },
+            resendVerification() {
+                // this.form_data.locale = this.$i18n.locale;
+                router.post( route('verification.send'), {}, {
+                    onError: (errors) => {
+                        if (errors.error)
+                            this.$toast.error(errors.error);
+                    },
+                    preserveScroll: true,
+                    preserveState: true,
+                });
+                this.startCooldown();
+            }
+        }
+    }
 </script>
-
-<style lang="scss" scoped>
-	.ck-verify-text {
-		font-size: .85rem;
-		opacity: .75;
-		margin-bottom: 1rem;
-	}
-
-	.ck-status {
-		font-size: .85rem;
-		color: #16a34a;
-		margin-bottom: 1rem;
-	}
-
-	.ck-auth-links {
-		display: flex;
-		justify-content: center;
-		font-size: .8rem;
-		margin-top: 1rem;
-	}
-</style>

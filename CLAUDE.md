@@ -1,117 +1,142 @@
-# CLAUDE.md — posio/cabinet-kit 
+# CLAUDE.md — posio/cabinet-kit
 
-Guidance for Claude Code (or any AI assistant) working directly in this
-repository — the standalone package, not a project that consumes it.
+Инструкции для Claude Code (или любого другого AI-ассистента), работающего
+непосредственно в этом репозитории — то есть в самом пакете, а не в проекте,
+который его подключает.
 
-## What this is
+## Что это
 
-A Composer package (`posio/cabinet-kit`) that adds a generic admin panel
-("cabinet") to other Laravel + Inertia + Vue 3 web projects: shell +
-backend + DB + seed data, meant to be installed once and updated via
-`composer update`, not copy-pasted per project.
+Composer-пакет (`posio/cabinet-kit`), добавляющий универсальную админ-панель
+(«кабинет») в сторонние веб-проекты на Laravel + Inertia + Vue 3: оболочка +
+backend + БД + сид-данные. Пакет ставится один раз и обновляется через
+`composer update`, а не копируется в каждый проект руками.
 
-Intended module scope (some already shipped, some not yet started —
-check `docs/CHANGELOG.md` for what actually landed before assuming a
-module exists):
-- **Users** — account membership, invite/remove — shipped.
-- **Roles & permissions** — Spatie teams, per-account role assignment —
-  shipped.
-- **Settings** — config-driven tabs shell (Account/Users/Profile) —
-  shipped.
-- **Auth** — login/register/logout/password reset/email verification —
-  shipped (v0.2.0+).
-- **Logs** — not yet built.
-- **Localization** — i18n plumbing exists (`i18n.config.js`,
-  `localeSync.js`) but there's no dedicated locale-management module yet.
-- **Notifications** — not yet built.
+Планируемый состав модулей (часть уже реализована, часть ещё не начата —
+прежде чем считать, что модуль существует, сверься с `docs/CHANGELOG.md`):
+- **Users** — членство в аккаунте, приглашение/удаление — реализовано.
+- **Roles & permissions** — Spatie teams, назначение ролей в рамках
+  аккаунта — реализовано.
+- **Settings** — оболочка вкладок на основе конфига (Account/Users/Profile) —
+  реализовано.
+- **Auth** — вход/регистрация/выход/сброс пароля/подтверждение email —
+  реализовано (v0.2.0+).
+- **Logs** — ещё не сделано.
+- **Localization** — инфраструктура i18n есть (`i18n.config.js`,
+  `localeSync.js`), но отдельного модуля управления локалями пока нет.
+- **Notifications** — ещё не сделано.
 
-See `docs/ARCHITECTURE.md` for the full picture and `docs/EXTENDING.md`
-for the intended extension points — **read both before making
-structural changes.**
+Полная картина — в `docs/ARCHITECTURE.md`, задуманные точки расширения —
+в `docs/EXTENDING.md`. **Оба файла читать до внесения структурных
+изменений.**
 
-## Origin & extraction method
+## Происхождение и метод переноса
 
-This package is not written from scratch — it's extracted from the
-actively-developed `posio.cabinet` project (`F:\OpenServer\home\posio.cabinet`).
-The working method: pull the relevant original files/components from
-`posio.cabinet`, lay them out under the *same relative structure* here
-(`resources/_admin/...` → `resources/js/...`, `app/Models/...` →
-`src/Models/...`, etc.), then generalize/wrap them — strip anything
-Posio-specific (product tour, AI widgets, product business logic),
-rename to the package's own prefixes (`cabinet-kit.*`, `--ck-*`).
+Пакет не пишется с нуля — он выделяется из активно разрабатываемого проекта
+`posio.cabinet` (`F:\OpenServer\home\posio.cabinet`). Рабочий метод: взять
+нужные исходные файлы/компоненты из `posio.cabinet`, разложить их здесь по
+*такой же относительной структуре* (`resources/_admin/...` →
+`resources/js/...`, `app/Models/...` → `src/Models/...` и т.д.), затем
+обобщить/обернуть — вырезать всё специфичное для Posio (продуктовый тур,
+AI-виджеты, продуктовая бизнес-логика), переименовать под собственные
+префиксы пакета (`cabinet-kit.*`, `--ck-*`).
 
-**Always try to preserve the original files and components from
-`posio.cabinet` as they are.** Port them over verbatim and change only
-what genuinely has to change for the package (Posio-specific logic
-stripped, prefixes renamed, host assumptions removed). Do not rewrite,
-restructure, re-style or "improve" an original file while porting it,
-and do not author a fresh replacement when an original exists — every
-gratuitous deviation makes the next re-sync from `posio.cabinet` a
-manual merge instead of a mechanical copy.
+**Всегда сохраняй исходные файлы и компоненты из `posio.cabinet` как есть.**
+Переноси их дословно и меняй только то, что действительно обязано измениться
+ради пакета. Не переписывай, не реструктурируй, не переоформляй и не
+«улучшай» исходный файл при переносе, и не пиши свою замену там, где есть
+оригинал — каждое лишнее отклонение превращает следующую пересинхронизацию
+из `posio.cabinet` из механического копирования в ручной мердж.
 
-The mapping between original and package files, plus which files are
-safe to mechanically re-sync vs. need hand-review, lives in
-`tools/sync-manifest.json` and is applied by
-`tools/Sync-CabinetKitFromPosio.ps1` — see `CABINET_KIT_MAINTENANCE.md`
-for the full update workflow. Don't re-derive this process from scratch;
-read that file first.
+### Компоненты переносятся целиком
 
-## Hard scope boundary
+Компонент переносится из оригинального кода **целиком, без изменений**.
+Менять его допустимо только в перечисленных ниже случаях:
 
-This package stays a **shell**. Do not add:
-- Document/order/report/POS business logic (that's posio.cabinet's job)
-- Anything that assumes a specific host database beyond `users`/`accounts`
+1. **Пути подключения зависимостей** — импорты правятся под структуру
+   пакета (алиасы, относительные пути, перенесённые соседние файлы).
+2. **Namespaces** — PHP-namespace и связанные с ним `use`-импорты правятся
+   под пространство имён пакета.
 
-Auth (login/register/logout/password reset/email verification) is bundled
-— that boundary moved (see `docs/CHANGELOG.md` v0.2.0). It stays a *generic*
-auth flow, though: don't add product-specific onboarding steps, social
-login providers, or anything posio.cabinet-specific to it.
+Всё остальное — разметка, стили, логика, порядок опций, имена методов и
+переменных, форматирование — остаётся ровно таким, как в оригинале.
+Изменение, не попадающее ни в один из этих двух случаев, — это не перенос,
+а правка: её нужно делать отдельно и осознанно, а не походя во время
+копирования.
 
-If a change only makes sense for one specific consumer project, it belongs
-in that project's own `resources/_admin/overrides/`, not here.
+Обобщение под пакет (вырезание Posio-специфичной логики, переименование
+префиксов, снятие предположений о хост-приложении) — тоже отдельный
+осознанный шаг, зафиксированный в манифесте синхронизации, а не свобода
+править файл по ходу дела.
 
-## Conventions
+Соответствие между исходными и пакетными файлами, а также перечень того, что
+можно пересинхронизировать механически, а что требует ручного разбора, лежит
+в `tools/sync-manifest.json` и применяется скриптом
+`tools/Sync-CabinetKitFromPosio.ps1` — полный процесс обновления описан в
+`CABINET_KIT_MAINTENANCE.md`. Не выводи этот процесс заново — сначала прочти
+тот файл.
 
-- **Vue**: Options API only. Never `<script setup>` or Composition API
-  imports (`ref`, `reactive`, `computed` as imports, etc.).
-- **No `lang="ts"`** on `<script>` tags.
-- Indentation in `.vue` files: tabs, not spaces.
-- Props: object syntax, one per line, never shorthand.
-- CSS variables: everything prefixed `--ck-*` (never bare names that could
-  collide with a host app's own tokens).
-- Tailwind for layout/spacing in templates; `<style lang="scss" scoped>`
-  only for what Tailwind can't express (CSS vars, pseudo-elements,
-  keyframes, complex selectors).
-- Forms: always validate client-side before submitting; backend validation
-  errors are the fallback layer, not the primary one.
-- PHP: PSR-12, typed properties/returns where the codebase already does.
+## Жёсткая граница ответственности
 
-## No copy-on-install, ever
+Пакет остаётся **оболочкой**. Не добавлять:
+- Бизнес-логику документов/заказов/отчётов/POS (это задача posio.cabinet)
+- Всё, что предполагает конкретную БД хоста сверх `users`/`accounts`
 
-The single most important architectural invariant: Vue/SCSS/PHP source
-files are **read directly from `vendor/posio/cabinet-kit/...`** by the host's
-build (Vite alias) and framework (service provider `loadMigrationsFrom` /
-`loadRoutesFrom`). Nothing gets published/copied except
-`config/cabinet-kit.php`. Any change that requires the host to manually
-re-copy a file after `composer update` breaks the "simple install, simple
-update" premise this package exists for — treat that as a design smell, not
-a normal trade-off, and look for a config-driven or override-resolvable
-alternative first.
+Auth (вход/регистрация/выход/сброс пароля/подтверждение email) входит в
+пакет — эта граница сдвинулась (см. `docs/CHANGELOG.md` v0.2.0). Но остаётся
+*универсальным* потоком авторизации: не добавлять в него продуктовые шаги
+онбординга, провайдеры социального входа и что-либо специфичное для
+posio.cabinet.
 
-## Versioning
+Если изменение имеет смысл только для одного конкретного
+проекта-потребителя, его место — в `resources/_admin/overrides/` того
+проекта, а не здесь.
 
-Semver git tags on this repo. Bump `docs/CHANGELOG.md` before tagging.
-Breaking changes (renamed config keys, removed props on shipped Vue
-components, changed route names) require a major bump — consumer projects
-pin a version range in their `composer.json`.
+## Соглашения
 
-## Testing changes against a real consumer
+- **Vue**: только Options API. Никогда `<script setup>` и импорты Composition
+  API (`ref`, `reactive`, `computed` как импорты и т.п.).
+- **Без `lang="ts"`** в теге `<script>`.
+- Отступы в `.vue` файлах: табуляция, не пробелы.
+- Props: объектный синтаксис, каждый на отдельной строке, никогда не
+  сокращённо.
+- CSS-переменные: всё с префиксом `--ck-*` (никаких голых имён, которые могут
+  столкнуться с токенами хост-приложения).
+- Tailwind для layout/отступов в шаблонах; `<style lang="scss" scoped>` —
+  только для того, что Tailwind выразить не может (CSS-переменные,
+  псевдоэлементы, keyframes, сложные селекторы).
+- Формы: всегда валидировать на фронте до отправки; ошибки валидации с
+  бэкенда — резервный слой, а не основной.
+- PHP: PSR-12, типизированные свойства/возвраты там, где так уже написано в
+  кодовой базе.
 
-There is no consumer project inside this repo. To verify a change:
-1. Have a Laravel+Inertia+Vue3 project with
+## Никакого копирования при установке
+
+Главный архитектурный инвариант: исходники Vue/SCSS/PHP **читаются напрямую
+из `vendor/posio/cabinet-kit/...`** сборкой хоста (алиас Vite) и фреймворком
+(сервис-провайдер, `loadMigrationsFrom` / `loadRoutesFrom`). Публикуется
+(копируется) только `config/cabinet-kit.php`. Любое изменение, требующее от
+хоста вручную перекопировать файл после `composer update`, ломает посыл
+«простая установка, простое обновление», ради которого пакет и существует, —
+считать это признаком плохого дизайна, а не нормальным компромиссом, и
+сначала искать альтернативу через конфиг или механизм override.
+
+## Версионирование
+
+Semver-теги git в этом репозитории. Перед тегированием обновлять
+`docs/CHANGELOG.md`. Ломающие изменения (переименованные ключи конфига,
+удалённые пропсы у выпущенных Vue-компонентов, изменённые имена маршрутов)
+требуют мажорного бампа — проекты-потребители фиксируют диапазон версий в
+своём `composer.json`.
+
+## Проверка изменений на реальном потребителе
+
+Внутри этого репозитория проекта-потребителя нет. Чтобы проверить изменение:
+1. Нужен проект на Laravel+Inertia+Vue3, у которого в
    `composer.json` → `repositories: [{ type: "vcs", url: "F:/Packages/posio-cabinet-kit" }]`
-   and `require: { "posio/cabinet-kit": "dev-main" }`.
-   `composer update posio/cabinet-kit` after each commit here pulls the change.
-2. Or, for quick iteration, a `path` repository type instead of `vcs` — but
-   remember the final distribution mechanism is `vcs` (git-syncable), so
-   don't let path-only behavior (symlinks) leak into how you design things.
+   и `require: { "posio/cabinet-kit": "dev-main" }`.
+   `composer update posio/cabinet-kit` после каждого коммита здесь подтянет
+   изменение.
+2. Либо, для быстрой итерации, тип репозитория `path` вместо `vcs` — но
+   помнить, что итоговый механизм распространения — `vcs` (синхронизируемый
+   через git), поэтому нельзя допускать, чтобы поведение, специфичное для
+   `path` (симлинки), просачивалось в дизайн решений.

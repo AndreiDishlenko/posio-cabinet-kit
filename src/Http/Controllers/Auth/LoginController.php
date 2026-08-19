@@ -11,7 +11,11 @@ class LoginController extends Controller
 {
     public function showLogin()
     {
-        return Inertia::render('pages/Auth/Login');
+        // Outcome of whatever sent the visitor back here — a verification link,
+        // a finished password reset, an abandoned social sign-in.
+        return Inertia::render('pages/Auth/Login', [
+            'status' => session('status'),
+        ]);
     }
 
     public function login(Request $request)

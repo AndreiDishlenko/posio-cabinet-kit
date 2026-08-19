@@ -1,5 +1,37 @@
 # Changelog
 
+## Unreleased — Google/Apple sign-in
+
+**Added**
+- `SocialAuthController` (ported from `posio.cabinet`) backs the
+  `auth.google` / `auth.apple` routes already present in `routes/cabinet.php`:
+  redirect, callback, provider-state mismatch handling and a
+  `social-auth-failed` status back on the sign-in page. Logging goes through
+  the framework logger instead of the host's app log.
+- `UserRepository` with `findOrCreateGoogleUser()` / `findOrCreateAppleUser()`:
+  match by provider id, link the provider onto an existing row with the same
+  email (marking it verified), otherwise create the user with a random
+  password hash and the visitor's current language. Provider ids are written
+  past mass-assignment because the host owns the user model. A user created
+  this way gets a first account named after them, as the form-based
+  registration does with the company name.
+- Migration adding nullable unique `google_id` / `apple_id` to the users
+  table, skipped per column if the host already has it.
+- `cabinet-kit.social_auth` config: Google/Apple credentials read from env and
+  bridged into `config('services.*')` at boot unless the host declares them
+  there, so nothing has to be published into `config/services.php`. The Apple
+  Socialite provider is registered when `socialiteproviders/apple` is
+  installed. A provider without a client id answers 404 — its routes stay
+  registered so the sign-in page can resolve their URLs.
+- `cabinet-kit:doctor` fails when a configured provider has no driver
+  installed. `laravel/socialite` and `socialiteproviders/apple` are listed
+  under composer `suggest`.
+
+**Fixed**
+- The sign-in, forgotten-password and verify-email pages read a `status` prop
+  their controllers never passed, so no flash outcome (verification result,
+  reset confirmation, failed social sign-in) ever reached them.
+
 ## v0.3.24 — Modals rendered behind the page
 
 **Fixed**

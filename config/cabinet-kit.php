@@ -39,6 +39,31 @@ return [
     // Set to false when the host application already owns these route names.
     'auth_routes' => true,
 
+    // Social sign-in through Laravel Socialite (requires laravel/socialite, plus
+    // socialiteproviders/apple for Apple). These credentials are bridged into
+    // config('services.*') at boot unless the host already defines them there,
+    // so a consumer only has to fill in the env vars. A provider left without a
+    // client id answers 404: its routes stay registered either way so the
+    // sign-in page keeps resolving their URLs. Leave `redirect` empty to use
+    // the bundled callback route under `route_prefix`.
+    'social_auth' => [
+        'google' => [
+            'client_id' => env('GOOGLE_CLIENT_ID'),
+            'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+            'redirect' => env('GOOGLE_REDIRECT_URI'),
+        ],
+        'apple' => [
+            'client_id' => env('APPLE_CLIENT_ID'),
+            // Apple has no static secret: the driver signs a short-lived one
+            // from the key/team identifiers and the private key below.
+            'client_secret' => '',
+            'key_id' => env('APPLE_KEY_ID'),
+            'team_id' => env('APPLE_TEAM_ID'),
+            'private_key' => env('APPLE_PRIVATE_KEY'),
+            'redirect' => env('APPLE_REDIRECT_URI'),
+        ],
+    ],
+
     // Vite entry the bundled root view loads. Must also be listed in the
     // host vite.config.js `input` array. cabinet-kit:install scaffolds it.
     'vite_entry' => 'resources/_admin/js/cabinet.ts',

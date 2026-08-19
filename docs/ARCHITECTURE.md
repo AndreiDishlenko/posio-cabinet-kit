@@ -77,6 +77,20 @@ Bundled (since v0.2.0): login, registration (creates the `User` *and* its
 host's `User` implements `MustVerifyEmail` and adds the `verified`
 middleware itself — that's a deliberate opt-in, not assumed).
 
+Social sign-in (Google, Apple) rides in the same guest group via
+`SocialAuthController` + `UserRepository`. It is opt-in by credentials, not by
+a flag: `cabinet-kit.social_auth` reads them from env and the service provider
+bridges them into `config('services.*')` unless the host already declares them
+there — `config/services.php` belongs to the host and this package publishes
+nothing into it. Routes register regardless of credentials (so the sign-in page
+can resolve `route('auth.google')` unconditionally) and an unconfigured
+provider answers 404. Needs `laravel/socialite`, plus
+`socialiteproviders/apple` for Apple; `cabinet-kit:doctor` flags credentials
+without a driver. A person arriving through a provider is matched on
+`google_id`/`apple_id` (added by the package's migration), falls back to
+linking an existing row with the same email, and otherwise gets a new user
+with a first account named after them.
+
 Route **names** for the auth group are Laravel's own unprefixed convention
 (`login`, `register`, `logout`, `password.*`, `verification.*`) rather than
 `cabinet-kit.*` — that's not a style choice, framework internals (the `auth`

@@ -1,83 +1,88 @@
-<template>
+<template>   
+    <AuthLayout title="Forgot Password" :back_href="route('login')">
 
-	<AuthLayout page_name="Forgot password">
+        <template v-if="!status">
+            <div ref="form" class="card-body">
+                <div class="text-secondary text-center">
+                    {{ $t('forgot-message') }}
+                </div>
+                <div class="label-group">
+                    <!-- <label class="form-label">{{ $t('Your email')}}</label> -->
+                    <input ref="email" type="text" v-model="form_data.email" class="form-control md:form-control-lg" @keyup.enter="submit()" autofocus/>
+                    <p v-if="form_data_errors.email" class="form-error" >{{ $t(form_data_errors.email) }}</p>
+                </div>
+            <!-- </div>
 
-		<p v-if="sent" class="ck-status">{{ $t ? $t('If that email exists, a reset link has been sent.') : 'If that email exists, a reset link has been sent.' }}</p>
+            <div class="card-footer !flex-col !space-x-0 space-y-5"> -->
+                <button                     
+                    class="w-full button primary-button button-lg text-md" 
+                    :class="$inprogress.value && 'spinner'" 
+                    @click.stop.prevent="submit" 
+                    >
+                    {{ $t('Send Reset Link') }}
+                </button>
+                <div class="flex justify-center font-sm font-medium text-secondary">
+                    <Link :href="route('login')" class="hover:underline">{{ $t('Remember the password?')}}</Link>
+                </div>
+            </div>
+        </template>
 
-		<form @submit.prevent="submit">
-			<div class="form-group">
-				<label class="form-label">{{ $t ? $t('Email') : 'Email' }}</label>
-				<input type="email" class="form-control" v-model="form.email" :class="{ 'is-invalid': errors.email }" autofocus>
-				<span v-if="errors.email" class="form-error">{{ errors.email }}</span>
-			</div>
+        <div v-else class="card-body text-center mb-4">
+            {{ $t(status) }}
+        </div>
 
-			<button type="submit" class="button primary-button w-full" :disabled="submitting">
-				{{ $t ? $t('Send reset link') : 'Send reset link' }}
-			</button>
-
-			<div class="ck-auth-links">
-				<Link :href="route('login')">{{ $t ? $t('Back to login') : 'Back to login' }}</Link>
-			</div>
-		</form>
-
-	</AuthLayout>
-
+    </AuthLayout>
 </template>
 
 <script>
-	import { Link, router } from '@inertiajs/vue3';
+    import { Link, router } from '@inertiajs/vue3';      
 
-	import AuthLayout from '../../layouts/AuthLayout.vue';
+    import sharedMixins     from '@/js/_sharedMixins.js'
+    import _formMixins     from '@/js/_formMixins';
 
-	export default {
-		name: 'ForgotPassword',
-		components: { AuthLayout, Link },
-		data() {
-			return {
-				form: {
-					email: '',
-				},
-				errors: {},
-				submitting: false,
-				sent: false,
-			}
-		},
-		methods: {
-			validateForm() {
-				this.errors = {};
+    import AuthLayout      from '../../Layouts/AuthLayout.vue';
 
-				if (!/^\S+@\S+\.\S+$/.test(this.form.email))
-					this.errors.email = this.$t ? this.$t('Enter a valid email') : 'Enter a valid email';
+    export default {
+        mixins: [sharedMixins, _formMixins],
+        components: { AuthLayout, Link },
+        props: {
+            status: {
+                type: String,
+            },
+        },
+        data: function() {
+            return {
+                validationRules: {
+                    email: 'required|email'
+                },
+            }
+        },
+        mounted() {
+            var lastemail = localStorage.getItem('lastemail');
+            if (lastemail) 
+                this.form_data.email = lastemail;
 
-				return Object.keys(this.errors).length === 0;
-			},
-			submit() {
-				if (!this.validateForm())
-					return;
+            this.$refs.email.focus();
+        },
+        methods: {
+            submit: async function(e) {
+                if ( !await this.validateForm() )
+                    return false;
 
-				this.submitting = true;
-
-				router.post(route('password.email'), this.form, {
-					onSuccess: () => { this.sent = true; },
-					onError: (errors) => { this.errors = errors; },
-					onFinish: () => { this.submitting = false; },
-				});
-			},
-		},
-	}
+                router.post(route('password.email'), this.form_data, {
+                    // locale: this.$i18n.locale,
+                    onSuccess: (response) => {
+                        console.log('success', response);                        
+                    },
+                    onError: (errors) => {
+                        if (errors.error)
+                            this.$toast.error(errors.error);
+                        this.outputErrors(errors);                   
+                    },
+                    preserveScroll: true,
+                    preserveState: true,
+                });
+            }
+        }
+    }
 </script>
-
-<style lang="scss" scoped>
-	.ck-status {
-		font-size: .85rem;
-		color: #16a34a;
-		margin-bottom: 1rem;
-	}
-
-	.ck-auth-links {
-		display: flex;
-		justify-content: center;
-		font-size: .8rem;
-		margin-top: 1rem;
-	}
-</style>

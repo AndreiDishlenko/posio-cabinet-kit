@@ -184,6 +184,20 @@
       "notes": "Package repository should not depend on the host repository base class."
     },
     {
+      "id": "repository-user",
+      "mode": "manual",
+      "source": "app/Repositories/UserRepository.php",
+      "target": "src/Repositories/UserRepository.php",
+      "notes": "Package repository carries only the social find-or-create half. No user-event milestones, no default system role, no host locale service."
+    },
+    {
+      "id": "controller-social-auth",
+      "mode": "manual",
+      "source": "app/Http/Controllers/SocialAuthController.php",
+      "target": "src/Http/Controllers/Auth/SocialAuthController.php",
+      "notes": "Package controller logs through the framework logger instead of the host app log, guards unconfigured providers, and redirects to the configured login route."
+    },
+    {
       "id": "middleware-set-permission-team",
       "mode": "manual",
       "source": "app/Http/Middleware/SetPermissionTeam.php",

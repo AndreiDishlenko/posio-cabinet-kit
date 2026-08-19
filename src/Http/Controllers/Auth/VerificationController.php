@@ -15,7 +15,9 @@ class VerificationController extends Controller
             return redirect()->route(config('cabinet-kit.login_redirect_route', 'cabinet-kit.users'));
         }
 
-        return Inertia::render('pages/Auth/VerifyEmail');
+        return Inertia::render('pages/Auth/VerifyEmail', [
+            'status' => session('status'),
+        ]);
     }
 
     public function verify(EmailVerificationRequest $request)

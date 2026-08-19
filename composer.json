@@ -10,7 +10,9 @@
         "spatie/laravel-permission": "^6.0"
     },
     "suggest": {
-        "tightenco/ziggy": "Required in practice: CabinetKit Vue pages resolve every URL through route(), and the bundled root view prints @routes."
+        "tightenco/ziggy": "Required in practice: CabinetKit Vue pages resolve every URL through route(), and the bundled root view prints @routes.",
+        "laravel/socialite": "Required for the bundled Google/Apple sign-in routes (config cabinet-kit.social_auth).",
+        "socialiteproviders/apple": "Required for Apple sign-in on top of laravel/socialite."
     },
     "autoload": {
         "psr-4": {

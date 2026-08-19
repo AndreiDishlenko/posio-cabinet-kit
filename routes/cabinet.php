@@ -9,6 +9,7 @@ use Posio\CabinetKit\Http\Controllers\AccountController;
 use Posio\CabinetKit\Http\Controllers\Auth\LoginController;
 use Posio\CabinetKit\Http\Controllers\Auth\PasswordResetController;
 use Posio\CabinetKit\Http\Controllers\Auth\RegisterController;
+use Posio\CabinetKit\Http\Controllers\Auth\SocialAuthController;
 use Posio\CabinetKit\Http\Controllers\Auth\VerificationController;
 use Posio\CabinetKit\Http\Controllers\ProfileController;
 use Posio\CabinetKit\Http\Controllers\SettingsController;
@@ -69,6 +70,18 @@ Route::middleware(['web', UseCabinetKitRootView::class])
                 Route::post('forgot-password', [PasswordResetController::class, 'email'])->name('password.email');
                 Route::get('reset-password/{token}', [PasswordResetController::class, 'reset'])->name('password.reset');
                 Route::post('reset-password', [PasswordResetController::class, 'update'])->name('password.store');
+
+                // Social sign-in stays registered even without credentials (the
+                // controller answers 404 then), so the sign-in page can resolve
+                // these names unconditionally.
+                Route::get('auth/google', [SocialAuthController::class, 'googleRedirect'])->name('auth.google');
+                Route::get('auth/google/callback', [SocialAuthController::class, 'googleCallback'])->name('auth.google.callback');
+
+                Route::get('auth/apple', [SocialAuthController::class, 'appleRedirect'])->name('auth.apple');
+                // Apple posts its return from its own origin, so no session token rides along.
+                Route::post('auth/apple/callback', [SocialAuthController::class, 'appleCallback'])
+                    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class])
+                    ->name('auth.apple.callback');
             });
 
             Route::middleware('auth')->group(function () {

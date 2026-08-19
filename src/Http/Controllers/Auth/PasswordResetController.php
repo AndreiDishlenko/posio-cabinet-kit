@@ -14,7 +14,9 @@ class PasswordResetController extends Controller
 {
     public function request()
     {
-        return Inertia::render('pages/Auth/ForgotPassword');
+        return Inertia::render('pages/Auth/ForgotPassword', [
+            'status' => session('status'),
+        ]);
     }
 
     public function email(Request $request)
