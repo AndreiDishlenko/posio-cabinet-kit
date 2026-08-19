@@ -1,7 +1,6 @@
 <template>
 
-    <AuthLayout title="Sign in account"
-        :show_header="false">
+    <AuthLayout title="Sign in account">
 
         <div class="card-body">
 
@@ -75,8 +74,8 @@
     import sharedMixins     from '@/js/_sharedMixins.js'
     import _formMixins     from '@/js/_formMixins';
 
-    import AuthLayout          from '@/_main/js/Layouts/AuthLayout.vue';
-    import SocialAuthButtons   from '@/_main/js/Pages/Auth/SocialAuthButtons.vue';
+    import AuthLayout          from '../../Layouts/AuthLayout.vue';
+    import SocialAuthButtons   from './SocialAuthButtons.vue';
 
     export default {
         mixins: [sharedMixins, _formMixins],

@@ -343,7 +343,7 @@ MD);
         }
 
         $contents = File::get($path);
-        if (str_contains($contents, 'tailwind-preset.cjs') || str_contains($contents, 'vendor/posio/cabinet-kit/resources/js/**/*.vue')) {
+        if (str_contains($contents, 'tailwind-preset.cjs')) {
             return;
         }
 

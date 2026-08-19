@@ -59,7 +59,7 @@
     import _formMixins     from '@/js/_formMixins';
 
     import AuthLayout          from '../../Layouts/AuthLayout.vue';
-    import SocialAuthButtons   from '@/_main/js/Pages/Auth/SocialAuthButtons.vue';
+    import SocialAuthButtons   from './SocialAuthButtons.vue';
 
     export default {
         mixins: [sharedMixins, _formMixins],

@@ -24,7 +24,7 @@ class DoctorCommand extends Command
         $this->check(File::exists(base_path($entry)), "Vite entry exists: {$entry}", "Create {$entry} or update config/cabinet-kit.php.");
         $this->check($this->entryUsesFactory($entry), 'Vite entry uses createCabinetKitApp()', 'Replace the entry with the CabinetKit stub or import createCabinetKitApp().');
         $this->check($this->viteConfigLooksReady($entry), 'vite.config contains CabinetKit plugin and entry', "Add cabinetKit() and '{$entry}' to laravel-vite-plugin input.");
-        $this->check($this->tailwindConfigLooksReady(), 'tailwind.config contains CabinetKit preset or package glob', 'Add vendor/posio/cabinet-kit/tailwind-preset.cjs.');
+        $this->check($this->tailwindConfigLooksReady(), 'tailwind.config contains CabinetKit preset', 'Add vendor/posio/cabinet-kit/tailwind-preset.cjs.');
         $this->check($this->userModelLooksReady(), 'User model uses IsCabinetKitUser', 'Add Posio\\CabinetKit\\Traits\\IsCabinetKitUser to app/Models/User.php.');
         $this->check(File::exists(config_path('permission.php')), 'config/permission.php is published', 'Publish Spatie Permission config before running migrations.');
         $this->check((bool) config('permission.teams'), "Spatie Permission 'teams' is true", "Set 'teams' => true in config/permission.php before migrating.");
@@ -85,7 +85,7 @@ class DoctorCommand extends Command
         $contents = $this->firstExistingContents(base_path('tailwind.config.ts'), base_path('tailwind.config.js'), base_path('tailwind.config.cjs'));
 
         return $contents !== null
-            && (str_contains($contents, 'tailwind-preset.cjs') || str_contains($contents, 'vendor/posio/cabinet-kit/resources/js/**/*.vue'));
+            && str_contains($contents, 'tailwind-preset.cjs');
     }
 
     protected function userModelLooksReady(): bool
