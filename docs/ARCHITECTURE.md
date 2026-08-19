@@ -35,19 +35,22 @@ src/
   Models/Account.php              tenant model (name + settings jsonb, owner_id)
   Traits/                         IsCabinetKitUser (User), HasAccount, HasSettings, HasCustomFields
   Repositories/AccountRepository.php
-  Services/                       AccountService (role writes + account creation), MenuService (menu/tabs filtering)
+  Services/                       AccountService (role writes + account creation), MenuService (menu filtering)
   Console/Commands/               InstallCommand, DoctorCommand, SyncConfigCommand
 database/
   migrations/                     accounts, user_has_accounts, users.settings
   seeders/CabinetKitRolesSeeder.php  Account owner / Manager / Administrator / User + manage-account permission
 routes/cabinet.php                mounted automatically, prefix+name from config
-config/cabinet-kit.php            user_model, menu[], settings_tabs[], roles, login_redirect_route
+config/cabinet-kit.php            user_model, menu[], roles, login_redirect_route
 resources/js/
   layouts/                        CabinetLayout, CabinetHeader, SideMenu, AccountSwitcher, AuthLayout
-  pages/                          Settings.vue + Settings/{Account,Users,Profile}Tab.vue
   pages/Auth/                     Login, Register, ForgotPassword, ResetPassword, VerifyEmail
   components/ui/                 Table.vue, ModalForm.vue, CardTemplate.vue
   resolvePage.js                  override-aware Inertia page resolver
+resources/_admin/js/
+  layouts/                        CabinetLayout, CabinetHeader, SideMenu (own copy for the _admin pages)
+  pages/                          CabinetSettings.vue + Settings/{settingsTabs.js, CabinetSettings*Tab.vue},
+                                  UsersAdmin, Permissions, PermissionsAccount
 resources/scss/                   cabinet-kit.scss entry (tokens + base + @use) →
                                   colors/buttons/cards/forms/icons_cabinet-kit.scss partials
 ```

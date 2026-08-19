@@ -1,5 +1,35 @@
 # Changelog
 
+## Unreleased — Settings page taken over from the source cabinet
+
+**Breaking**
+- The settings page is now `resources/_admin/js/pages/CabinetSettings.vue` —
+  a verbatim copy of the `posio.cabinet` page — and the controller renders
+  `pages/CabinetSettings` instead of `pages/Settings`. The generalized
+  `pages/Settings.vue` and its `Settings/{Account,Users,Profile}Tab.vue` are
+  gone. A host that overrode `pages/Settings.vue` must rename its override to
+  `pages/CabinetSettings.vue` and re-check it against the new page.
+- `config('cabinet-kit.settings_tabs')` and `MenuService::settingsTabsFor()`
+  are removed. The tab strip is built in JS by
+  `pages/Settings/settingsTabs.js`, which keeps only the tabs whose component
+  file actually sits next to it — a config entry could never have added a tab
+  on its own, and the two lists could drift apart silently.
+- The active tab now travels in the `?settings=` query parameter (the tab
+  group's storage key), not `?tab=`. `SideMenu.vue` and `AccountSwitcher.vue`
+  link accordingly.
+- `SettingsController` no longer passes `tabs`, `account`, `members`, `roles`,
+  `can_manage_account`; the page reads `own_account`, `account_users`,
+  `assignable_roles` and `can_manage_account_users` instead. The member list
+  is now only built for users with `manage-members`, and the system (root)
+  user is left out of it — as in the source.
+
+**Note**
+- The package currently ships one settings tab,
+  `CabinetSettingsUserProfileTab.vue` (profile, password, interface language,
+  sound notifications). Account settings and member management have no UI
+  until their tabs are transferred; the routes behind them
+  (`account.update`, `account.member.*`) stay registered.
+
 ## Unreleased — Google/Apple sign-in
 
 **Added**

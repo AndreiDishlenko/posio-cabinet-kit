@@ -25,44 +25,45 @@ it a normal host route name — `SideMenu.vue` doesn't care whose route it is.
 
 ## Adding a Settings tab
 
-Edit `config/cabinet-kit.php` → `settings_tabs`, add
-`{ id, label, component, permission }`. `component` must match a key
-`Settings.vue` knows — either one of the three shipped tabs
-(`AccountTab`/`UsersTab`/`ProfileTab`) or a new one you register:
+The settings page (`resources/_admin/js/pages/CabinetSettings.vue`) builds its
+tab strip in JS, not from config: `pages/Settings/settingsTabs.js` holds the
+full catalogue (`{ id, label, label_mobile?, file, account_wide? }`) and keeps
+only the tabs whose `file` actually exists next to it — the page globs
+`./Settings/CabinetSettings*Tab.vue`. `account_wide: true` hides the tab from
+anyone without `manage-members`. The same helper feeds the settings dropdown
+in `SideMenu.vue`, so a tab added there shows up in both places.
 
-1. Create `resources/_admin/overrides/pages/Settings/YourTab.vue` (Options
-   API, no `<script setup>`).
-2. Register it in the host's own copy of the tab-component map — since
-   `Settings.vue`'s `TAB_COMPONENTS` map is not itself override-resolved
-   (only top-level pages are), the cleanest path is to override
-   `pages/Settings.vue` wholesale once you need custom tabs: copy the
-   package version into `overrides/pages/Settings.vue`, add your import to
-   `TAB_COMPONENTS`, keep everything else identical.
+The package ships one tab, `CabinetSettingsUserProfileTab.vue` (profile,
+password, interface language, sound notifications). To add your own:
 
-Each shipped tab receives only the props it needs (`Settings.vue` →
-`tabProps()`); a tab whose `component` isn't one of the three shipped names
-gets the generic bag — `account`, `members`, `roles`, `can_manage_account` —
-so a host tab written against an earlier version keeps working. The page
-itself passes everything the controller shares, so widening that bag is a
-one-line change in your override.
+1. Copy the package's `CabinetSettings.vue` into
+   `resources/_admin/overrides/pages/CabinetSettings.vue`; the glob and the
+   `settingsTabs.js` import then resolve against *your* folder, so put your
+   tab files and your own copy of `settingsTabs.js` beside it under
+   `overrides/pages/Settings/`. Only top-level pages go through
+   `resolvePage.js` — tab components are ordinary imports and are not
+   override-resolved on their own.
+2. Add the entry to your `settingsTabs.js` and hand the tab its props in the
+   page's `tab_props()` computed, keyed by tab id.
 
-This is the same mechanism the bundled `ProfileTab.vue` uses (profile,
-password, interface preferences) — it's a real, functional tab, not a stub,
-precisely because "a base page with extensible tabs" is what `settings_tabs`
-already is. Don't build a second, parallel tabs system for a similar need.
+Everything the settings controller shares (`profile`, `own_account`,
+`account_users`, `assignable_roles`, `can_manage_members`,
+`can_manage_account_users`, `is_owner`, `is_system_user`) is already declared
+as a prop on the page, so widening `tab_props()` is a one-line change in your
+override — no backend edit needed.
 
 ## Overriding a page
 
 ```
-resources/_admin/overrides/pages/Settings.vue    →  replaces vendor's pages/Settings.vue
-resources/_admin/overrides/pages/UsersAdmin.vue  →  replaces vendor's pages/UsersAdmin.vue
-resources/_admin/overrides/pages/Auth/Login.vue  →  replaces vendor's pages/Auth/Login.vue
+resources/_admin/overrides/pages/CabinetSettings.vue  →  replaces vendor's pages/CabinetSettings.vue
+resources/_admin/overrides/pages/UsersAdmin.vue       →  replaces vendor's pages/UsersAdmin.vue
+resources/_admin/overrides/pages/Auth/Login.vue       →  replaces vendor's pages/Auth/Login.vue
 ```
 
 `resolveCabinetKitPage()` matches by the Inertia render name's basename
-(`pages/Settings` → looks for a file ending in `/Settings.vue` in the
-overrides glob first). Copy the package file as your starting point so you
-don't have to reverse-engineer its props.
+(`pages/CabinetSettings` → looks for a file ending in `/CabinetSettings.vue`
+in the overrides glob first). Copy the package file as your starting point so
+you don't have to reverse-engineer its props.
 
 ## Overriding a layout piece (SideMenu, CabinetHeader, AuthLayout, ...)
 

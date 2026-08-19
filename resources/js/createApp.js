@@ -141,7 +141,12 @@ function hydrateI18n(payload = {}) {
     }
 
     i18n.global.fallbackLocale = fallbackLocale;
-    i18n.global.setLocaleMessage(locale, payload.messages ?? {});
+    // Хост отдаёт переводы через lang/{locale}.json — они дополняют собранные
+    // в бандл переводы кабинета, а не заменяют их полностью.
+    i18n.global.setLocaleMessage(locale, {
+        ...i18n.global.getLocaleMessage(locale),
+        ...(payload.messages ?? {}),
+    });
     applyLocale(locale);
 }
 

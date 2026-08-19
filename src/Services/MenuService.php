@@ -30,15 +30,6 @@ class MenuService
         return $visibleGroups;
     }
 
-    /** Settings tabs filtered to what the authenticated user can actually see. */
-    public function settingsTabsFor($user): array
-    {
-        return array_values(array_filter(
-            config('cabinet-kit.settings_tabs', []),
-            fn ($tab) => empty($tab['permission']) || $this->allowed($user, $tab['permission']),
-        ));
-    }
-
     public function currentPage(?string $routeName, $user): ?array
     {
         foreach ($this->menuFor($user) as $group) {

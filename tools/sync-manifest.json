@@ -115,31 +115,24 @@
     },
     {
       "id": "settings-page",
-      "mode": "manual",
+      "mode": "copy",
       "source": "resources/_admin/js/pages/CabinetSettings.vue",
-      "target": "resources/js/pages/Settings.vue",
-      "notes": "Same Tabs shell as the source, but the tab list stays config-driven: slots render dynamic components from settings_tabs instead of hardcoded per-tab markup. Avatar block moved into ProfileTab, account-name heading into UsersTab."
+      "target": "resources/_admin/js/pages/CabinetSettings.vue",
+      "notes": "Verbatim copy of the source page. Tabs it declares props for but does not ship (licenses, cash accounts, cashflow items, integrations) simply never render: settingsTabs.js keeps only tabs whose file exists. Route names it calls are bridged by the ROUTE_ALIASES map in createApp.js."
     },
     {
-      "id": "settings-account-tab",
-      "mode": "manual",
-      "source": "resources/_admin/js/pages/Settings/CabinetSettingsAccountTab.vue",
-      "target": "resources/js/pages/Settings/AccountTab.vue",
-      "notes": "Same company-settings form as the source. Extra fields live in accounts.settings (json), not in columns; product-specific integrations/configuration and the dictionaries behind units/currency stay out."
-    },
-    {
-      "id": "settings-users-tab",
-      "mode": "manual",
-      "source": "resources/_admin/js/pages/Settings/CabinetSettingsAccountUsersTab.vue",
-      "target": "resources/js/pages/Settings/UsersTab.vue",
-      "notes": "Same owner/members/invite markup as the source, but member calls go through Inertia against the package endpoints (user_id + role name) instead of the source's json client (email + role_id)."
+      "id": "settings-tabs-catalogue",
+      "mode": "copy",
+      "source": "resources/_admin/js/pages/Settings/settingsTabs.js",
+      "target": "resources/_admin/js/pages/Settings/settingsTabs.js",
+      "notes": "Verbatim copy. The full Posio tab catalogue stays as-is on purpose — the file-presence filter is what trims it down to the tabs the package actually ships."
     },
     {
       "id": "settings-profile-tab",
-      "mode": "manual",
+      "mode": "copy",
       "source": "resources/_admin/js/pages/Settings/CabinetSettingsUserProfileTab.vue",
-      "target": "resources/js/pages/Settings/ProfileTab.vue",
-      "notes": "Same profile form, language/theme selectors and sound-notification switch as the source, plus the avatar block that the source keeps on the settings page."
+      "target": "resources/_admin/js/pages/Settings/CabinetSettingsUserProfileTab.vue",
+      "notes": "Verbatim copy — the only settings tab the package ships (profile, password, interface language, sound notifications)."
     },
     {
       "id": "vee-validator",
@@ -283,7 +276,7 @@
       "mode": "manual",
       "source": "resources/_admin/js/layouts/SideMenu.vue",
       "target": "resources/_admin/js/layouts/SideMenu.vue",
-      "notes": "Package's own _admin-section side menu (used by Permissions/UsersAdmin pages), distinct from the generalized top-level copy tracked as layout-side-menu. Settings dropdown reuses resources/js/pages/Settings/settingsTabs.js and links via route('cabinet-kit.settings', { tab }) — keep in sync with resources/js/layouts/SideMenu.vue if the settings tab contract changes."
+      "notes": "Package's own _admin-section side menu (used by Permissions/UsersAdmin pages), distinct from the generalized top-level copy tracked as layout-side-menu. Settings dropdown reuses resources/_admin/js/pages/Settings/settingsTabs.js and links via route('cabinet-kit.settings', { settings }) — same as the source apart from the route-name prefix; keep in sync with resources/js/layouts/SideMenu.vue if the settings tab contract changes."
     },
     {
       "id": "helpers-arrays",

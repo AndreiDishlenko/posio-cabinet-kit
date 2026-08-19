@@ -1,8 +1,11 @@
 import { createI18n } from 'vue-i18n'
 
+import admin_en from '../locales/admin_en.js'
+import admin_uk from '../locales/admin_uk.js'
+
 const messages = {
-	en: {},
-	uk: {},
+	en: { ...admin_en },
+	uk: { ...admin_uk },
 	ru: {},
 };
 

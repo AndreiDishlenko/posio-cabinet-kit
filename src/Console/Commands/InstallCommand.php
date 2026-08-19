@@ -230,7 +230,7 @@ class InstallCommand extends Command
             return;
         }
 
-        File::ensureDirectoryExists($overridesPath.'/pages/Settings');
+        File::ensureDirectoryExists($overridesPath.'/pages');
         File::ensureDirectoryExists($overridesPath.'/layouts');
 
         File::put($overridesPath.'/README.md', <<<'MD'
@@ -240,7 +240,7 @@ Drop a file here with the same relative path as its counterpart in
 `vendor/posio/cabinet-kit/resources/js/...` to replace it. The page resolver
 checks this folder first, then falls back to the package version.
 
-Example: `overrides/pages/Settings/UsersTab.vue` replaces the package tab.
+Example: `overrides/pages/CabinetSettings.vue` replaces the package settings page.
 MD);
 
         $this->info('Created resources/'.config('cabinet-kit.overrides_path', '_admin/overrides').'/');

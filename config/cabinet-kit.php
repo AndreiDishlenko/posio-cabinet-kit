@@ -116,15 +116,6 @@ return [
         'assignable_roles' => ['Administrator', 'Manager', 'User'],
     ],
 
-    // Settings page tabs (component name resolved relative to
-    // resources/js/pages/Settings/ — package tab first, then host override).
-    // Add entries here to extend the Settings page without touching Vue files.
-    'settings_tabs' => [
-        ['id' => 'account', 'label' => 'Account', 'component' => 'AccountTab', 'permission' => null],
-        ['id' => 'users', 'label' => 'Users', 'component' => 'UsersTab', 'permission' => 'manage-account'],
-        ['id' => 'profile', 'label' => 'Profile', 'component' => 'ProfileTab', 'permission' => null],
-    ],
-
     // Side menu groups. Each item needs either a `route` name (Inertia visit)
     // or a `link` (plain href). `permission` gates visibility (null = always shown).
     'menu' => [

@@ -169,7 +169,7 @@
     import Avatar           from '@/js/Elements/Avatar.vue';
     import Dropdown         from '@/js/Elements/Dropdown.vue';
 
-    import { buildSettingsTabs } from '../pages/Settings/settingsTabs.js';
+    import { buildSettingsTabs } from '@/_admin/js/pages/Settings/settingsTabs.js';
 
     export default {
         components: { Link, Icon, Avatar, Dropdown },
@@ -223,13 +223,13 @@
             // Табы настроек — тот же состав, что и на странице настроек
             // (общий settingsTabs.js).
             settingsTabs() {
-                return buildSettingsTabs(this.$page.props.user?.can_manage_account);
+                return buildSettingsTabs(this.$page.props.user?.can_manage_members);
             },
             // Клик по пользователю ведёт именно в профиль (таб settings),
             // поэтому таб задаётся явно через query — иначе восстановится
             // последний открытый.
             profileHref() {
-                return this.settingsHref('profile');
+                return this.settingsHref('settings');
             },
         },
         watch: {
@@ -341,10 +341,10 @@
             },
 
             // Ссылка на страницу настроек с активным табом в query. Ключ query —
-            // storage-key группы табов на странице ('tab'), см. Tabs.vue →
+            // storage-key группы табов на странице ('settings'), см. Tabs.vue →
             // applyQueryTab(). Ziggy кладёт неизвестный маршруту параметр в query.
             settingsHref(tabId) {
-                return route('cabinet-kit.settings', { tab: tabId });
+                return route('cabinet-kit.settings', { settings: tabId });
             },
 
             // ── Группы-дропдауны ───────────────────────────────────────────
