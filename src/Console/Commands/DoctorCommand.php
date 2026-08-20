@@ -4,6 +4,7 @@ namespace Posio\CabinetKit\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Posio\CabinetKit\Support\CabinetRedirects;
 use Posio\CabinetKit\Support\FrontendDependencies;
@@ -25,6 +26,7 @@ class DoctorCommand extends Command
         $this->check(File::exists(config_path('cabinet-kit.php')), 'config/cabinet-kit.php is published', 'Run php artisan cabinet-kit:install.');
         $this->check(File::exists(config_path('cabinet-kit-redirects.php')), 'config/cabinet-kit-redirects.php is published', 'Run php artisan cabinet-kit:sync-config.');
         $this->check(CabinetRedirects::unresolvable() === [], 'Auth flow landing pages resolve to registered routes', $this->unresolvableRedirectsHint());
+        $this->check($this->unresolvableMenuRoutes() === [], 'Menu items point at registered routes', 'These items are hidden until their route exists: '.implode(', ', $this->unresolvableMenuRoutes()).'.');
         $this->check(File::exists(base_path($entry)), "Vite entry exists: {$entry}", "Create {$entry} or update config/cabinet-kit.php.");
         $this->check($this->entryUsesFactory($entry), 'Vite entry uses createCabinetKitApp()', 'Replace the entry with the CabinetKit stub or import createCabinetKitApp().');
         $this->check($this->viteConfigLooksReady($entry), 'vite.config contains CabinetKit plugin and entry', "Add cabinetKit() and '{$entry}' to laravel-vite-plugin input.");
@@ -81,6 +83,23 @@ class DoctorCommand extends Command
         }
 
         return 'Fix these in config/cabinet-kit-redirects.php: '.implode(', ', $broken).'.';
+    }
+
+    protected function unresolvableMenuRoutes(): array
+    {
+        $broken = [];
+
+        foreach (config('cabinet-kit.menu', []) as $group) {
+            foreach ($group['children'] ?? [] as $item) {
+                $route = $item['route'] ?? null;
+
+                if (! empty($route) && ! Route::has($route)) {
+                    $broken[] = $route;
+                }
+            }
+        }
+
+        return array_values(array_unique($broken));
     }
 
     protected function entryUsesFactory(string $entry): bool

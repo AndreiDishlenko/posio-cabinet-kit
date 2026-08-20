@@ -23,6 +23,25 @@ means always visible; otherwise it's gated through
 To point a menu item at a page that isn't part of CabinetKit at all, just give
 it a normal host route name — `SideMenu.vue` doesn't care whose route it is.
 
+An item whose route name isn't registered is hidden instead of rendered — the
+template resolves every item's address, and one unknown name would otherwise
+take the whole page down. `cabinet-kit:doctor` lists what got hidden.
+
+## Where the auth flow lands
+
+`config/cabinet-kit-redirects.php` holds one route name per step: `home`
+(cabinet root), `after_login`, `after_register`, `after_verify`,
+`after_logout`. A value starting with `/` or `http` is used as a plain address
+instead of a route name.
+
+Point `home` and `after_login` at your own route to open the cabinet on your
+own page. Point `after_register` at `verification.notice` to require email
+confirmation before the cabinet opens.
+
+A value naming a route the application doesn't register is ignored in favour of
+the package default, so a page you later remove can't lock anyone out of
+signing in. `cabinet-kit:doctor` reports those.
+
 ## Adding a Settings tab
 
 The settings page (`resources/_admin/js/pages/CabinetSettings.vue`) builds its

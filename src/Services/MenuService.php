@@ -2,6 +2,7 @@
 
 namespace Posio\CabinetKit\Services;
 
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Posio\CabinetKit\Models\AdminLink;
 
@@ -11,7 +12,7 @@ class MenuService
     public function menuFor($user): array
     {
         if (Schema::hasTable('admin_links') && AdminLink::query()->where('is_published', 1)->exists()) {
-            return $this->menuFromDatabase($user);
+            return $this->withResolvableRoutes($this->menuFromDatabase($user));
         }
 
         $groups = config('cabinet-kit.menu', []);
@@ -27,7 +28,30 @@ class MenuService
             }
         }
 
-        return $visibleGroups;
+        return $this->withResolvableRoutes($visibleGroups);
+    }
+
+    /**
+     * An item naming a route this application does not register takes the whole
+     * page down when the template resolves its address, so it is dropped here
+     * instead of rendered. The diagnostics command reports what was dropped.
+     */
+    public function withResolvableRoutes(array $groups): array
+    {
+        $result = [];
+
+        foreach ($groups as $group) {
+            $children = array_values(array_filter(
+                $group['children'] ?? [],
+                fn ($item) => empty($item['route']) || Route::has($item['route']),
+            ));
+
+            if ($children) {
+                $result[] = array_merge($group, ['children' => $children]);
+            }
+        }
+
+        return $result;
     }
 
     public function currentPage(?string $routeName, $user): ?array

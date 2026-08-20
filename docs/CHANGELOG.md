@@ -50,6 +50,10 @@
 - Signing in on a project installed before the dashboard page was removed no
   longer fails: `cabinet-kit.dashboard` left in the published config is
   detected and replaced with the package default.
+- A menu item naming a route the application does not register is hidden
+  instead of rendered — `SideMenu.vue` resolves every item's address inline, so
+  one unknown name used to take the whole cabinet page down. `cabinet-kit:doctor`
+  lists the hidden items.
 
 ## Unreleased — Real cabinet services instead of the placeholder ones
 
