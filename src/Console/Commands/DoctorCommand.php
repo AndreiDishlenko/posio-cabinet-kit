@@ -5,6 +5,7 @@ namespace Posio\CabinetKit\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
+use Posio\CabinetKit\Support\CabinetRedirects;
 use Posio\CabinetKit\Support\FrontendDependencies;
 use Posio\CabinetKit\Support\HostTailwindConfig;
 
@@ -22,6 +23,8 @@ class DoctorCommand extends Command
         $entry = config('cabinet-kit.vite_entry', 'resources/_admin/js/cabinet.ts');
 
         $this->check(File::exists(config_path('cabinet-kit.php')), 'config/cabinet-kit.php is published', 'Run php artisan cabinet-kit:install.');
+        $this->check(File::exists(config_path('cabinet-kit-redirects.php')), 'config/cabinet-kit-redirects.php is published', 'Run php artisan cabinet-kit:sync-config.');
+        $this->check(CabinetRedirects::unresolvable() === [], 'Auth flow landing pages resolve to registered routes', $this->unresolvableRedirectsHint());
         $this->check(File::exists(base_path($entry)), "Vite entry exists: {$entry}", "Create {$entry} or update config/cabinet-kit.php.");
         $this->check($this->entryUsesFactory($entry), 'Vite entry uses createCabinetKitApp()', 'Replace the entry with the CabinetKit stub or import createCabinetKitApp().');
         $this->check($this->viteConfigLooksReady($entry), 'vite.config contains CabinetKit plugin and entry', "Add cabinetKit() and '{$entry}' to laravel-vite-plugin input.");
@@ -65,6 +68,19 @@ class DoctorCommand extends Command
         $this->failures++;
         $this->line("<fg=red>FAIL</> {$label}");
         $this->line("      {$hint}");
+    }
+
+    // A landing page naming a route the project dropped is invisible until
+    // someone signs in and lands on an exception instead of the cabinet.
+    protected function unresolvableRedirectsHint(): string
+    {
+        $broken = [];
+
+        foreach (CabinetRedirects::unresolvable() as $key => $target) {
+            $broken[] = "{$key} => {$target}";
+        }
+
+        return 'Fix these in config/cabinet-kit-redirects.php: '.implode(', ', $broken).'.';
     }
 
     protected function entryUsesFactory(string $entry): bool

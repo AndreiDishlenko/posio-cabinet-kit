@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Posio\CabinetKit\Support\CabinetRedirects;
 
 class LoginController extends Controller
 {
@@ -35,7 +36,7 @@ class LoginController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->route(config('cabinet-kit.login_redirect_route', 'cabinet-kit.users'));
+        return redirect(CabinetRedirects::url('after_login'));
     }
 
     public function logout(Request $request)
@@ -45,6 +46,6 @@ class LoginController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect(CabinetRedirects::url('after_logout'));
     }
 }

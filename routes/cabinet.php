@@ -16,6 +16,7 @@ use Posio\CabinetKit\Http\Middleware\CanSystemPermission;
 use Posio\CabinetKit\Http\Middleware\SetPermissionTeam;
 use Posio\CabinetKit\Http\Middleware\ShareCabinetKitData;
 use Posio\CabinetKit\Http\Middleware\UseCabinetKitRootView;
+use Posio\CabinetKit\Support\CabinetRedirects;
 
 Route::get('cabinet-assets/{path}', function (string $path) {
     $assetRoot = realpath(__DIR__.'/../public/cabinet-assets');
@@ -102,7 +103,7 @@ Route::middleware(['web', UseCabinetKitRootView::class])
             ))
             ->name(config('cabinet-kit.route_name_prefix', 'cabinet-kit.'))
             ->group(function () {
-                Route::get('/', fn () => redirect()->route(config('cabinet-kit.home_route', 'cabinet-kit.users')))->name('home');
+                Route::get('/', fn () => redirect(CabinetRedirects::url('home')))->name('home');
                 Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
 
                 Route::middleware(CanSystemPermission::class.':sysper-users')->group(function () {

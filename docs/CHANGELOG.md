@@ -1,5 +1,56 @@
 # Changelog
 
+## Unreleased — Old-browser flex-gap fallback actually wired up
+
+**Fixed**
+- `app.blade.php` never shipped the inline script that measures `row-gap`
+  support in flex and sets `no-flex-gap` on `<html>` — every rule guarded by
+  `html.no-flex-gap` (`_flexgap_shared.scss`, `buttons_shared.scss`,
+  `uisizes.scss`, `SideMenu.vue`, ...) was unreachable dead code on every
+  install. The script (and the matching Ziggy `window` duplication for
+  WebKit < 14, and the pre-mount theme restore from `localStorage`) is now
+  ported into `app.blade.php`, same as the source `cabinet.blade.php`.
+- Restoring the saved theme was silently broken as a result: `applyDefaultTheme()`
+  in `createApp.js` only ever saw a `<html>` with no theme class yet (nothing
+  upstream had set one) and always fell back to `dark`, ignoring a `light`
+  choice saved by `_ThemeSelector.vue` on the previous visit.
+- `tailwind-preset.cjs` gained the `wrap-gap`/`wrap-gap-x`/`wrap-gap-y`
+  utilities (margin fallback under `html.no-flex-gap`) — the plugin that
+  generates them existed only in `posio.cabinet`'s own `tailwind.config.js`
+  and was never carried into the package, so those classes compiled to
+  nothing in every host. The `gap`/`gap-x`/`gap-y` core-utility override from
+  the source plugin was deliberately left out: it needs `corePlugins.gap: false`
+  on the host, which nothing in `cabinet-kit:install`/`:doctor` sets or checks,
+  and enabling it silently would risk a duplicate-utility warning (or dropped
+  arbitrary-value class) for any host already using plain `gap-*`.
+
+## Unreleased — Auth flow landing pages moved to their own config file
+
+**Breaking**
+- `cabinet-kit.home_route` and `cabinet-kit.login_redirect_route` are gone.
+  Landing pages now live in `config/cabinet-kit-redirects.php`, which
+  `cabinet-kit:sync-config` creates in an already installed project, carrying
+  the old values over. Until that file exists the old keys keep working, so
+  updating alone changes nothing; once it exists the old keys are ignored and
+  should be deleted from `config/cabinet-kit.php`.
+
+**Added**
+- `config/cabinet-kit-redirects.php` with one key per step of the auth flow:
+  `home`, `after_login`, `after_register`, `after_verify`, `after_logout`.
+  A value starting with `/` or `http` is used as an address instead of a
+  route name, which is how signing out can leave the cabinet entirely.
+- `Posio\CabinetKit\Support\CabinetRedirects` resolves those keys. A target
+  naming a route the application does not register is ignored in favour of the
+  package default: a stale name can no longer take the whole sign-in flow
+  down, which is what a leftover `cabinet-kit.dashboard` used to do.
+- `cabinet-kit:doctor` reports a missing redirects file and any landing page
+  that resolves to nothing.
+
+**Fixed**
+- Signing in on a project installed before the dashboard page was removed no
+  longer fails: `cabinet-kit.dashboard` left in the published config is
+  detected and replaced with the package default.
+
 ## Unreleased — Real cabinet services instead of the placeholder ones
 
 **Breaking**

@@ -18,6 +18,46 @@ const dynamicViewportHeights = function ({ addUtilities }) {
     addUtilities(utilities);
 };
 
+// Отступ между элементами внутри flex Apple понимает только с 14.1: ниже объявление
+// отбрасывается целиком и вёрстка слипается. Признак ставится замером в разметке
+// (в сетке то же свойство работает с 12-й версии, поэтому @supports его не различает) —
+// скрипт-замер живёт в app.blade.php пакета, здесь только margin-фолбэк под его признак.
+//
+// Утилиты `gap-*` ядра здесь не переопределяются: у оригинала это требовало
+// `corePlugins.gap: false` в конфиге хоста, а установщик пакета эту настройку нигде
+// не проставляет — включить её молча значило бы задвоить регистрацию `gap` у любого
+// хоста без предупреждения. `wrap-gap-*` с ядром не пересекается по имени и не требует
+// такой правки — фолбэк работает у любого хоста сразу после подключения пресета.
+const flexGapFallback = function ({ matchUtilities, theme }) {
+    // Ряды с переносом: отступ соседям здесь не подходит — первый элемент новой
+    // строки получил бы лишний отступ, а между строками отступа не было бы.
+    // Поэтому отступ раздаётся всем элементам, а лишняя внешняя рамка снимается
+    // отрицательным отступом контейнера. Из-за этого применимо только к
+    // контейнерам без собственных полей и без собственных внешних отступов.
+    const wrapRules = (sides) => (value) => Object.fromEntries([
+        [`html.no-flex-gap &`, Object.fromEntries(sides.map(s => [`margin${s}`, `calc(${value} / -2)`]))],
+        [`html.no-flex-gap & > *`, Object.fromEntries(sides.map(s => [`margin${s}`, `calc(${value} / 2)`]))],
+    ]);
+
+    matchUtilities(
+        {
+            'wrap-gap': value => ({
+                gap: value,
+                ...wrapRules(['Top', 'Right', 'Bottom', 'Left'])(value),
+            }),
+            'wrap-gap-x': value => ({
+                columnGap: value,
+                ...wrapRules(['Right', 'Left'])(value),
+            }),
+            'wrap-gap-y': value => ({
+                rowGap: value,
+                ...wrapRules(['Top', 'Bottom'])(value),
+            }),
+        },
+        { values: theme('gap'), type: ['length', 'any'] }
+    );
+};
+
 module.exports = {
     // Запасной путь, а не основной: Tailwind v3 не сливает `content` пресета с
     // хостовым — при наличии `content` у хоста этот список не применяется вовсе.
@@ -69,5 +109,5 @@ module.exports = {
         },
     },
 
-    plugins: [dynamicViewportHeights],
+    plugins: [dynamicViewportHeights, flexGapFallback],
 };

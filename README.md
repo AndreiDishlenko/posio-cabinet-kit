@@ -38,7 +38,8 @@ php artisan cabinet-kit:install
 npm run dev
 ```
 
-The install command publishes `config/cabinet-kit.php`, enables Spatie
+The install command publishes `config/cabinet-kit.php` and
+`config/cabinet-kit-redirects.php`, enables Spatie
 Permission teams before migrations, resolves auth-route conflicts, scaffolds
 the cabinet Vite entry (`resources/_admin/js/cabinet.ts` by default),
 patches `vite.config`, `tailwind.config` and `app/Models/User.php` with
@@ -64,8 +65,9 @@ php artisan cabinet-kit:doctor        # verifies frontend/backend wiring
 `cabinet-kit:install` registers `sync-config` in your `composer.json`
 `post-update-cmd`, so from then on `composer update` runs it for you: it keeps
 the npm dependency list and the Tailwind `content` glob for the package
-templates current, and only *reports* new `config/cabinet-kit.php` keys (that
-file is never rewritten). Rebuild assets afterwards if it patched anything.
+templates current, creates config files a new package version introduced, and
+only *reports* new `config/cabinet-kit.php` keys (that file is never
+rewritten). Rebuild assets afterwards if it patched anything.
 
 Vue/SCSS/routes/migrations are read straight from `vendor/posio/cabinet-kit/`
 — nothing was copied into your project, so there's nothing to merge.
@@ -76,6 +78,9 @@ working untouched.
 
 - Menu items, assignable roles, log-viewer path → `config/cabinet-kit.php`
   (survives updates for free).
+- Where sign-in, registration, email confirmation and sign-out land →
+  `config/cabinet-kit-redirects.php`. Point `home`/`after_login` at your own
+  route to open the cabinet on your own page.
 - Styles → `resources/_admin/scss/cabinet-kit-overrides.scss` (scaffolded by
   install, loaded after the kit so your rules win; redefine `--ck-*` tokens or
   re-declare element classes — never edit the package's own scss).

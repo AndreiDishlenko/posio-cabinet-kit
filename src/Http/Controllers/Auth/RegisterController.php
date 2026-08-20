@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Posio\CabinetKit\Services\AccountService;
+use Posio\CabinetKit\Support\CabinetRedirects;
 
 class RegisterController extends Controller
 {
@@ -48,6 +49,6 @@ class RegisterController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route(config('cabinet-kit.login_redirect_route', 'cabinet-kit.users'));
+        return redirect(CabinetRedirects::url('after_register'));
     }
 }

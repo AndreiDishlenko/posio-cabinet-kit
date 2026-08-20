@@ -6,13 +6,14 @@ use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Inertia\Inertia;
+use Posio\CabinetKit\Support\CabinetRedirects;
 
 class VerificationController extends Controller
 {
     public function notice(Request $request)
     {
         if ($request->user()->hasVerifiedEmail()) {
-            return redirect()->route(config('cabinet-kit.login_redirect_route', 'cabinet-kit.users'));
+            return redirect(CabinetRedirects::url('after_verify'));
         }
 
         return Inertia::render('pages/Auth/VerifyEmail', [
@@ -26,13 +27,13 @@ class VerificationController extends Controller
             $request->fulfill();
         }
 
-        return redirect()->route(config('cabinet-kit.login_redirect_route', 'cabinet-kit.users'));
+        return redirect(CabinetRedirects::url('after_verify'));
     }
 
     public function send(Request $request)
     {
         if ($request->user()->hasVerifiedEmail()) {
-            return redirect()->route(config('cabinet-kit.login_redirect_route', 'cabinet-kit.users'));
+            return redirect(CabinetRedirects::url('after_verify'));
         }
 
         $request->user()->sendEmailVerificationNotification();

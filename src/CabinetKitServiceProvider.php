@@ -10,13 +10,16 @@ use Opcodes\LogViewer\Facades\LogViewer;
 use Posio\CabinetKit\Console\Commands\DoctorCommand;
 use Posio\CabinetKit\Console\Commands\InstallCommand;
 use Posio\CabinetKit\Console\Commands\SyncConfigCommand;
+use Posio\CabinetKit\Support\CabinetRedirects;
 
 class CabinetKitServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/cabinet-kit.php', 'cabinet-kit');
+        $this->mergeConfigFrom(__DIR__.'/../config/cabinet-kit-redirects.php', 'cabinet-kit-redirects');
 
+        $this->bridgeLegacyRedirects();
         $this->mountLogViewer();
     }
 
@@ -32,7 +35,12 @@ class CabinetKitServiceProvider extends ServiceProvider
 
         $this->publishes([
             __DIR__.'/../config/cabinet-kit.php' => config_path('cabinet-kit.php'),
+            __DIR__.'/../config/cabinet-kit-redirects.php' => config_path('cabinet-kit-redirects.php'),
         ], 'cabinet-kit-config');
+
+        $this->publishes([
+            __DIR__.'/../config/cabinet-kit-redirects.php' => config_path('cabinet-kit-redirects.php'),
+        ], 'cabinet-kit-redirects');
 
         $this->publishes([
             __DIR__.'/../database/migrations' => database_path('migrations'),
@@ -48,6 +56,27 @@ class CabinetKitServiceProvider extends ServiceProvider
                 InstallCommand::class,
                 SyncConfigCommand::class,
             ]);
+        }
+    }
+
+    /**
+     * A host installed before landing pages got a config file of their own
+     * still keeps its choice in the main one. Those keys stay authoritative
+     * until the dedicated file exists, so an update alone never moves a
+     * cabinet's landing page behind the host's back.
+     */
+    protected function bridgeLegacyRedirects(): void
+    {
+        if (file_exists(config_path('cabinet-kit-redirects.php'))) {
+            return;
+        }
+
+        foreach (CabinetRedirects::LEGACY_KEYS as $key => $legacyKey) {
+            $target = config("cabinet-kit.{$legacyKey}");
+
+            if (filled($target)) {
+                config(["cabinet-kit-redirects.{$key}" => $target]);
+            }
         }
     }
 

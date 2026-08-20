@@ -382,6 +382,20 @@
       "source": "resources/_admin/js/components/ui/CategoryIconPicker.vue",
       "target": "resources/_admin/js/components/ui/CategoryIconPicker.vue",
       "notes": "Verbatim copy. Icon grid for editable categories; no dependencies beyond Iconify."
+    },
+    {
+      "id": "config-redirects",
+      "mode": "manual",
+      "source": "config/cabinet_redirects.php",
+      "target": "config/cabinet-kit-redirects.php",
+      "notes": "Same key set on both sides, different values: posio lands on its dashboard, the package on a page it actually ships. Never mirror the values."
+    },
+    {
+      "id": "controller-authenticate",
+      "mode": "manual",
+      "source": "app/Http/Controllers/AuthenticateController.php",
+      "target": "src/Http/Controllers/Auth/LoginController.php",
+      "notes": "One source controller is split across the package's Login/Register/PasswordReset/Verification controllers. Redirect targets are read from the redirects config on both sides; the package additionally falls back when a target names no registered route."
     }
   ]
 }

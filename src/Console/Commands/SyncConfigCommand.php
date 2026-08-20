@@ -4,7 +4,9 @@ namespace Posio\CabinetKit\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
+use Posio\CabinetKit\Support\CabinetRedirects;
 use Posio\CabinetKit\Support\FrontendDependencies;
 use Posio\CabinetKit\Support\HostTailwindConfig;
 
@@ -36,6 +38,8 @@ class SyncConfigCommand extends Command
             return self::SUCCESS;
         }
 
+        $this->publishRedirectsConfig();
+
         $hostConfig = require $hostPath;
         $packageConfig = require $packagePath;
 
@@ -54,6 +58,61 @@ class SyncConfigCommand extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * A config file introduced by a package release never appears in a project
+     * that is only updated — composer refreshes vendor and nothing else. It is
+     * created here, carrying over the landing pages the host had chosen back
+     * when they lived in the main config file. A page whose route the project
+     * no longer registers is dropped rather than carried: that stale name is
+     * what used to break the sign-in flow.
+     */
+    protected function publishRedirectsConfig(): void
+    {
+        $path = config_path('cabinet-kit-redirects.php');
+
+        if (File::exists($path)) {
+            return;
+        }
+
+        $contents = File::get(__DIR__.'/../../../config/cabinet-kit-redirects.php');
+        $carried = [];
+        $dropped = [];
+
+        foreach (CabinetRedirects::LEGACY_KEYS as $key => $legacyKey) {
+            $target = trim((string) config("cabinet-kit.{$legacyKey}", ''));
+
+            if ($target === '') {
+                continue;
+            }
+
+            if (! Route::has($target)) {
+                $dropped[$legacyKey] = $target;
+                continue;
+            }
+
+            $contents = preg_replace("/'{$key}'\\s*=>\\s*'[^']*'/", "'{$key}' => '{$target}'", $contents, 1, $count);
+
+            if ($count > 0) {
+                $carried[$key] = $target;
+            }
+        }
+
+        File::put($path, $contents);
+        $this->info('Created config/cabinet-kit-redirects.php.');
+
+        foreach ($carried as $key => $target) {
+            $this->line("    kept your '{$key}' landing page: {$target}");
+        }
+
+        foreach ($dropped as $legacyKey => $target) {
+            $this->warn("    '{$legacyKey}' pointed at '{$target}', which this app does not register — replaced with the package default.");
+        }
+
+        if ($carried !== [] || $dropped !== []) {
+            $this->warn('    Landing pages are read from the new file only — delete the old keys from config/cabinet-kit.php.');
+        }
     }
 
     // A stale glob here has no visible symptom other than package templates

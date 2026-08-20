@@ -36,12 +36,14 @@ src/
   Traits/                         IsCabinetKitUser (User), HasAccount, HasSettings, HasCustomFields
   Repositories/AccountRepository.php
   Services/                       AccountService (role writes + account creation), MenuService (menu filtering)
+  Support/CabinetRedirects.php    auth flow landing pages, with a fallback for targets that resolve to nothing
   Console/Commands/               InstallCommand, DoctorCommand, SyncConfigCommand
 database/
   migrations/                     accounts, user_has_accounts, users.settings
   seeders/CabinetKitRolesSeeder.php  Account owner / Manager / Administrator / User + manage-account permission
 routes/cabinet.php                mounted automatically, prefix+name from config
-config/cabinet-kit.php            user_model, menu[], roles, login_redirect_route
+config/cabinet-kit.php            user_model, menu[], roles, route prefixes
+config/cabinet-kit-redirects.php  home, after_login, after_register, after_verify, after_logout
 resources/js/
   layouts/                        CabinetLayout, CabinetHeader, SideMenu, AccountSwitcher, AuthLayout
   pages/Auth/                     Login, Register, ForgotPassword, ResetPassword, VerifyEmail

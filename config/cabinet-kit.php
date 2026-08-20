@@ -23,11 +23,7 @@ return [
     // in order. 'auth' must resolve against the host's own guard.
     'middleware' => ['web', 'auth'],
 
-    // Named routes used for initial navigation. The package default page is
-    // the platform users section; hosts may point both settings at any visible
-    // cabinet route.
-    'home_route' => 'cabinet-kit.users',
-    'login_redirect_route' => 'cabinet-kit.users',
+    // Landing pages of the auth flow moved to config/cabinet-kit-redirects.php.
 
     // Blade root view every CabinetKit Inertia page renders into. The bundled
     // view (resources/views/app.blade.php in the package) prints @routes,

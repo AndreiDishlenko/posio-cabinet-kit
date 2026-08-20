@@ -11,6 +11,7 @@ use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\InvalidStateException;
 use Posio\CabinetKit\Repositories\UserRepository;
 use Posio\CabinetKit\Services\AccountService;
+use Posio\CabinetKit\Support\CabinetRedirects;
 
 class SocialAuthController extends Controller
 {
@@ -85,7 +86,7 @@ class SocialAuthController extends Controller
 
         // Full page load rather than an Inertia visit: the provider returns the
         // browser here by plain navigation, and the session was just rotated.
-        return Inertia::location(route(config('cabinet-kit.login_redirect_route', 'cabinet-kit.users')));
+        return Inertia::location(CabinetRedirects::url('after_login'));
     }
 
     protected function defaultAccountName($user): string
