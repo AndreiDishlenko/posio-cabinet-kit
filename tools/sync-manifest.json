@@ -396,6 +396,36 @@
       "source": "app/Http/Controllers/AuthenticateController.php",
       "target": "src/Http/Controllers/Auth/LoginController.php",
       "notes": "One source controller is split across the package's Login/Register/PasswordReset/Verification controllers. Redirect targets are read from the redirects config on both sides; the package additionally falls back when a target names no registered route."
+    },
+    {
+      "id": "package-system-password-policy",
+      "mode": "package_only",
+      "target": "src/Support/SystemPasswordPolicy.php",
+      "notes": "Detects an account still holding the password the installer seeded it with (config cabinet-kit.system_users). Install-time concern of the package; posio.cabinet has no counterpart."
+    },
+    {
+      "id": "package-system-password-gate",
+      "mode": "package_only",
+      "target": "src/Http/Middleware/RequireSystemPasswordChange.php",
+      "notes": "Holds a seeded account on the password form, mirroring how posio.cabinet's HaveCurrentAccount holds a user without an account on cabinet.init. Also aliased as cabinet-kit.system-password for host route groups."
+    },
+    {
+      "id": "package-system-password-controller",
+      "mode": "package_only",
+      "target": "src/Http/Controllers/SystemPasswordController.php",
+      "notes": "Screen + update for the forced password change. Shaped after InitController::initScreen (redirect away when there is nothing to do)."
+    },
+    {
+      "id": "package-system-password-page",
+      "mode": "package_only",
+      "target": "resources/_admin/js/pages/SystemPassword.vue",
+      "notes": "Modelled on posio.cabinet pages/InitFirst.vue: CabinetLayout with disable_menu plus an unclosable ModalForm opened on mount. Keep the two in sync in shape, not in content."
+    },
+    {
+      "id": "package-system-password-card",
+      "mode": "package_only",
+      "target": "resources/_admin/js/pages/SystemPassword/ChangeSystemPassword.vue",
+      "notes": "Modelled on pages/Initial/CreateAccount.vue (ModalCard + _formMixins + footer button). No source counterpart."
     }
   ]
 }

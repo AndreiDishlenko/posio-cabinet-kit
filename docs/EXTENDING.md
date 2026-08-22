@@ -202,6 +202,30 @@ apply directly:
   middleware to those routes yourself; CabinetKit deliberately doesn't
   assume this is wanted globally.
 
+## The forced password change of seeded accounts
+
+An account seeded by the installer (`cabinet-kit.system_users`) is held on
+`pages/SystemPassword` until it replaces the password the config gave it (see
+ARCHITECTURE for the mechanism). Three ways to bend it:
+
+- **Hold host routes behind it too** — the package's own middleware covers
+  package routes only. Add the `cabinet-kit.system-password` alias to your own
+  route groups so a seeded account cannot slip into the host's pages either:
+
+  ```php
+  Route::middleware(['auth', 'cabinet-kit.system-password'])->group(...);
+  ```
+
+- **Reword or restyle the screen** — override `pages/SystemPassword` (and, if
+  you want the form itself, keep the override's own copy of the card it
+  imports). The POST target `cabinet-kit.system-password.update` stays the
+  same; it only accepts `password` + `password_confirmation`.
+
+- **Turn it off** — `'force_system_password_change' => false` in
+  `config/cabinet-kit.php`. Correct when those passwords come from a secret
+  manager or a provisioning script; wrong as a way to skip the prompt, since
+  the seeded password is public knowledge in every install of this package.
+
 ## Known gaps (intentionally out of scope)
 
 - Social login providers, 2FA, magic links — bring your own if needed, the

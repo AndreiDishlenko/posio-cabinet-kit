@@ -280,7 +280,15 @@ export default {
     "This password reset token is invalid.": "Посилання для скидання пароля є недійсним.",
     "Your password has been reset.": "Ваш пароль було змінено.",
 	"Enter password to confirm"	: "Введіть пароль для підтвердження",
-    
+
+    // Заміна пароля службового користувача, заданого при встановленні
+    "Change password": "Зміна пароля",
+    "Change the installation password": "Змініть встановлений пароль",
+    "system-password-message": "Цей обліковий запис досі входить із паролем, заданим під час встановлення. Задайте власний пароль, щоб продовжити роботу.",
+    "Save password": "Зберегти пароль",
+    "Password changed": "Пароль змінено",
+    "Choose a password other than the installed one.": "Оберіть пароль, відмінний від встановленого.",
+
     "Quick Service"     : "Швидкий сервіс",
     "Orders Management" : "Керування замовленнями",
     "Kitchen Display"   : "Кухонний дисплей",

@@ -27,6 +27,13 @@ Then open `/cabinet/register` and create the first user — registration also
 creates the account (the "Company name" field), so no separate
 account-creation step is needed on a fresh install.
 
+Signing in as one of the seeded accounts (`sa` / `admin`, see `system_users`
+in `config/cabinet-kit.php`) instead opens the password screen and stops
+there: their installed password is written in that config and is the same in
+every project using this package, so the cabinet opens only after it has been
+replaced. Set `'force_system_password_change' => false` if those passwords are
+managed outside the application.
+
 ### Notes on the git source
 
 - Composer needs `git` on PATH; if it is missing, Composer falls back to

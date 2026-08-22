@@ -39,7 +39,7 @@ class DoctorCommand extends Command
         $this->check(File::exists(config_path('permission.php')), 'config/permission.php is published', 'Publish Spatie Permission config before running migrations.');
         $this->check((bool) config('permission.teams'), "Spatie Permission 'teams' is true", "Set 'teams' => true in config/permission.php before migrating.");
         $this->check($this->permissionConfigLooksReady(), 'Spatie Permission table config matches CabinetKit', 'Set model_has_roles=user_has_roles, model_has_permissions=user_has_permissions and model_morph_key=user_id.');
-        $this->check($this->permissionTablesLookReady(), 'Permission role tables exist and include team_id when present', 'Run php artisan migrate after CabinetKit patches config/permission.php.');
+        $this->check($this->permissionTablesLookReady(), 'Permission role tables exist and include team_id when present', $this->permissionTablesHint());
         $this->check(Schema::hasTable('accounts') && Schema::hasTable('user_has_accounts'), 'CabinetKit account tables exist', 'Run php artisan migrate.');
         $this->check(Schema::hasTable('admin_links'), 'CabinetKit admin_links table exists', 'Run php artisan migrate.');
         $this->check($this->routeNamesDoNotCollide(), 'Route names can be cached', "Set 'auth_routes' => false or remove duplicate auth route names.");
@@ -185,6 +185,27 @@ class DoctorCommand extends Command
         }
 
         return true;
+    }
+
+    // Pivots left under Spatie's own names are the one shape that looks like a
+    // missing migration and is not: the tables are there, the config points
+    // somewhere else, and every role query dies on a table that never existed.
+    protected function permissionTablesHint(): string
+    {
+        $stale = array_values(array_filter(
+            ['model_has_roles', 'model_has_permissions'],
+            fn ($default) => config("permission.table_names.{$default}") !== $default
+                && Schema::hasTable($default)
+                && ! Schema::hasTable(config("permission.table_names.{$default}")),
+        ));
+
+        if ($stale === []) {
+            return 'Run php artisan migrate after CabinetKit patches config/permission.php.';
+        }
+
+        return 'This project used Spatie before CabinetKit: '.implode(' and ', $stale)
+            .' still carry their original names while config/permission.php points at the CabinetKit ones. '
+            .'Run php artisan migrate to rename them.';
     }
 
     protected function permissionConfigLooksReady(): bool

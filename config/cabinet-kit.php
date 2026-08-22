@@ -86,6 +86,13 @@ return [
 
     // Built-in users created during installation. Existing users are kept as-is:
     // passwords are only written when the user row is first created.
+    //
+    // Their passwords are listed here, and are therefore the same in every
+    // project built on this package: an account still holding the one written
+    // below is led to the password form and nowhere else until it picks its
+    // own. Turn that off only when those passwords are managed outside the
+    // application.
+    'force_system_password_change' => true,
     'system_team_id' => 0,
     'system_users' => [
         'sa' => [

@@ -103,6 +103,29 @@ middleware's redirect-to-login, `EmailVerificationRequest`) look those exact
 names up. Only the *authenticated* users/settings/account route group
 uses the `cabinet-kit.` name prefix.
 
+## First sign-in of a seeded account
+
+`cabinet-kit:install` seeds the accounts listed under
+`cabinet-kit.system_users` with the password written next to them in the config
+— the same one in every project built on this package. While an account still
+holds that password, `RequireSystemPasswordChange` (last in the authenticated
+cabinet group, after `ShareCabinetKitData`) answers every route of that group
+with a redirect to `cabinet-kit.system-password`, which renders
+`pages/SystemPassword`: `CabinetLayout` with the menu disabled and a modal
+that cannot be closed or clicked away — the same shape posio.cabinet uses to
+hold a user without an account on its initialization screen.
+
+Nothing records the state: `SystemPasswordPolicy` compares the stored hash
+against the configured password, so the gate lifts as soon as the password
+differs and comes back if the configured one is set again — no flag, no column,
+no migration, and nothing to reset when the config changes. Accounts absent
+from `system_users` are never affected, and `force_system_password_change`
+turns the whole thing off.
+
+Like posio.cabinet's own gate, this one speaks only for the group it sits in —
+package routes. A host that wants its own pages held the same way applies the
+`cabinet-kit.system-password` middleware alias to them.
+
 ## Logs
 
 The one section of the cabinet that is **not** an Inertia page: reading the

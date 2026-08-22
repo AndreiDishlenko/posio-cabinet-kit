@@ -86,28 +86,27 @@ php artisan cabinet-kit:sync-config
 npm run build
 ```
 
-6. Tag and publish — `tools/Release-CabinetKit.ps1` (or `release.bat` in the
-   repository root) does the whole step: it takes the newest semver tag,
-   bumps it, commits the working tree, tags the commit and pushes branch and
-   tag in one atomic push. The tag prefix follows the previous tag, so the
-   numbering scheme never drifts.
+6. Tag and publish — `release.bat` in the repository root does the whole step:
+   it reads the release tag reachable from HEAD, increments its third number,
+   commits the working tree with the bare version as the commit message, tags
+   that commit and pushes branch and tag in one atomic push. The tag prefix
+   follows the current tag (`0.3.33` -> `0.3.34`), so the numbering scheme
+   never drifts. The file is self-contained and project-independent — copy it
+   into any repository as is.
 
 ```powershell
-.\release.bat                      # patch bump, e.g. 0.3.32 -> 0.3.33
-.\release.bat -Minor               # 0.3.32 -> 0.4.0
-.\release.bat -Version 1.0.0       # explicit version
-.\release.bat -StampChangelog      # rename "## Unreleased" sections to the version
-.\release.bat -DryRun              # print the plan, touch nothing
+.\release.bat            # 0.3.33 -> 0.3.34, commit, tag, push
+.\release.bat -DryRun    # print the plan, change nothing
+.\release.bat -NoPush    # commit and tag locally, push nothing
+.\release.bat -h         # help
 ```
 
-   Manual equivalent, if the script is not usable:
+   Minor and major bumps are deliberate, so they stay manual:
 
 ```powershell
-git status
-git add .
-git commit -m "Prepare cabinet kit update"
-git tag vX.Y.Z
-git push origin main --tags
+git commit -am "0.4.0"
+git tag -a 0.4.0 -m "0.4.0"
+git push --atomic origin main 0.4.0
 ```
 
 ## Consumer update contract

@@ -10,6 +10,7 @@ use Opcodes\LogViewer\Facades\LogViewer;
 use Posio\CabinetKit\Console\Commands\DoctorCommand;
 use Posio\CabinetKit\Console\Commands\InstallCommand;
 use Posio\CabinetKit\Console\Commands\SyncConfigCommand;
+use Posio\CabinetKit\Http\Middleware\RequireSystemPasswordChange;
 use Posio\CabinetKit\Support\CabinetRedirects;
 
 class CabinetKitServiceProvider extends ServiceProvider
@@ -32,6 +33,10 @@ class CabinetKitServiceProvider extends ServiceProvider
         $this->registerInertiaPagePaths();
         $this->registerSocialAuth();
         $this->registerLogViewerAuth();
+
+        // Aliased so a host can hold its own route groups behind the same gate —
+        // the package can only speak for its own routes.
+        $this->app['router']->aliasMiddleware('cabinet-kit.system-password', RequireSystemPasswordChange::class);
 
         $this->publishes([
             __DIR__.'/../config/cabinet-kit.php' => config_path('cabinet-kit.php'),

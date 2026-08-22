@@ -142,12 +142,18 @@ class InstallCommand extends Command
         ]);
     }
 
+    // Spatie's own names are checked too: a project that used Spatie before the
+    // kit arrived carries its pivots under them, and migrations adopt those
+    // tables as they are — a missing team column would only surface later, at
+    // the first query.
     protected function permissionTablesWereMigratedWithoutTeams(): bool
     {
-        $tables = [
+        $tables = array_unique([
             config('permission.table_names.model_has_roles', 'user_has_roles'),
             config('permission.table_names.model_has_permissions', 'user_has_permissions'),
-        ];
+            'model_has_roles',
+            'model_has_permissions',
+        ]);
 
         foreach ($tables as $table) {
             if (Schema::hasTable($table) && ! Schema::hasColumn($table, 'team_id')) {

@@ -10,6 +10,7 @@ export default {
     "email-verified": "Your email address has been confirmed. Please sign in.",
     "email-already-verified": "This email address has already been confirmed. Please sign in.",
     "social-auth-failed": "Sign-in was not completed. Please try again — click the sign-in button once and do not reload the page you return to.",
+    "system-password-message": "This account still signs in with the password set during installation. Choose a password of your own to continue.",
 
     "Please wait {number} s. before retrying.": "Please wait {number} s. before retrying.",
 

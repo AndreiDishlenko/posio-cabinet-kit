@@ -1,5 +1,60 @@
 # Changelog
 
+## Unreleased — Seeded accounts must replace their installation password
+
+**Added**
+- A fresh install seeds `sa` / `admin` with a password that is written in
+  `config/cabinet-kit.php` and therefore identical in every project built on
+  this package. Such an account now signs in onto a single screen — the
+  cabinet page `pages/SystemPassword`, a modal that cannot be closed, dismissed
+  or navigated away from (`RequireSystemPasswordChange` sends every other route
+  of the cabinet group back to it) — and reaches the rest of the cabinet only
+  after setting a password of its own.
+- The condition is read from the password hash itself (`Hash::check` against
+  the configured one), so there is no flag, no column and no migration: the
+  gate lifts the moment the password differs and returns if the configured one
+  is set again. Accounts outside `cabinet-kit.system_users` never see it.
+- `'force_system_password_change' => true` in `config/cabinet-kit.php` turns
+  the gate off for hosts that manage those passwords elsewhere.
+- The gate is also aliased as middleware `cabinet-kit.system-password`, so a
+  host can hold its own route groups behind it — the package's own middleware
+  only covers package routes, exactly like the account-initialization gate it
+  is modelled on.
+
+## Unreleased — Spatie tables already present in the host are adopted, not ignored
+
+**Fixed**
+- Installing into a project that already used Spatie Permission left it unable
+  to sign in: `SQLSTATE[42S02] ... Table 'user_has_roles' doesn't exist`. The
+  installer patches `config/permission.php` to the kit's pivot names, but the
+  host's copy of Spatie's table migration had already run under the original
+  ones, so `migrate` had nothing left to do and the tables kept the names
+  nothing reads any more. A migration now renames `model_has_roles` /
+  `model_has_permissions` and their `model_id` column to whatever the config
+  asks for, when — and only when — the target tables are not there yet.
+- The same ordering flaw silently skipped the `is_system` columns on `roles`
+  and `permissions` in the opposite case: a project **without** Spatie got its
+  permission tables created by the freshly published migration, which is dated
+  the day of the install and therefore ran *after* the kit's own migrations.
+  Both concerns now live in one migration dated far ahead, so it always runs
+  once those tables exist. Projects that already applied
+  `2024_01_01_000005_prepare_cabinet_kit_permissions` keep that row in their
+  migrations table; the replacement is idempotent and simply finds nothing to
+  do.
+- `cabinet-kit:install` also checks Spatie's own table names when it refuses to
+  install over permission tables built without teams — under the kit's names
+  those tables do not exist yet, so a teamless schema used to pass the check
+  and fail later, at the first role query.
+- `cabinet-kit:doctor` names this case instead of asking for a migration run
+  that had nothing to do: the tables are reported as still carrying their
+  original names while the config points elsewhere.
+
+**Note for affected projects**
+- Seeding runs after migrations in the installer, so an install that hit this
+  bug also has its system users without roles. Run `php artisan migrate` (which
+  now renames the tables) and then re-run `php artisan cabinet-kit:install` —
+  answering *no* to the user purge — to seed the roles that were lost.
+
 ## Unreleased — Host version constraint repaired instead of freezing the install
 
 **Fixed**

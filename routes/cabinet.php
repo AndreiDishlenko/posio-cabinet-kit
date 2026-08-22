@@ -12,7 +12,9 @@ use Posio\CabinetKit\Http\Controllers\Auth\SocialAuthController;
 use Posio\CabinetKit\Http\Controllers\Auth\VerificationController;
 use Posio\CabinetKit\Http\Controllers\ProfileController;
 use Posio\CabinetKit\Http\Controllers\SettingsController;
+use Posio\CabinetKit\Http\Controllers\SystemPasswordController;
 use Posio\CabinetKit\Http\Middleware\CanSystemPermission;
+use Posio\CabinetKit\Http\Middleware\RequireSystemPasswordChange;
 use Posio\CabinetKit\Http\Middleware\SetPermissionTeam;
 use Posio\CabinetKit\Http\Middleware\ShareCabinetKitData;
 use Posio\CabinetKit\Http\Middleware\UseCabinetKitRootView;
@@ -99,12 +101,17 @@ Route::middleware(['web', UseCabinetKitRootView::class])
 
         Route::middleware(array_merge(
                 config('cabinet-kit.middleware', ['web', 'auth']),
-                [SetPermissionTeam::class, ShareCabinetKitData::class],
+                [SetPermissionTeam::class, ShareCabinetKitData::class, RequireSystemPasswordChange::class],
             ))
             ->name(config('cabinet-kit.route_name_prefix', 'cabinet-kit.'))
             ->group(function () {
                 Route::get('/', fn () => redirect(CabinetRedirects::url('home')))->name('home');
                 Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
+
+                // The one pair of routes the gate above lets a seeded account
+                // through to, so it can replace the password it was installed with.
+                Route::get('/system-password', [SystemPasswordController::class, 'screen'])->name('system-password');
+                Route::post('/system-password', [SystemPasswordController::class, 'update'])->name('system-password.update');
 
                 Route::middleware(CanSystemPermission::class.':sysper-users')->group(function () {
                     Route::get('/users', [UsersController::class, 'index'])->name('users');
