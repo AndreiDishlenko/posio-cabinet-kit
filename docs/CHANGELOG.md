@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased — Signing out actually signs out
+
+**Fixed**
+- `The GET method is not supported for route cabinet/logout` (405) when leaving
+  the cabinet. The package's logout route is `POST` (the source project it was
+  taken from used `GET`), but both places that link to it were still plain
+  links: the burger menu item and the "Logout" link on the email-verification
+  screen. Both send `POST` now, and burger-menu items accept a `method` prop —
+  a non-GET item renders as a button, since a browser follows an `<a>` with
+  `GET` regardless of what the component asked for.
+
 ## Unreleased — Cabinet pages are found server-side, not just in the browser
 
 **Fixed**

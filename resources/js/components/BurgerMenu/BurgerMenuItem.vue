@@ -10,7 +10,7 @@
 			active:bg-[rgba(255,255,255,0.06)] 
 			p-4 lt-sm:px-6 sm:mx-4"
 		:class="{ 'opacity-40 pointer-events-none cursor-default hover:!bg-transparent active:!bg-transparent': disabled }"
-		v-bind="href ? { href } : { type: 'button' }"
+		v-bind="element_attrs"
 		@click="$emit('click', $event)"
 	>
 		<Icon v-if="icon" :icon="icon" class="icon icon-lg text-color"/>
@@ -47,8 +47,25 @@
 				type: Boolean,
 				default: false,
 			},
+			// HTTP-метод перехода; всё, кроме get, требует отправки формы, а не обычной ссылки.
+			method: {
+				type: String,
+				default: 'get',
+			},
 		},
 		emits: ['click'],
+		computed: {
+			// Не-GET переход обязан рендериться кнопкой: браузер всё равно откроет <a> обычным GET-запросом.
+			element_attrs() {
+				if ( !this.href )
+					return { type: 'button' };
+
+				if ( this.external || this.method === 'get' )
+					return { href: this.href };
+
+				return { href: this.href, method: this.method, as: 'button' };
+			},
+		},
 	}
 </script>
 

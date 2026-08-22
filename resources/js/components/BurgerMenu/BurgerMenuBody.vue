@@ -34,6 +34,7 @@
 				icon="solar:logout-outline"
 				:label="$t('Logout')"
 				:href="route('logout')"
+				method="post"
 				@click="$emit('close-silently')"
 			/>
 			<BurgerMenuItem

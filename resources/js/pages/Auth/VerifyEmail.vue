@@ -26,7 +26,7 @@
                 <span v-else>{{ $t('Resend Verification Email')}}</span>
             </button>
             <div class="card-footer-text !justify-center">
-                <Link as="button" :href="route('logout')">
+                <Link as="button" method="post" :href="route('logout')">
                     {{ $t('Logout')}}
                 </Link>
             </div>
