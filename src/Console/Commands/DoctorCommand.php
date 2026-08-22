@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Posio\CabinetKit\Support\CabinetRedirects;
 use Posio\CabinetKit\Support\FrontendDependencies;
+use Posio\CabinetKit\Support\HostComposerJson;
 use Posio\CabinetKit\Support\HostTailwindConfig;
 use Posio\CabinetKit\Support\HostViteConfig;
 
@@ -24,6 +25,7 @@ class DoctorCommand extends Command
 
         $entry = config('cabinet-kit.vite_entry', 'resources/_admin/js/cabinet.ts');
 
+        $this->check(HostComposerJson::receivesNewReleases(), 'composer.json can receive new cabinet-kit releases', $this->composerConstraintHint());
         $this->check(File::exists(config_path('cabinet-kit.php')), 'config/cabinet-kit.php is published', 'Run php artisan cabinet-kit:install.');
         $this->check(File::exists(config_path('cabinet-kit-redirects.php')), 'config/cabinet-kit-redirects.php is published', 'Run php artisan cabinet-kit:sync-config.');
         $this->check(CabinetRedirects::unresolvable() === [], 'Auth flow landing pages resolve to registered routes', $this->unresolvableRedirectsHint());
@@ -71,6 +73,19 @@ class DoctorCommand extends Command
         $this->failures++;
         $this->line("<fg=red>FAIL</> {$label}");
         $this->line("      {$hint}");
+    }
+
+    // The one failure with no symptom at all: composer keeps reporting the
+    // project as up to date while every release after the pinned one is
+    // unreachable.
+    protected function composerConstraintHint(): string
+    {
+        $json = HostComposerJson::read() ?? [];
+        $constraint = (string) HostComposerJson::constraint($json);
+        $widened = HostComposerJson::widenedConstraint($constraint);
+
+        return "\"{$constraint}\" is an exact version to composer, not a range — it matches one release only. "
+            ."Change it to \"{$widened}\" in composer.json require, or run php artisan cabinet-kit:sync-config, then composer update posio/cabinet-kit.";
     }
 
     // A landing page naming a route the project dropped is invisible until

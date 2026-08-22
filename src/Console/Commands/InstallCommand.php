@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Posio\CabinetKit\Support\FrontendDependencies;
+use Posio\CabinetKit\Support\HostComposerJson;
 use Posio\CabinetKit\Support\HostTailwindConfig;
 use Posio\CabinetKit\Support\HostViteConfig;
 use Spatie\Permission\PermissionRegistrar;
@@ -49,7 +50,7 @@ class InstallCommand extends Command
         $this->patchViteConfig($entry);
         $this->patchTailwindConfig();
         $this->patchPackageJson();
-        $this->patchComposerScripts();
+        $this->patchComposerJson();
         $this->patchUserModel();
         $this->publishPermissionMigrations();
 
@@ -405,11 +406,12 @@ MD);
         return ($count ?? 0) === 0 ? null : $updated;
     }
 
-    // Wiring inside the host's own files (Tailwind content, npm dependencies)
-    // can go stale with any package release, and nothing in composer re-runs a
-    // library's installer. The host's own update hook is the only place from
-    // which the package can repair that on its own.
-    protected function patchComposerScripts(): void
+    // Two repairs in the host's composer.json, written together so the file is
+    // touched once: the version constraint (a partial version there pins the
+    // project to a single release) and the update hook — wiring inside the
+    // host's own files can go stale with any package release, and nothing in
+    // composer re-runs a library's installer.
+    protected function patchComposerJson(): void
     {
         $path = base_path('composer.json');
         if (! File::exists($path)) {
@@ -423,23 +425,36 @@ MD);
             return;
         }
 
-        $hooks = (array) data_get($json, 'scripts.post-update-cmd', []);
+        $changes = [];
+        $constraint = HostComposerJson::constraint($json);
+        $widened = $constraint === null ? null : HostComposerJson::widenedConstraint($constraint);
 
-        foreach ($hooks as $hook) {
-            if (is_string($hook) && str_contains($hook, 'cabinet-kit:sync-config')) {
-                return;
-            }
+        if ($widened !== null) {
+            $json['require'][HostComposerJson::PACKAGE] = $widened;
+            $changes[] = "the version constraint (\"{$constraint}\" matches only one release, so \"{$widened}\")";
         }
 
-        $hooks[] = '@php artisan cabinet-kit:sync-config --ansi';
-        $json['scripts']['post-update-cmd'] = array_values($hooks);
+        if (! HostComposerJson::runsSyncConfigAfterUpdate($json)) {
+            $hooks = (array) data_get($json, 'scripts.post-update-cmd', []);
+            $hooks[] = '@php artisan cabinet-kit:sync-config --ansi';
+            $json['scripts']['post-update-cmd'] = array_values($hooks);
+            $changes[] = 'the post-update hook that re-applies CabinetKit wiring';
+        }
 
-        if (! $this->confirmPatch($path, 'Run cabinet-kit:sync-config automatically after every composer update?')) {
+        if ($changes === []) {
             return;
         }
 
-        $this->backupAndPut($path, json_encode($json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).PHP_EOL);
-        $this->info('Patched composer.json with the CabinetKit post-update hook.');
+        if (! $this->confirmPatch($path, 'Patch composer.json with '.implode(' and ', $changes).'?')) {
+            return;
+        }
+
+        $this->backupAndPut($path, HostComposerJson::encode($json));
+        $this->info('Patched composer.json.');
+
+        if ($widened !== null) {
+            $this->warn('Run composer update posio/cabinet-kit to pick up the releases the old constraint hid.');
+        }
     }
 
     protected function patchPackageJson(): void

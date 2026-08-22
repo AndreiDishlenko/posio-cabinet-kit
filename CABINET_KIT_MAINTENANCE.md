@@ -86,7 +86,21 @@ php artisan cabinet-kit:sync-config
 npm run build
 ```
 
-6. Tag and publish:
+6. Tag and publish — `tools/Release-CabinetKit.ps1` (or `release.bat` in the
+   repository root) does the whole step: it takes the newest semver tag,
+   bumps it, commits the working tree, tags the commit and pushes branch and
+   tag in one atomic push. The tag prefix follows the previous tag, so the
+   numbering scheme never drifts.
+
+```powershell
+.\release.bat                      # patch bump, e.g. 0.3.32 -> 0.3.33
+.\release.bat -Minor               # 0.3.32 -> 0.4.0
+.\release.bat -Version 1.0.0       # explicit version
+.\release.bat -StampChangelog      # rename "## Unreleased" sections to the version
+.\release.bat -DryRun              # print the plan, touch nothing
+```
+
+   Manual equivalent, if the script is not usable:
 
 ```powershell
 git status

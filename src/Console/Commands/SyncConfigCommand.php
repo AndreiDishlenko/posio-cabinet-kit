@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Posio\CabinetKit\Support\CabinetRedirects;
 use Posio\CabinetKit\Support\FrontendDependencies;
+use Posio\CabinetKit\Support\HostComposerJson;
 use Posio\CabinetKit\Support\HostTailwindConfig;
 use Posio\CabinetKit\Support\HostViteConfig;
 
@@ -29,6 +30,7 @@ class SyncConfigCommand extends Command
 
     public function handle(): int
     {
+        $this->syncComposerConstraint();
         $this->syncPackageJsonDependencies();
         $this->syncViteConfig();
         $this->syncTailwindContent();
@@ -61,6 +63,37 @@ class SyncConfigCommand extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * A partial version in the host's `require` is an exact version to composer,
+     * so the project sits on the first release of the line and every later tag
+     * is invisible — including the one that would carry this repair. Fixed here
+     * without asking, same as any other silently stale wiring; the surrounding
+     * update has already resolved, so the widened range only takes effect on
+     * the next one.
+     */
+    protected function syncComposerConstraint(): void
+    {
+        $path = HostComposerJson::path();
+        $json = HostComposerJson::read();
+
+        if ($path === null || $json === null) {
+            return;
+        }
+
+        $constraint = HostComposerJson::constraint($json);
+        $widened = $constraint === null ? null : HostComposerJson::widenedConstraint($constraint);
+
+        if ($widened === null) {
+            return;
+        }
+
+        $json['require'][HostComposerJson::PACKAGE] = $widened;
+
+        $this->backupAndPut($path, HostComposerJson::encode($json));
+        $this->info("Patched composer.json: \"{$constraint}\" is an exact version to composer, replaced with \"{$widened}\".");
+        $this->warn('Run composer update posio/cabinet-kit again to pick up the releases it was hiding.');
     }
 
     /**

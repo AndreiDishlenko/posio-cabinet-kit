@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased — Host version constraint repaired instead of freezing the install
+
+**Fixed**
+- A host requiring `"posio/cabinet-kit": "0.3"` got 0.3.0 and never anything
+  newer: a two-segment version is an exact version to composer (it normalizes
+  to `0.3.0`), so every later tag of the line was invisible and
+  `composer update` reported the project as current. `cabinet-kit:install`
+  now widens such a constraint to `^0.3` while patching `composer.json`
+  (together with the post-update hook, in one write), `cabinet-kit:sync-config`
+  repairs it in projects installed before this release, and
+  `cabinet-kit:doctor` fails on it with the fix in the hint. A full
+  three-segment pin (`0.3.31`) is read as deliberate and left alone.
+- README documents the `0.3` vs `^0.3` distinction in both the install notes
+  and "Which version you get".
+
 ## Unreleased — One-step update launcher in the host project root
 
 **Added**

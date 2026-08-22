@@ -36,8 +36,15 @@ account-creation step is needed on a fresh install.
   in the host `composer.json`.
 - Private-repo / rate-limit case: authenticate Composer once with a GitHub
   token — `composer config --global github-oauth.github.com <token>`.
-- To pin an exact release, use a tag instead of a range, e.g.
-  `composer require posio/cabinet-kit:0.3.31`.
+- Write the constraint as `^0.3`, not `0.3`: a two-segment version is an
+  *exact* version to composer (it normalizes to `0.3.0`), so `0.3` installs
+  the very first release of the line and hides every later tag —
+  `composer update` then reports the project as current forever.
+  `cabinet-kit:install` and `cabinet-kit:sync-config` rewrite such a
+  constraint to its range form, and `cabinet-kit:doctor` fails on it.
+- To pin an exact release, use a full tag instead of a range, e.g.
+  `composer require posio/cabinet-kit:0.3.31` (left alone by the commands
+  above — a three-segment pin is read as deliberate).
 - Offline machines: clone or copy the repo to that machine and point the
   repository at the local path — `composer config repositories.cabinet-kit
   vcs /path/to/posio-cabinet-kit` (a plain filesystem path works as a `vcs`
@@ -172,7 +179,11 @@ working untouched.
 ### Which version you get
 
 `composer update posio/cabinet-kit` only moves inside the range in your
-`composer.json` (`^0.3` stays on `0.3.*`). Breaking changes — renamed config
+`composer.json` (`^0.3` stays on `0.3.*`). A bare `0.3` there is not that
+range — composer reads it as the single release `0.3.0` and silently stops
+offering updates; `cabinet-kit:doctor` reports it, and `cabinet-kit:sync-config`
+rewrites it to `^0.3` (run `composer update posio/cabinet-kit` once more
+afterwards). Breaking changes — renamed config
 keys, removed props on released Vue components, changed route names — arrive
 as a major bump, so crossing one is a deliberate edit of the constraint
 followed by `composer update`, plus a read of `docs/CHANGELOG.md`.
