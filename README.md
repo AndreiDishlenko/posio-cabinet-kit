@@ -218,6 +218,82 @@ cached clone — `composer clearcache`, then update again.
 - Deeper changes → `resources/_admin/overrides/pages/...` (checked before
   the package's own version — see `docs/EXTENDING.md`).
 
+## Uninstall (remove from a project)
+
+There is no uninstall command — `cabinet-kit:install` patches the host's own
+files, and undoing that automatically would mean rewriting files you have
+edited since. The steps below are the exact reverse of what install did.
+
+Back up the database first: step 1 drops tables and columns.
+
+**1. Roll back the package migrations** (while the package is still
+installed — its migration files must be readable):
+
+```bash
+php artisan migrate:rollback --path=vendor/posio/cabinet-kit/database/migrations --step=20
+```
+
+That removes the `accounts`, `user_has_accounts` and `admin_links` tables,
+the settings/social-id columns added to `users`, and the `is_system` columns
+on `roles`/`permissions`. Migrations recorded from other paths are skipped
+with a "migration not found" note — that is expected, not an error.
+
+Spatie's own permission tables were published into
+`database/migrations/`, so they are the host's files now: keep them if the
+project still uses roles, otherwise roll them back and delete them too.
+Seeded rows (roles, admin links, system users) disappear with their tables.
+
+**2. Remove the composer package:**
+
+```bash
+composer remove posio/cabinet-kit
+```
+
+`spatie/laravel-permission`, `opcodesio/log-viewer` and `inertiajs/inertia-laravel`
+came in as its dependencies and go with it. If the project keeps using any of
+them, `composer require` it explicitly first.
+
+**3. Undo the host-file patches.** Each patched file has a `.bak` copy from
+install time — useful as a reference, but do not blindly restore it: it
+predates every change you made since. Edit by hand:
+
+| File | What to remove |
+| --- | --- |
+| `composer.json` | the `@php artisan cabinet-kit:sync-config --ansi` entry in `scripts.post-update-cmd` |
+| `vite.config.js`/`.ts` | the `cabinet-kit.js` plugin import, the `cabinetKit({ https: true })` call, and the cabinet entry in the vite-plugin `input` |
+| `tailwind.config.js`/`.ts` | the `tailwind-preset.cjs` import, `cabinetKitPreset` in `presets`, and the `vendor/posio/cabinet-kit/**` glob in `content` |
+| `app/Models/User.php` | `use IsCabinetKitUser;` and its `use Posio\CabinetKit\Traits\IsCabinetKitUser;` import |
+| `package.json` | the npm packages install added (see [Requirements](#requirements)) — only the ones nothing else in the project uses |
+| `config/permission.php` | the CabinetKit shape (`teams`, `user_has_roles`, `user_has_permissions`, `model_morph_key`) — **only** if the project drops Spatie roles entirely; reverting those names while permission tables still hold data breaks them |
+
+**4. Delete the files install created:**
+
+```
+config/cabinet-kit.php
+config/cabinet-kit-redirects.php
+public/cabinet-assets/
+resources/_admin/overrides/
+resources/_admin/scss/cabinet-kit-overrides.scss
+resources/_admin/js/cabinet.ts        # the Vite entry, if it serves nothing else
+updcab.bat
+*.bak                                 # the install-time backups, once you are done with them
+```
+
+**5. Rebuild and clear:**
+
+```bash
+composer dump-autoload
+php artisan optimize:clear
+npm install
+npm run build
+```
+
+Nothing else of the package remains in the project: Vue/SCSS/routes/views
+were always read from `vendor/`, which step 2 deleted. If the host relied on
+the bundled auth routes (`login`, `register`, `password.*`,
+`verification.*`), those names are now gone — restore the project's own auth
+routes before deploying.
+
 ## Developing this package itself
 
 Open this repo directly (`F:\Packages\posio-cabinet-kit`) and follow its own

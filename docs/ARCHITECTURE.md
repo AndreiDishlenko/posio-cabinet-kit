@@ -156,10 +156,14 @@ highlights as the current page — current-page matching goes by route name.
   `@vite(config('cabinet-kit.vite_entry'))` and `@inertia`. Swap the whole
   view via `config('cabinet-kit.root_view')` if the host needs its own
   HTML shell.
-- **Inertia server-side page paths** — the service provider appends the
-  package `resources/js` and the host `resources/_admin/overrides` to
-  `inertia.pages.paths` (v3) / `inertia.testing.page_paths` (v1/v2), so
-  `ensure_pages_exist => true` and `assertInertia` both see package pages.
+- **Inertia server-side page paths** — the service provider appends the host
+  `resources/_admin/overrides` and **both** package page roots — `resources/js`
+  (auth pages) and `resources/_admin/js` (settings, users, permissions, the
+  system-password screen) — to `inertia.pages.paths` (v3) /
+  `inertia.testing.page_paths` (v1/v2), so `ensure_pages_exist => true` and
+  `assertInertia` both see package pages. A root registered on the client
+  (the resolver globs both) but not here renders fine in the browser and 500s
+  server-side with `ComponentNotFoundException`.
 - **Client-side resolver** — `resolveCabinetKitPage()` in the host's
   cabinet entry: overrides glob first, package glob second.
 

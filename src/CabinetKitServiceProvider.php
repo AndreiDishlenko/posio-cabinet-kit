@@ -172,22 +172,31 @@ class CabinetKitServiceProvider extends ServiceProvider
      * package page ("pages/Auth/Login" etc.), because the default paths only
      * cover the host's own resources. The override folder goes first so a
      * host override is also visible to the finder.
+     *
+     * Both roots the client-side resolver globs have to be listed: auth pages
+     * live under resources/js, the cabinet's own (settings, users, permissions,
+     * the system-password screen) under resources/_admin/js. A root left out
+     * here renders fine in the browser and 500s server-side.
      */
     protected function registerInertiaPagePaths(): void
     {
-        $packagePages = dirname(__DIR__).DIRECTORY_SEPARATOR.'resources'.DIRECTORY_SEPARATOR.'js';
-        $overridePages = resource_path(config('cabinet-kit.overrides_path', '_admin/overrides'));
+        $resources = dirname(__DIR__).DIRECTORY_SEPARATOR.'resources'.DIRECTORY_SEPARATOR;
+        $pageRoots = [
+            resource_path(config('cabinet-kit.overrides_path', '_admin/overrides')),
+            $resources.'js',
+            $resources.'_admin'.DIRECTORY_SEPARATOR.'js',
+        ];
 
         // inertia-laravel v3: runtime ensure_pages_exist + assertInertia share these paths.
         $paths = config('inertia.pages.paths');
         if (is_array($paths)) {
-            config(['inertia.pages.paths' => array_values(array_unique(array_merge($paths, [$overridePages, $packagePages])))]);
+            config(['inertia.pages.paths' => array_values(array_unique(array_merge($paths, $pageRoots)))]);
         }
 
         // inertia-laravel v1/v2: only test assertions look pages up, under a different key.
         $testingPaths = config('inertia.testing.page_paths');
         if (is_array($testingPaths)) {
-            config(['inertia.testing.page_paths' => array_values(array_unique(array_merge($testingPaths, [$overridePages, $packagePages])))]);
+            config(['inertia.testing.page_paths' => array_values(array_unique(array_merge($testingPaths, $pageRoots)))]);
         }
     }
 }

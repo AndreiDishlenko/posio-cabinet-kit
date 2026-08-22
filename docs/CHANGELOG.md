@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased — Cabinet pages are found server-side, not just in the browser
+
+**Fixed**
+- `Inertia page component [pages/SystemPassword] not found` (500) right after
+  signing in on a host with `inertia.pages.ensure_pages_exist => true`. The
+  service provider registered only `resources/js` with Inertia's view finder,
+  while the cabinet's own pages live in `resources/_admin/js` — so
+  `pages/CabinetSettings`, `pages/UsersAdmin`, `pages/Permissions`,
+  `pages/PermissionsAccount` and the new password screen were invisible to it,
+  even though the client-side resolver globs both roots and renders them fine.
+  Auth pages resolved, which is why sign-in itself worked and only the page it
+  led to failed. Both roots are registered now.
+
 ## Unreleased — Seeded accounts must replace their installation password
 
 **Added**
