@@ -110,6 +110,19 @@
 		// }
     }
 
+    // Режим високих рядків: висота рахується від вмісту, а не фіксується розміром
+    // таблиці — рядок вміщує велике прев'ю знімка й підпис у два рядки.
+    .table.wide-rows {
+        --cell-image-size: 5rem;
+
+        .row-header-cell, .table-cell {
+            height: auto!important;
+            min-height: calc( var(--cell-image-size) + 1rem );
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+    }
+
     .table-lg {
 		.header-cell, .footer-cell {
 			font-size: var(--text-lg)!important;

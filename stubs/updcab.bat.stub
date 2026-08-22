@@ -1,0 +1,42 @@
+@echo off
+rem Full CabinetKit update procedure (README "Update"), in the order the steps
+rem depend on each other. Stops at the first failing step so a broken update is
+rem not hidden by the steps after it.
+setlocal
+cd /d "%~dp0"
+
+echo == 1/6 composer update posio/cabinet-kit
+call composer update posio/cabinet-kit
+if errorlevel 1 goto :failed
+
+rem No-op when the composer post-update hook already ran it.
+echo == 2/6 php artisan cabinet-kit:sync-config
+call php artisan cabinet-kit:sync-config
+if errorlevel 1 goto :failed
+
+echo == 3/6 php artisan migrate
+call php artisan migrate
+if errorlevel 1 goto :failed
+
+echo == 4/6 php artisan optimize:clear
+call php artisan optimize:clear
+if errorlevel 1 goto :failed
+
+echo == 5/6 npm install ^&^& npm run build
+call npm install
+if errorlevel 1 goto :failed
+call npm run build
+if errorlevel 1 goto :failed
+
+echo == 6/6 php artisan cabinet-kit:doctor
+call php artisan cabinet-kit:doctor
+if errorlevel 1 goto :failed
+
+echo.
+echo CabinetKit updated.
+exit /b 0
+
+:failed
+echo.
+echo Update stopped: the step above failed. Fix it and run updcab.bat again.
+exit /b 1

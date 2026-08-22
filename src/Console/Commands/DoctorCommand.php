@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Schema;
 use Posio\CabinetKit\Support\CabinetRedirects;
 use Posio\CabinetKit\Support\FrontendDependencies;
 use Posio\CabinetKit\Support\HostTailwindConfig;
+use Posio\CabinetKit\Support\HostViteConfig;
 
 class DoctorCommand extends Command
 {
@@ -29,7 +30,7 @@ class DoctorCommand extends Command
         $this->check($this->unresolvableMenuRoutes() === [], 'Menu items point at registered routes', 'These items are hidden until their route exists: '.implode(', ', $this->unresolvableMenuRoutes()).'.');
         $this->check(File::exists(base_path($entry)), "Vite entry exists: {$entry}", "Create {$entry} or update config/cabinet-kit.php.");
         $this->check($this->entryUsesFactory($entry), 'Vite entry uses createCabinetKitApp()', 'Replace the entry with the CabinetKit stub or import createCabinetKitApp().');
-        $this->check($this->viteConfigLooksReady($entry), 'vite.config contains CabinetKit plugin and entry', "Add cabinetKit() and '{$entry}' to laravel-vite-plugin input.");
+        $this->check($this->viteConfigLooksReady($entry), 'vite.config contains CabinetKit plugin and entry', "Run php artisan cabinet-kit:sync-config, or add ".HostViteConfig::PLUGIN_CALL." and '{$entry}' to laravel-vite-plugin input by hand — without the plugin the package resolves its imports against your own resources/ and renders unstyled.");
         $this->check($this->tailwindConfigLooksReady(), 'tailwind.config contains CabinetKit preset', 'Add vendor/posio/cabinet-kit/tailwind-preset.cjs.');
         $this->check($this->tailwindContentLooksReady(), 'tailwind.config scans CabinetKit templates', "Add '".HostTailwindConfig::CONTENT_GLOB."' to the content array, or run php artisan cabinet-kit:sync-config.");
         $this->check($this->userModelLooksReady(), 'User model uses IsCabinetKitUser', 'Add Posio\\CabinetKit\\Traits\\IsCabinetKitUser to app/Models/User.php.');
@@ -109,13 +110,17 @@ class DoctorCommand extends Command
         return File::exists($path) && str_contains(File::get($path), 'createCabinetKitApp');
     }
 
+    // An `@cabinet-kit` alias on its own used to be accepted here. It is not
+    // enough any more and passing it green is what hides an unstyled cabinet:
+    // the kit's own sources resolve each other through aliases that only the
+    // plugin declares.
     protected function viteConfigLooksReady(string $entry): bool
     {
-        $contents = $this->firstExistingContents(base_path('vite.config.ts'), base_path('vite.config.js'));
+        $path = HostViteConfig::path();
 
-        return $contents !== null
-            && (str_contains($contents, 'cabinetKit(') || str_contains($contents, "'@cabinet-kit'") || str_contains($contents, '"@cabinet-kit"'))
-            && (str_contains($contents, "'{$entry}'") || str_contains($contents, "\"{$entry}\""));
+        return $path !== null
+            && HostViteConfig::usesPlugin($contents = File::get($path))
+            && HostViteConfig::hasEntry($contents, $entry);
     }
 
     protected function tailwindConfigLooksReady(): bool

@@ -1,5 +1,66 @@
 # posio/cabinet-kit
 
+## Quick install
+
+The package is not on Packagist — it is installed straight from its git
+repository, so any machine with network access to GitHub can install it; no
+local checkout of the package is needed.
+
+Run inside an existing Laravel 11/12 + Inertia + Vue 3 project:
+
+```bash
+# 1. register the package repository
+composer config repositories.cabinet-kit vcs https://github.com/AndreiDishlenko/posio-cabinet-kit.git
+
+# 2. pull the package in
+composer require posio/cabinet-kit:^0.3
+
+# 3. wire it into the host project (configs, migrations, seeds, vite/tailwind patches)
+php artisan cabinet-kit:install
+
+# 4. install the npm deps the command added to package.json, then build
+npm install
+npm run dev
+```
+
+Then open `/cabinet/register` and create the first user — registration also
+creates the account (the "Company name" field), so no separate
+account-creation step is needed on a fresh install.
+
+### Notes on the git source
+
+- Composer needs `git` on PATH; if it is missing, Composer falls back to
+  downloading zip archives from GitHub, which also works.
+- To follow the unreleased tip instead of a tagged release, require
+  `dev-main` and set `"minimum-stability": "dev"` + `"prefer-stable": true`
+  in the host `composer.json`.
+- Private-repo / rate-limit case: authenticate Composer once with a GitHub
+  token — `composer config --global github-oauth.github.com <token>`.
+- To pin an exact release, use a tag instead of a range, e.g.
+  `composer require posio/cabinet-kit:0.3.31`.
+- Offline machines: clone or copy the repo to that machine and point the
+  repository at the local path — `composer config repositories.cabinet-kit
+  vcs /path/to/posio-cabinet-kit` (a plain filesystem path works as a `vcs`
+  source because the copy is a git repo).
+
+### Updating
+
+```bash
+composer update posio/cabinet-kit
+php artisan migrate                   # new versions may ship migrations
+php artisan cabinet-kit:doctor        # verifies frontend/backend wiring
+npm install && npm run build
+```
+
+On Windows the install command drops `updcab.bat` in the project root — running
+it performs the whole [Update](#update) procedure in order and stops at the
+first failing step.
+
+Requirements and what those commands actually do — below; the full
+step-by-step is in [Update](#update).
+
+---
+
 Base admin-panel scaffolding extracted from `posio.cabinet`: multi-tenant
 accounts, per-account roles/permissions (Spatie Permission teams), bundled
 auth (login, register, logout, password reset, email verification), a
@@ -31,20 +92,22 @@ Not a finished product — a **shell** you extend per project. See
 
 ## Install (in a consumer project)
 
-```bash
-composer config repositories.cabinet-kit vcs F:/Packages/posio-cabinet-kit
-composer require posio/cabinet-kit
-php artisan cabinet-kit:install
-npm run dev
-```
+Commands — see [Quick install](#quick-install) above.
 
 The install command publishes `config/cabinet-kit.php` and
 `config/cabinet-kit-redirects.php`, enables Spatie
 Permission teams before migrations, resolves auth-route conflicts, scaffolds
 the cabinet Vite entry (`resources/_admin/js/cabinet.ts` by default),
 patches `vite.config`, `tailwind.config` and `app/Models/User.php` with
-`.bak` backups, runs migrations, seeds base roles, and finishes with
+`.bak` backups, drops `updcab.bat` (the one-step update launcher) in the
+project root, runs migrations, seeds base roles, and finishes with
 `cabinet-kit:doctor`.
+
+If the database already contains users, the command asks whether to delete
+them (with their accounts, memberships and role assignments) before seeding.
+The default answer is **no** — say yes only on a database you are willing to
+reset. `--purge-users` answers that prompt up front; with `--no-interaction`
+and no flag nothing is deleted.
 
 Every CabinetKit page renders into the package's own Blade root view
 (`cabinet-kit::app`) with its own Vite entry — the host's main app view and
@@ -56,23 +119,73 @@ no separate account-creation step for a brand-new install.
 
 ## Update
 
+Windows: run `updcab.bat` from the project root — it is scaffolded by the
+install command and runs exactly the six steps below, stopping at the first
+one that fails. Everything after this paragraph describes what it does (and
+what to run by hand elsewhere).
+
+Full procedure, in order:
+
 ```bash
+# 1. pull the new package version
 composer update posio/cabinet-kit
-php artisan cabinet-kit:sync-config   # re-applies host wiring, reports new config keys
-php artisan cabinet-kit:doctor        # verifies frontend/backend wiring
+
+# 2. only if the post-update hook is missing (see below) — re-apply host wiring
+php artisan cabinet-kit:sync-config
+
+# 3. apply migrations a new version may have added
+php artisan migrate
+
+# 4. drop caches built from package routes/config/views
+php artisan optimize:clear
+
+# 5. rebuild the frontend (sync-config may have added npm packages)
+npm install
+npm run build
+
+# 6. verify the result
+php artisan cabinet-kit:doctor
 ```
 
+On production, re-cache after step 4 as usual (`php artisan config:cache
+route:cache view:cache`) — the caches must be rebuilt because package routes
+and views changed, not because the update needs anything special.
+
 `cabinet-kit:install` registers `sync-config` in your `composer.json`
-`post-update-cmd`, so from then on `composer update` runs it for you: it keeps
-the npm dependency list and the Tailwind `content` glob for the package
-templates current, creates config files a new package version introduced, and
-only *reports* new `config/cabinet-kit.php` keys (that file is never
-rewritten). Rebuild assets afterwards if it patched anything.
+`post-update-cmd`, so from then on `composer update` runs it for you (step 2
+is then redundant): it keeps the npm dependency list and the Tailwind
+`content` glob for the package templates current, creates config files a new
+package version introduced, and only *reports* new `config/cabinet-kit.php`
+keys (that file is never rewritten). Rebuild assets afterwards if it patched
+anything.
+
+Read its output: keys it lists are new settings your `config/cabinet-kit.php`
+does not have yet — copy them in by hand, otherwise the package falls back to
+its own defaults for them. `cabinet-kit:doctor` at the end reports anything
+still unwired.
 
 Vue/SCSS/routes/migrations are read straight from `vendor/posio/cabinet-kit/`
 — nothing was copied into your project, so there's nothing to merge.
 Anything you deliberately overrode in `resources/_admin/overrides/` keeps
 working untouched.
+
+### Which version you get
+
+`composer update posio/cabinet-kit` only moves inside the range in your
+`composer.json` (`^0.3` stays on `0.3.*`). Breaking changes — renamed config
+keys, removed props on released Vue components, changed route names — arrive
+as a major bump, so crossing one is a deliberate edit of the constraint
+followed by `composer update`, plus a read of `docs/CHANGELOG.md`.
+
+To see what is available before updating:
+
+```bash
+composer show posio/cabinet-kit --all | head -20   # versions offered by the repo
+composer outdated posio/cabinet-kit                # installed vs latest in range
+```
+
+If a `dev-main` install stops picking up new commits, Composer is serving a
+cached clone — `composer clearcache`, then update again.
 
 ## Customizing
 

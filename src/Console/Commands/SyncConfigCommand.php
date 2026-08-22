@@ -9,11 +9,13 @@ use Illuminate\Support\Str;
 use Posio\CabinetKit\Support\CabinetRedirects;
 use Posio\CabinetKit\Support\FrontendDependencies;
 use Posio\CabinetKit\Support\HostTailwindConfig;
+use Posio\CabinetKit\Support\HostViteConfig;
 
 /**
  * What `composer update` cannot bring along: the wiring the package needs
- * inside the host's own files. npm dependencies and the Tailwind content glob
- * are repaired in place; config/cabinet-kit.php is only diagnosed, never
+ * inside the host's own files. npm dependencies, the Vite plugin and the
+ * Tailwind content glob are repaired in place; config/cabinet-kit.php is only
+ * diagnosed, never
  * rewritten, so no hand-written value or comment there is ever clobbered.
  *
  * The installer registers this command as a composer post-update hook, so it
@@ -28,6 +30,7 @@ class SyncConfigCommand extends Command
     public function handle(): int
     {
         $this->syncPackageJsonDependencies();
+        $this->syncViteConfig();
         $this->syncTailwindContent();
 
         $hostPath = config_path('cabinet-kit.php');
@@ -113,6 +116,58 @@ class SyncConfigCommand extends Command
         if ($carried !== [] || $dropped !== []) {
             $this->warn('    Landing pages are read from the new file only — delete the old keys from config/cabinet-kit.php.');
         }
+    }
+
+    /**
+     * A project installed before the kit's sources started resolving each other
+     * through the plugin's aliases carries wiring that predates them, and
+     * `composer update` leaves it exactly as it was: every package import then
+     * lands in the host's own resources/ and the cabinet renders unstyled with
+     * nothing pointing at the cause. Same silent symptom as a stale Tailwind
+     * glob, so it is repaired on the same terms — without asking.
+     */
+    protected function syncViteConfig(): void
+    {
+        $path = HostViteConfig::path();
+        if (! $path) {
+            $this->warn('vite.config.js/ts was not found — add '.HostViteConfig::PLUGIN_CALL.' to it manually, or the cabinet stays unstyled.');
+            return;
+        }
+
+        $contents = File::get($path);
+        $entry = config('cabinet-kit.vite_entry', 'resources/_admin/js/cabinet.ts');
+        $updated = $contents;
+        $patched = [];
+
+        if (! HostViteConfig::usesPlugin($updated)) {
+            $withPlugin = HostViteConfig::withPlugin($updated);
+
+            if ($withPlugin === null) {
+                $this->warn('Could not patch the vite.config plugins array — add '.HostViteConfig::PLUGIN_CALL.' to it manually, or the cabinet stays unstyled.');
+            } else {
+                $updated = $withPlugin;
+                $patched[] = 'CabinetKit plugin';
+            }
+        }
+
+        if (! HostViteConfig::hasEntry($updated, $entry)) {
+            $withEntry = HostViteConfig::withEntry($updated, $entry);
+
+            if ($withEntry === null) {
+                $this->warn("Could not patch the laravel-vite-plugin input — add '{$entry}' to it manually, or the cabinet loads no assets at all.");
+            } else {
+                $updated = $withEntry;
+                $patched[] = "entry {$entry}";
+            }
+        }
+
+        if ($patched === []) {
+            return;
+        }
+
+        $this->backupAndPut($path, $updated);
+        $this->info('Patched '.basename($path).' with the '.implode(' and the ', $patched).'.');
+        $this->warn('Rebuild your assets: npm run dev/build.');
     }
 
     // A stale glob here has no visible symptom other than package templates

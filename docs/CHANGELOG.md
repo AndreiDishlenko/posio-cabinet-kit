@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased — One-step update launcher in the host project root
+
+**Added**
+- `cabinet-kit:install` now scaffolds `updcab.bat` in the host project root
+  (from `stubs/updcab.bat.stub`). Running it performs the whole README
+  "Update" procedure in order — `composer update posio/cabinet-kit`,
+  `cabinet-kit:sync-config`, `migrate`, `optimize:clear`, `npm install`,
+  `npm run build`, `cabinet-kit:doctor` — and aborts at the first failing
+  step instead of running the rest over a broken state. An existing
+  `updcab.bat` is never overwritten, so a host may adapt it. Windows only;
+  other platforms follow the README steps by hand.
+
+## Unreleased — Installer can wipe pre-existing users
+
+**Added**
+- `cabinet-kit:install` now offers to delete the users already in the database
+  (with their accounts, account memberships and role assignments) right before
+  seeding the system users. The prompt appears only when the users table is
+  non-empty, and its default is **no** — the rows may belong to the host
+  application and the deletion is irreversible. In production a second
+  confirmation is required. `--purge-users` answers the prompt up front for
+  scripted installs; under `--no-interaction` nothing is deleted unless that
+  flag is passed.
+
 ## Unreleased — Old-browser flex-gap fallback actually wired up
 
 **Fixed**

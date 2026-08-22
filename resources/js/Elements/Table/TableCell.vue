@@ -69,6 +69,15 @@
 			</div>
 		</template>
 
+		<!-- Прев'ю знімка. Порожній рядок теж займає плитку-заглушку, інакше
+		     колонка стрибала б по ширині від рядка до рядка. -->
+		<template v-else-if="column.type == 'image'">
+			<span class="cell-image">
+				<img v-if="image_source" :src="image_source" :alt="image_alt" loading="lazy">
+				<Icon v-else :icon="column.icon || 'ph:image'" class="icon icon-md text-secondary opacity-40" />
+			</span>
+		</template>
+
 		<!-- Number -->
 		<template v-else-if="column.type == 'number'">
 			{{ row[column.field] == 0 ? (column.hide_zero ? '' : '0' + (column.suffix ?? '')) : Number(row[column.field]).toFixed(column.precision ?? 0) + (column.suffix ?? '') }}
@@ -193,6 +202,18 @@
 			inline_value_filled() {
 				return !!String(this.row[this.column.field] ?? '').trim();
 			},
+			// Посилання на знімок: або готове значення поля, або обчислене колонкою —
+			// знімок зазвичай лежить у вкладеній структурі рядка, а не окремим полем.
+			image_source() {
+				const value = typeof this.column.getter === 'function'
+					? this.column.getter(this.row)
+					: this.row[this.column.field];
+
+				return typeof value === 'string' ? value : '';
+			},
+			image_alt() {
+				return this.column.alt_field ? (this.row[this.column.alt_field] ?? '') : '';
+			},
 		},
 		watch: {
 			inline_edit: {
@@ -235,6 +256,26 @@
 
 	.cell-subtext-sub {
 		font-size: 0.8em;
+	}
+
+	// Тип 'image': плитка сталого розміру. Розмір задає таблиця змінною — у режимі
+	// високих рядків прев'ю більше, ніж у звичайному списку.
+	.cell-image {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex: 0 0 auto;
+		width: var(--cell-image-size, 2rem);
+		height: var(--cell-image-size, 2rem);
+		border-radius: var(--ui-radius-md);
+		background-color: var(--muted-tint-15);
+		overflow: hidden;
+	}
+
+	.cell-image img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
 	}
 
 	// Клітинка-розшифровка: число-посилання. Підкреслення завжди видиме (сигнал «клікабельно»),

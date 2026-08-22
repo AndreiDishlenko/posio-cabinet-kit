@@ -13,7 +13,8 @@
 			'y-scroll': y_scroll || x_scroll,
 			'has-slaves': has_slaves,
 			'is-grouped': is_grouped,
-			'no-slave-marker': has_slaves && !slave_marker
+			'no-slave-marker': has_slaves && !slave_marker,
+			'wide-rows': wide_rows
 		}"
 		>
 
@@ -439,6 +440,13 @@
 				default: true
 			},
 			v_dividers: {
+				type: Boolean,
+				default: false
+			},
+			// Високі рядки: висота перестає бути фіксованою і рахується від вмісту, а
+			// прев'ю знімків стають великими. Для списків, де рядок — це картка товару,
+			// а не запис довідника.
+			wide_rows: {
 				type: Boolean,
 				default: false
 			},
@@ -1514,7 +1522,10 @@
 					const filter_type =  conditions.includes(filter[1]) ? filter[3] : filter[2]
 					// console.log('filter', field, condition, filter_value, filter_type);
 
-					if ( !filter_value && filter_value!=0)
+					// Порожнє значення означає «фільтр не заданий». Нестрога перевірка
+					// прирівнювала порожній рядок до нуля й лишала такий фільтр діяти —
+					// жоден рядок не проходив, і список порожнів замість показу всього.
+					if ( filter_value === '' || filter_value === null || filter_value === undefined )
 						return					
 
 					// const field_settings = this.settings.columns.find(t => t.field == field)
@@ -1573,12 +1584,17 @@
 				// console.log('---new filter');
 				
                 let result = datasource.filter((row) => {   
-                    // console.log('row', this.filters);
+                    // console.log('row', this.filters);//this.filters['counterparty_id'], '.', this.filters['counterparty_id_type']!='!=', row['counterparty_id'] != this.filters['counterparty_id']);                                    
                     if ( this.settings.filters?.deleted && !this.panel_data.showDeleted && row['is_deleted'] )
                         return false;
                     if ( !this.settings.filters?.deleted && row['is_deleted'])
                         return false
 
+					// if ( this.filters['counterparty_id'] && this.filters['counterparty_id_type']!='!=' && row['counterparty_id'] != this.filters['counterparty_id'] ) {
+					// 	return false;
+					// }
+
+					
                     for ( let key in this.settings.filters) {
 						// console.log('key', key);
 						if ( this.filters[key]==undefined || this.filters[key]==null || row[key]==undefined || row[key]==null )

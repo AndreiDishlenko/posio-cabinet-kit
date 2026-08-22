@@ -3,14 +3,19 @@
 namespace Posio\CabinetKit\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Posio\CabinetKit\Support\FrontendDependencies;
 use Posio\CabinetKit\Support\HostTailwindConfig;
+use Posio\CabinetKit\Support\HostViteConfig;
+use Spatie\Permission\PermissionRegistrar;
 
 class InstallCommand extends Command
 {
-    protected $signature = 'cabinet-kit:install {--no-doctor : Skip the final cabinet-kit:doctor run}';
+    protected $signature = 'cabinet-kit:install
+        {--no-doctor : Skip the final cabinet-kit:doctor run}
+        {--purge-users : Delete existing users, accounts and role assignments before seeding (asked interactively otherwise)}';
     protected $description = 'Install CabinetKit into a Laravel host project with minimal manual wiring.';
 
     protected const BUNDLED_ROUTE_NAMES = [
@@ -39,6 +44,7 @@ class InstallCommand extends Command
         $this->scaffoldOverridesFolder();
         $this->scaffoldStyleOverrides($entry);
         $this->scaffoldViteEntry($entry);
+        $this->scaffoldUpdateScript();
 
         $this->patchViteConfig($entry);
         $this->patchTailwindConfig();
@@ -50,6 +56,7 @@ class InstallCommand extends Command
         $this->info('Running migrations (permission tables, accounts, user settings)...');
         $this->call('migrate');
 
+        $this->purgeExistingUsers();
         $this->seedRolesAndPermissions();
 
         if (! $this->option('no-doctor')) {
@@ -282,58 +289,57 @@ MD);
         $this->info("Prepared {$entry}.");
     }
 
+    // Updating spans several ordered steps across composer, artisan and npm;
+    // a launcher in the project root keeps that order from being remembered
+    // (and mis-remembered) by hand on every release.
+    protected function scaffoldUpdateScript(): void
+    {
+        $path = base_path('updcab.bat');
+
+        if (File::exists($path)) {
+            return;
+        }
+
+        File::copy(__DIR__.'/../../../stubs/updcab.bat.stub', $path);
+
+        $this->info('Created updcab.bat — runs the whole CabinetKit update.');
+    }
+
     protected function patchViteConfig(string $entry): void
     {
-        $path = $this->firstExisting(base_path('vite.config.ts'), base_path('vite.config.js'));
+        $path = HostViteConfig::path();
         if (! $path) {
-            $this->warn("vite.config.js/ts was not found. Add {$entry} to laravel-vite-plugin input and use cabinetKit().");
+            $this->warn("vite.config.js/ts was not found. Add {$entry} to laravel-vite-plugin input and use ".HostViteConfig::PLUGIN_CALL.'.');
             return;
         }
 
         $contents = File::get($path);
         $updated = $contents;
 
-        if (! str_contains($updated, 'cabinet-kit/resources/vite/cabinet-kit.js')) {
-            $updated = "import cabinetKit from './vendor/posio/cabinet-kit/resources/vite/cabinet-kit.js';\n".$updated;
-        }
+        if (! HostViteConfig::usesPlugin($updated)) {
+            $withPlugin = HostViteConfig::withPlugin($updated);
 
-        if (! str_contains($updated, 'cabinetKit(')) {
-            $updated = preg_replace('/plugins\\s*:\\s*\\[/', "plugins: [\n        cabinetKit({ https: true }),", $updated, 1, $pluginCount);
-            if (($pluginCount ?? 0) === 0) {
-                $this->warn('Could not patch vite.config plugins array. Add cabinetKit({ https: true }) manually.');
+            if ($withPlugin === null) {
+                $this->warn('Could not patch vite.config plugins array. Add '.HostViteConfig::PLUGIN_CALL.' manually.');
+            } else {
+                $updated = $withPlugin;
             }
         }
 
-        if (! str_contains($updated, "'{$entry}'") && ! str_contains($updated, "\"{$entry}\"")) {
-            $updated = $this->patchViteInput($updated, $entry);
+        if (! HostViteConfig::hasEntry($updated, $entry)) {
+            $withEntry = HostViteConfig::withEntry($updated, $entry);
+
+            if ($withEntry === null) {
+                $this->warn("Could not patch laravel-vite-plugin input. Add '{$entry}' manually.");
+            } else {
+                $updated = $withEntry;
+            }
         }
 
         if ($updated !== $contents && $this->confirmPatch($path, 'Patch vite.config with CabinetKit plugin and entry?')) {
             $this->backupAndPut($path, $updated);
             $this->info('Patched '.basename($path).'.');
         }
-    }
-
-    protected function patchViteInput(string $contents, string $entry): string
-    {
-        $updated = preg_replace_callback('/input\\s*:\\s*\\[([^\\]]*)\\]/s', function ($matches) use ($entry) {
-            $inner = rtrim($matches[1]);
-            $comma = trim($inner) === '' || str_ends_with(trim($inner), ',') ? '' : ',';
-
-            return "input: [{$inner}{$comma} '{$entry}']";
-        }, $contents, 1, $count);
-
-        if ($count > 0) {
-            return $updated;
-        }
-
-        $updated = preg_replace("/input\\s*:\\s*(['\"])([^'\"]+)\\1/", "input: ['$2', '{$entry}']", $contents, 1, $count);
-
-        if ($count === 0) {
-            $this->warn("Could not patch laravel-vite-plugin input. Add '{$entry}' manually.");
-        }
-
-        return $updated;
     }
 
     protected function patchTailwindConfig(): void
@@ -507,6 +513,58 @@ MD);
             $this->backupAndPut($path, $updated);
             $this->info('Patched app/Models/User.php.');
         }
+    }
+
+    // Installing over a database left by another project (or by an earlier
+    // install) keeps user rows whose accounts and role assignments no longer
+    // match this config. Wiping them is opt-in and defaults to "no": the rows
+    // may belong to the host application, and the deletion is irreversible.
+    protected function purgeExistingUsers(): void
+    {
+        $usersTable = config('cabinet-kit.users_table', 'users');
+
+        if (! Schema::hasTable($usersTable)) {
+            return;
+        }
+
+        $count = DB::table($usersTable)->count();
+
+        if ($count === 0) {
+            return;
+        }
+
+        if (! $this->option('purge-users')) {
+            $this->newLine();
+            $this->warn("The database already holds {$count} user(s) with their accounts and role assignments.");
+
+            if (! $this->confirm('Delete all existing users before seeding? This cannot be undone.', false)) {
+                $this->line('Existing users kept.');
+                return;
+            }
+        }
+
+        if ($this->laravel->environment('production')
+            && ! $this->confirm('The application is in production. Really delete every user?', false)) {
+            $this->line('Existing users kept.');
+            return;
+        }
+
+        // Child rows first — everything below references the users row.
+        $tables = array_filter([
+            config('permission.table_names.model_has_roles', 'user_has_roles'),
+            config('permission.table_names.model_has_permissions', 'user_has_permissions'),
+            'user_has_accounts',
+            'accounts',
+            $usersTable,
+        ], fn ($table) => Schema::hasTable($table));
+
+        foreach ($tables as $table) {
+            DB::table($table)->delete();
+        }
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $this->info("Deleted {$count} user(s) together with their accounts and role assignments.");
     }
 
     protected function seedRolesAndPermissions(): void

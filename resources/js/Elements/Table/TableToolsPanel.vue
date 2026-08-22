@@ -249,7 +249,7 @@
         display: inline-flex;
         align-items: center;
 		// color: var(--primary-button-background);
-		background-color: var(--table-selection-color)!important;
+		// background-color: var(--table-selection-color)!important;
 
 		span {
             // Не text-wrap: его Apple понимает только с 17.4, ниже подпись фильтра переносится.
