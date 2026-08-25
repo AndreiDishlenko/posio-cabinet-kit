@@ -226,6 +226,28 @@ ARCHITECTURE for the mechanism). Three ways to bend it:
   manager or a provisioning script; wrong as a way to skip the prompt, since
   the seeded password is public knowledge in every install of this package.
 
+## Wiring site settings and SEO into the host's public pages
+
+Full instructions ship with the consumer project as `docs/cabinet-kit/` (source:
+`docs/host/` here). Read those first — this section only lists the extension
+points that belong to the package side.
+
+| I want to… | Do this |
+|---|---|
+| Let a public Blade view follow the operator's brand | Add its view name to `cabinet-kit.site.views` (value `'main'`, `'cabinet'` or `null`) and print `$site_name` / `$site_favicon` / `$site_theme` in it |
+| Use the logos in Vue | Read the `site` Inertia prop (`name`, `main.*`, `cabinet.*`); render both theme variants and hide one with CSS |
+| Add a page to the SEO section | Give the route a name (no locale suffix) and add a record in the cabinet — no code |
+| Change organization data, contacts, social profiles | `config/seo.php` |
+| Add the main-navigation JSON-LD nodes | `seo.sitenav_routes` — base route names |
+| Emit the product node (`SoftwareApplication`) | `seo.software.enabled` + `software_description` / `software_features` |
+| Add breadcrumbs to a page | `app(BreadcrumbService::class)->add('home')->add('pricing')` in the controller |
+| Put an AI behind the SEO card's "Generate" button | `cabinet-kit.seo.meta_generator` → class with `generate(array): array` |
+| Turn either layer off | `cabinet-kit.site.share_prop` / `cabinet-kit.seo.share_prop` |
+
+Do **not** write to `site_settings` or `seo_meta` from application code: the
+first is cached as a whole set and its writes drop that cache, the second is
+edited through the section built for it.
+
 ## Known gaps (intentionally out of scope)
 
 - Social login providers, 2FA, magic links — bring your own if needed, the

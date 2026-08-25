@@ -1,5 +1,47 @@
 # Changelog
 
+## Unreleased — Site settings, cabinet settings and SEO move into the package
+
+**Added**
+- **Site settings** (`cabinet-kit.sitesettings`) and **Cabinet settings**
+  (`cabinet-kit.cabinetsettings`) — two cabinet sections behind `sysper-site`
+  where an operator sets the site name, the default light/dark theme, the
+  favicon and the logos, separately for the public part and for the cabinet.
+  Values live in the new `site_settings` table, uploads in
+  `storage/app/public/site/`; every image falls back to a neutral placeholder
+  shipped by the package (`/brand-assets/...`, served by a package route), so
+  no project's branding is baked into the code.
+- The cabinet applies them itself: its root view prints the name and the
+  favicon and sets the theme class before the first paint, and the side menu
+  reads its logo/symbol from the shared `site` prop. A host's public views opt
+  in through `cabinet-kit.site.views` and receive `$site_name`,
+  `$site_favicon`, `$site_theme`.
+- `php artisan site:import-brand` — bulk import of an installation's own brand
+  files from `public/temp/` (names match the setting keys). Idempotent, so it
+  also works as a restore path.
+- **SEO** (`cabinet-kit.seo`) — per-route meta records (`seo_meta`), the `seo`
+  Inertia prop consumed by `SeoMeta.vue`, Schema.org JSON-LD (`WebSite`,
+  `Organization`, `WebPage`, `BreadcrumbList`, navigation `ItemList`, optional
+  `SoftwareApplication`), `hreflang` alternates and `php artisan
+  sitemap:generate`. The installer seeds one record for the `home` route so the
+  section is never empty on a fresh project.
+- `config/seo.php` and `config/general.php` are published by the installer and
+  merged from the package otherwise. Everything project-specific in them is
+  config-driven: the main-navigation nodes come from `seo.sitenav_routes`, the
+  product node only exists when `seo.software.enabled` is on.
+- **Integration docs for host projects.** `docs/host/*.md` is copied into the
+  project as `docs/cabinet-kit/*.md` during installation, refreshed by
+  `cabinet-kit:sync-config` (which already runs on every update), with a
+  pointer block written into the project's `AGENTS.md` and `CLAUDE.md` so any
+  assistant finds them.
+
+**Notes**
+- The "Generate with AI" button of the SEO card needs a generator of the host's
+  own (`cabinet-kit.seo.meta_generator`); the package ships no language model
+  and the button answers "not configured" until one is set.
+- `sitemap:generate` needs `spatie/laravel-sitemap`; without it the command is
+  simply not registered.
+
 ## Unreleased — Signing out actually signs out
 
 **Fixed**

@@ -5,6 +5,10 @@ use Illuminate\Support\Facades\Cookie;
 use Posio\CabinetKit\Http\Controllers\Admin\PermissionsController;
 use Posio\CabinetKit\Http\Controllers\Admin\UsersController;
 use Posio\CabinetKit\Http\Controllers\AccountController;
+use Posio\CabinetKit\Http\Controllers\Api\SeoApiController;
+use Posio\CabinetKit\Http\Controllers\Api\SiteSettingsApiController;
+use Posio\CabinetKit\Http\Controllers\SeoPageController;
+use Posio\CabinetKit\Http\Controllers\SiteSettingsController;
 use Posio\CabinetKit\Http\Controllers\Auth\LoginController;
 use Posio\CabinetKit\Http\Controllers\Auth\PasswordResetController;
 use Posio\CabinetKit\Http\Controllers\Auth\RegisterController;
@@ -30,6 +34,19 @@ Route::get('cabinet-assets/{path}', function (string $path) {
 
     return response()->file($assetPath);
 })->where('path', '.*')->name('cabinet-kit.assets');
+
+// Обезличенные заготовки бренда отдаются из пакета: пока оператор не загрузил
+// свои картинки, значок вкладки и логотипы должны работать без шага публикации.
+Route::get('brand-assets/{path}', function (string $path) {
+    $assetRoot = realpath(__DIR__.'/../public/brand-assets');
+    $assetPath = $assetRoot ? realpath($assetRoot.DIRECTORY_SEPARATOR.$path) : false;
+
+    if (! $assetRoot || ! $assetPath || ! str_starts_with($assetPath, $assetRoot.DIRECTORY_SEPARATOR)) {
+        abort(404);
+    }
+
+    return response()->file($assetPath);
+})->where('path', '.*')->name('cabinet-kit.brand-assets');
 
 Route::middleware(['web', UseCabinetKitRootView::class])
     ->prefix(config('cabinet-kit.route_prefix', 'cabinet'))
@@ -117,6 +134,30 @@ Route::middleware(['web', UseCabinetKitRootView::class])
                     Route::get('/users', [UsersController::class, 'index'])->name('users');
                     Route::put('/users', [UsersController::class, 'update'])->name('users.update');
                     Route::post('/users', [UsersController::class, 'update'])->name('users.update.post');
+                });
+
+                // Операторские разделы: бренд публичной части и кабинета,
+                // постраничная SEO-мета. Страницы данные подтягивают сами через
+                // соседнюю api-группу за тем же правом.
+                Route::middleware(CanSystemPermission::class.':sysper-site')->group(function () {
+                    Route::get('/sitesettings', [SiteSettingsController::class, 'site'])->name('sitesettings');
+                    Route::get('/cabinetsettings', [SiteSettingsController::class, 'cabinet'])->name('cabinetsettings');
+                    Route::get('/seo', [SeoPageController::class, 'index'])->name('seo');
+
+                    Route::prefix('api')->name('api.')->group(function () {
+                        Route::get ('/sitesettings',              [SiteSettingsApiController::class, 'index'])->name('sitesettings.index');
+                        Route::post('/sitesettings/update',       [SiteSettingsApiController::class, 'update'])->name('sitesettings.update');
+                        Route::post('/sitesettings/theme',        [SiteSettingsApiController::class, 'updateTheme'])->name('sitesettings.theme');
+                        Route::post('/sitesettings/image',        [SiteSettingsApiController::class, 'uploadImage'])->name('sitesettings.image');
+                        Route::post('/sitesettings/image/delete', [SiteSettingsApiController::class, 'deleteImage'])->name('sitesettings.image.delete');
+
+                        Route::get ('/seo/getdata',      [SeoApiController::class, 'get'])->name('seodata');
+                        Route::post('/seo/update',       [SeoApiController::class, 'update'])->name('seodata.update');
+                        Route::post('/seo/delete',       [SeoApiController::class, 'delete'])->name('seodata.delete');
+                        Route::post('/seo/restore',      [SeoApiController::class, 'restore'])->name('seodata.restore');
+                        Route::post('/seo/generatemeta', [SeoApiController::class, 'generateMeta'])->name('seodata.generatemeta');
+                        Route::post('/seo/createsitemaps', [SeoApiController::class, 'createSitemaps'])->name('createsitemaps');
+                    });
                 });
 
                 Route::middleware(CanSystemPermission::class.':sysper-roles')->group(function () {

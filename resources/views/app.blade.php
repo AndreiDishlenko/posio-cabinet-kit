@@ -4,7 +4,13 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 
-	<title inertia>{{ config('app.name', 'Cabinet') }}</title>
+	{{-- Название и значок вкладки — из настроек кабинета (раздел «Налаштування
+	     кабінету»); пока настройки недоступны, работает имя приложения. --}}
+	<title inertia>{{ $site_name ?? config('app.name', 'Cabinet') }}</title>
+
+	@isset($site_favicon)
+		<link rel="icon" href="{{ $site_favicon }}">
+	@endisset
 
 	{{-- Safari до 14.1 не умеет отступ между элементами во flex: объявление молча
 	     отбрасывается и вёрстка слипается. Признак ставится замером, а не
@@ -37,11 +43,14 @@
 	</script>
 
 	{{-- Класс темы ставим до отрисовки — иначе будет вспышка светлой темы,
-	     пока не смонтируется Vue. --}}
+	     пока не смонтируется Vue. Свой выбор посетителя приоритетнее темы,
+	     заданной оператором в настройках кабинета. --}}
 	<script>
 	(function () {
-		var html = document.documentElement;
-		html.classList.add(localStorage.getItem('theme') === 'light' ? 'light' : 'dark');
+		var html  = document.documentElement;
+		var saved = localStorage.getItem('theme');
+
+		html.classList.add(saved === 'light' || saved === 'dark' ? saved : '{{ $site_theme ?? 'dark' }}');
 	})();
 	</script>
 

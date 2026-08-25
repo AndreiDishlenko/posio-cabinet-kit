@@ -167,6 +167,43 @@ highlights as the current page — current-page matching goes by route name.
 - **Client-side resolver** — `resolveCabinetKitPage()` in the host's
   cabinet entry: overrides glob first, package glob second.
 
+## Site settings and SEO (the two layers that reach outside the cabinet)
+
+Everything else in this package stops at the cabinet's own route group. These
+two do not — they exist to change how the **host's public pages** look to a
+visitor and to a crawler — so both are split into "what the package does by
+itself" and "what the host has to print".
+
+- **Storage.** `site_settings` (key → value, one row per setting, whole set
+  cached forever and dropped on write) and `seo_meta` (one row per route name +
+  optional locale, soft-deleted). Both are global, not per account: a site has
+  one identity regardless of who is signed in.
+- **Reading.** `SiteSettingsService` is the only door to the first table;
+  `SeoService` + `JsonLdObject` + `BreadcrumbService` build the payload from the
+  second. `imageUrl()` never answers empty — a missing upload falls back to a
+  neutral placeholder served from the package (`/brand-assets/...`), which is
+  why no consumer carries a fallback path of its own.
+- **Delivery.** Two Inertia props shared globally, not only on cabinet routes:
+  `site` (name + logo set) and `seo` (meta + JSON-LD). Both are lazy closures,
+  both are wrapped so an unmigrated or unreachable database degrades to
+  placeholders instead of a 500. Either can be switched off in config on a
+  project that has no public site.
+- **Blade.** A view composer feeds `$site_name` / `$site_favicon` /
+  `$site_theme` to the views listed in `cabinet-kit.site.views`. The cabinet's
+  own root view is in that list by default and prints them; a host view has to
+  be added there **and** print them — the package cannot write into templates it
+  does not own.
+- **Precedence.** Per-page SEO record → site settings → `config/seo.php`. The
+  short brand (`WebSite.alternateName`, `og:site_name`) deliberately stays on
+  the config value: it is an identity, not an editable label.
+- **Nothing product-specific is hardcoded.** The main-navigation JSON-LD nodes
+  come from `seo.sitenav_routes`; the `SoftwareApplication` node only exists
+  when `seo.software.enabled` is on. The upstream project this was extracted
+  from had both wired to its own routes and its own product.
+
+Host-facing instructions for both live in `docs/host/` and are copied into the
+consumer project as `docs/cabinet-kit/` during installation.
+
 ## Host integration contract
 
 CabinetKit provides its own auth (see above). It still expects:

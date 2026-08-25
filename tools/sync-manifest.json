@@ -426,6 +426,139 @@
       "mode": "package_only",
       "target": "resources/_admin/js/pages/SystemPassword/ChangeSystemPassword.vue",
       "notes": "Modelled on pages/Initial/CreateAccount.vue (ModalCard + _formMixins + footer button). No source counterpart."
+    },
+    {
+      "id": "vue-image-uploader",
+      "mode": "copy",
+      "source": "resources/js/Elements/ImageUploader.vue",
+      "target": "resources/js/Elements/ImageUploader.vue",
+      "notes": "Shared image uploader used by the brand settings sections."
+    },
+    {
+      "id": "vue-brand-settings",
+      "mode": "copy",
+      "source": "resources/_admin/js/pages/SiteSettings/BrandSettings.vue",
+      "target": "resources/_admin/js/pages/SiteSettings/BrandSettings.vue",
+      "notes": "Brand settings section. Upstream route names admin.api.sitesettings.* are resolved through ROUTE_ALIASES in createApp.js, so the file stays byte-identical."
+    },
+    {
+      "id": "vue-site-brand-page",
+      "mode": "copy",
+      "source": "resources/_admin/js/pages/SiteBrandSettings.vue",
+      "target": "resources/_admin/js/pages/SiteBrandSettings.vue",
+      "notes": "Public-site brand page (BrandSettings scope=main)."
+    },
+    {
+      "id": "vue-cabinet-brand-page",
+      "mode": "copy",
+      "source": "resources/_admin/js/pages/CabinetBrandSettings.vue",
+      "target": "resources/_admin/js/pages/CabinetBrandSettings.vue",
+      "notes": "Cabinet brand page (BrandSettings scope=cabinet). Named apart from CabinetSettings.vue, which is the settings-tabs page in both projects."
+    },
+    {
+      "id": "vue-seo-page",
+      "mode": "copy",
+      "source": "resources/_admin/js/pages/Seo.vue",
+      "target": "resources/_admin/js/pages/Seo.vue",
+      "notes": "SEO records table. Upstream route names cabinet.api.seodata* are resolved through ROUTE_ALIASES."
+    },
+    {
+      "id": "vue-seo-card",
+      "mode": "copy",
+      "source": "resources/_admin/js/components/cards/SeoCard.vue",
+      "target": "resources/_admin/js/components/cards/SeoCard.vue",
+      "notes": "SEO record card. The AI button posts to seodata.generatemeta, which answers 'not configured' until cabinet-kit.seo.meta_generator is set."
+    },
+    {
+      "id": "vue-seo-meta",
+      "mode": "copy",
+      "source": "resources/js/Components/SeoMeta.vue",
+      "target": "resources/js/Components/SeoMeta.vue",
+      "notes": "Head component rendering meta/OG/Twitter/JSON-LD from the seo prop."
+    },
+    {
+      "id": "php-site-settings-service",
+      "mode": "manual",
+      "source": "app/Services/SiteSettingsService.php",
+      "target": "src/Services/SiteSettingsService.php",
+      "notes": "Verbatim apart from namespace/model import and the app-name fallback."
+    },
+    {
+      "id": "php-site-settings-model",
+      "mode": "manual",
+      "source": "app/Models/SiteSetting.php",
+      "target": "src/Models/SiteSetting.php",
+      "notes": "Namespace only."
+    },
+    {
+      "id": "php-site-settings-api",
+      "mode": "manual",
+      "source": "app/Http/Controllers/Api/Cabinet/SiteSettingsApiController.php",
+      "target": "src/Http/Controllers/Api/SiteSettingsApiController.php",
+      "notes": "Namespace + base controller class."
+    },
+    {
+      "id": "php-import-site-brand",
+      "mode": "manual",
+      "source": "app/Console/Commands/ImportSiteBrand.php",
+      "target": "src/Console/Commands/ImportSiteBrand.php",
+      "notes": "Namespace only."
+    },
+    {
+      "id": "php-seo-service",
+      "mode": "manual",
+      "source": "app/Services/SeoService.php",
+      "target": "src/Services/SeoService.php",
+      "notes": "Namespace + locale suffix pattern read from config('general.locales') instead of the hardcoded uk|en|ru."
+    },
+    {
+      "id": "php-breadcrumb-service",
+      "mode": "manual",
+      "source": "app/Services/BreadcrumbService.php",
+      "target": "src/Services/BreadcrumbService.php",
+      "notes": "Namespace + same locale pattern change; commented-out upstream code dropped."
+    },
+    {
+      "id": "php-jsonld",
+      "mode": "manual",
+      "source": "app/Support/JsonLdObject.php",
+      "target": "src/Support/JsonLdObject.php",
+      "notes": "Namespace + the two product-specific parts made config-driven: sitenav route list (seo.sitenav_routes) and the SoftwareApplication node (seo.software.*)."
+    },
+    {
+      "id": "php-seo-api",
+      "mode": "manual",
+      "source": "app/Http/Controllers/Api/Cabinet/SeoApiController.php",
+      "target": "src/Http/Controllers/Api/SeoApiController.php",
+      "notes": "Namespace + generateMeta delegates to cabinet-kit.seo.meta_generator instead of the host's AiService."
+    },
+    {
+      "id": "php-seo-repository",
+      "mode": "manual",
+      "source": "app/Repositories/SeoRepository.php",
+      "target": "src/Repositories/SeoRepository.php",
+      "notes": "Rewritten without the project's _RepositoryClass base (account scoping and dictionary normalizators do not apply); same public API and same is_deleted flag."
+    },
+    {
+      "id": "php-sitemap-command",
+      "mode": "manual",
+      "source": "app/Console/Commands/GenerateSitemap.php",
+      "target": "src/Console/Commands/GenerateSitemap.php",
+      "notes": "Namespace + single-locale branch builds the URL through loc_route instead of using the raw route name."
+    },
+    {
+      "id": "php-loc-route-helper",
+      "mode": "manual",
+      "source": "app/helpers.php",
+      "target": "src/helpers.php",
+      "notes": "Only loc_route is carried over, guarded by function_exists so a host keeps its own."
+    },
+    {
+      "id": "config-seo",
+      "mode": "manual",
+      "source": "config/seo.php",
+      "target": "config/seo.php",
+      "notes": "Same keys, neutral values; adds seo.software.* and seo.sitenav_routes, which are hardcoded upstream."
     }
   ]
 }

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Posio\CabinetKit\Support\FrontendDependencies;
 use Posio\CabinetKit\Support\HostComposerJson;
+use Posio\CabinetKit\Support\HostDocs;
 use Posio\CabinetKit\Support\HostTailwindConfig;
 use Posio\CabinetKit\Support\HostViteConfig;
 use Spatie\Permission\PermissionRegistrar;
@@ -28,6 +29,7 @@ class InstallCommand extends Command
     public function handle(): int
     {
         $this->call('vendor:publish', ['--tag' => 'cabinet-kit-config']);
+        $this->call('vendor:publish', ['--tag' => 'cabinet-kit-seo-config']);
         $this->call('vendor:publish', ['--tag' => 'cabinet-kit-assets', '--force' => true]);
 
         if (! $this->ensurePermissionConfig()) {
@@ -46,6 +48,7 @@ class InstallCommand extends Command
         $this->scaffoldStyleOverrides($entry);
         $this->scaffoldViteEntry($entry);
         $this->scaffoldUpdateScript();
+        $this->installHostDocs();
 
         $this->patchViteConfig($entry);
         $this->patchTailwindConfig();
@@ -588,6 +591,24 @@ MD);
         $this->info("Deleted {$count} user(s) together with their accounts and role assignments.");
     }
 
+    /**
+     * Инструкции по интеграции кладутся в сам проект, а указатель на них — в
+     * файлы, которые читают ассистенты. При установке файлы указателя создаются,
+     * если их ещё нет: иначе инструкцию никто не найдёт.
+     */
+    protected function installHostDocs(): void
+    {
+        $result = HostDocs::sync(true);
+
+        if ($result['copied'] !== []) {
+            $this->info('Integration docs written to '.HostDocs::TARGET_DIR.'/.');
+        }
+
+        if ($result['pointers'] !== []) {
+            $this->info('Pointer to them added to: '.implode(', ', $result['pointers']).'.');
+        }
+    }
+
     protected function seedRolesAndPermissions(): void
     {
         if (! $this->confirm('Seed base roles and manage-account permission?', true)) {
@@ -604,6 +625,10 @@ MD);
             (new \Posio\CabinetKit\Database\Seeders\CabinetKitSystemUsersSeeder())->run();
             $this->info('System users seeded.');
         }
+
+        // Раздел SEO без единой записи выглядит сломанным — главная заводится сразу.
+        (new \Posio\CabinetKit\Database\Seeders\CabinetKitSeoSeeder())->run();
+        $this->info('SEO record for the home page seeded.');
     }
 
     protected function setCabinetConfigValue(string $key, mixed $value): void

@@ -95,7 +95,7 @@
             title() {
                 return this.$t(
                     this.$page.props.seo?.meta_data?.title ? this.$page.props.seo.meta_data.title : this.page_name
-                ) + ' | Posio';
+                ) + ' | ' + this.siteName;
             },
             description() {
                 return this.$page.props.seo?.meta_data?.description ? this.$page.props.seo.meta_data.description : ''

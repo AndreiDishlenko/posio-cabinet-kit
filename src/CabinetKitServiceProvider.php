@@ -5,11 +5,17 @@ namespace Posio\CabinetKit;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Inertia\Inertia;
 use Opcodes\LogViewer\Facades\LogViewer;
 use Posio\CabinetKit\Console\Commands\DoctorCommand;
+use Posio\CabinetKit\Console\Commands\GenerateSitemap;
+use Posio\CabinetKit\Console\Commands\ImportSiteBrand;
 use Posio\CabinetKit\Console\Commands\InstallCommand;
 use Posio\CabinetKit\Console\Commands\SyncConfigCommand;
+use Posio\CabinetKit\Services\SeoService;
+use Posio\CabinetKit\Services\SiteSettingsService;
 use Posio\CabinetKit\Http\Middleware\RequireSystemPasswordChange;
 use Posio\CabinetKit\Support\CabinetRedirects;
 
@@ -19,6 +25,10 @@ class CabinetKitServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__.'/../config/cabinet-kit.php', 'cabinet-kit');
         $this->mergeConfigFrom(__DIR__.'/../config/cabinet-kit-redirects.php', 'cabinet-kit-redirects');
+        // Оба конфига носят имена, под которыми их читает перенесённый SEO-код.
+        // Слияние оставляет за хостом каждый ключ, который он объявил сам.
+        $this->mergeConfigFrom(__DIR__.'/../config/seo.php', 'seo');
+        $this->mergeConfigFrom(__DIR__.'/../config/general.php', 'general');
 
         $this->bridgeLegacyRedirects();
         $this->mountLogViewer();
@@ -33,6 +43,8 @@ class CabinetKitServiceProvider extends ServiceProvider
         $this->registerInertiaPagePaths();
         $this->registerSocialAuth();
         $this->registerLogViewerAuth();
+        $this->registerSiteSettings();
+        $this->registerSeoSharing();
 
         // Aliased so a host can hold its own route groups behind the same gate —
         // the package can only speak for its own routes.
@@ -47,6 +59,13 @@ class CabinetKitServiceProvider extends ServiceProvider
             __DIR__.'/../config/cabinet-kit-redirects.php' => config_path('cabinet-kit-redirects.php'),
         ], 'cabinet-kit-redirects');
 
+        // Оба файла — правки хоста: контакты организации, состав главной навигации,
+        // список локалей. Существующие не перезаписываются публикацией.
+        $this->publishes([
+            __DIR__.'/../config/seo.php' => config_path('seo.php'),
+            __DIR__.'/../config/general.php' => config_path('general.php'),
+        ], 'cabinet-kit-seo-config');
+
         $this->publishes([
             __DIR__.'/../database/migrations' => database_path('migrations'),
         ], 'cabinet-kit-migrations');
@@ -60,7 +79,80 @@ class CabinetKitServiceProvider extends ServiceProvider
                 DoctorCommand::class,
                 InstallCommand::class,
                 SyncConfigCommand::class,
+                ImportSiteBrand::class,
             ]);
+
+            // Карту сайта строит сторонний генератор — без него команда просто
+            // не появляется, вместо падения на отсутствующем классе.
+            if (class_exists(\Spatie\Sitemap\Sitemap::class)) {
+                $this->commands([GenerateSitemap::class]);
+            }
+        }
+    }
+
+    /**
+     * Название, значок вкладки и тема по умолчанию доезжают до разметки двумя
+     * путями: переменными Blade (до монтирования Vue — иначе вкладка мигает
+     * чужим значком и светлой темой) и пропом Inertia с логотипами для шапки
+     * сайта и бокового меню кабинета.
+     *
+     * Набор Blade-вьюх задаёт хост: своих шаблонов публичной части у пакета нет.
+     */
+    protected function registerSiteSettings(): void
+    {
+        $views = (array) config('cabinet-kit.site.views', []);
+
+        if ($views !== []) {
+            View::composer(array_keys($views), function ($view) use ($views) {
+                $scope = $views[$view->getName()] ?? 'main';
+                $settings = app(SiteSettingsService::class);
+
+                $view->with([
+                    'site_name' => $this->safely(fn () => $settings->siteName(), config('app.name', 'Cabinet')),
+                    // Часть приложения, чьё оформление принадлежит ей самой,
+                    // получает только название: пустые значок и тема оставляют
+                    // работать запасные пути её собственного шаблона.
+                    'site_favicon' => $scope ? $this->safely(fn () => $settings->imageUrl($scope.'_favicon')) : null,
+                    'site_theme' => $scope ? $this->safely(fn () => $settings->theme($scope.'_theme'), 'dark') : null,
+                ]);
+            });
+        }
+
+        if (config('cabinet-kit.site.share_prop', true)) {
+            Inertia::share('site', fn () => $this->safely(
+                fn () => app(SiteSettingsService::class)->frontPayload(),
+                [],
+            ));
+        }
+    }
+
+    /**
+     * Мета публичных страниц считается на каждый полный рендер и уезжает одним
+     * пропом — его читает единственный компонент меты внутри layout сайта.
+     */
+    protected function registerSeoSharing(): void
+    {
+        if (! config('cabinet-kit.seo.share_prop', true)) {
+            return;
+        }
+
+        Inertia::share('seo', fn () => $this->safely(
+            fn () => app(SeoService::class)->getInfo(),
+            [],
+        ));
+    }
+
+    /**
+     * Настройки и мета читаются из базы, а рендер страницы не должен падать
+     * из-за ещё не накатанной миграции или недоступной базы: тогда работают
+     * заготовки.
+     */
+    protected function safely(callable $resolve, $fallback = null)
+    {
+        try {
+            return $resolve();
+        } catch (\Throwable) {
+            return $fallback;
         }
     }
 

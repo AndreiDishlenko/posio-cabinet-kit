@@ -10,7 +10,6 @@ export default {
     "email-verified": "Your email address has been confirmed. Please sign in.",
     "email-already-verified": "This email address has already been confirmed. Please sign in.",
     "social-auth-failed": "Sign-in was not completed. Please try again — click the sign-in button once and do not reload the page you return to.",
-    "system-password-message": "This account still signs in with the password set during installation. Choose a password of your own to continue.",
 
     "Please wait {number} s. before retrying.": "Please wait {number} s. before retrying.",
 
@@ -126,7 +125,15 @@ export default {
     "emails-log-shown-of"                 : "Showing {shown} of {total} records",
     "emails-log-page-of"                  : "Page {page} of {pages}",
 
-    "recalc-stock-hint": "Recalculation re-expands raw material write-offs by the current tech cards and recomputes stock and cost for the selected month and all subsequent months. Runs immediately, without queueing.",
+    // Site settings / Cabinet settings
+    "sitesettings-name-note"              : "Used as the browser tab title and as the brand name in structured data. Leave empty to keep the default; per-page values set in the SEO section take priority.",
+    "sitesettings-main-note"              : "Appearance, favicon and logos of the public part of the site.",
+    "sitesettings-cabinet-note"           : "Appearance, favicon and logos of the cabinet.",
+    "sitesettings-symbol-hint"            : "Short mark for the collapsed side menu",
+    "sitesettings-main-theme-note"        : "The theme the public part of the site opens with.",
+    "sitesettings-cabinet-theme-note"     : "The theme the cabinet opens with for a new user; their own choice takes priority.",
+
+    "recalc-stock-hint":"Recalculation re-expands raw material write-offs by the current tech cards and recomputes stock and cost for the selected month and all subsequent months. Runs immediately, without queueing.",
 
 	"New-male"              : "New",
 	"New-female"            : "New",

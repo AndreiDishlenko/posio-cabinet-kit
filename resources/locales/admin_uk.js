@@ -1,4 +1,5 @@
 export default {
+	"Title"	: "Заголовок",
     // Ліцензування кас (licenses)
     "Licenses": "Ліцензії",
     "Add license": "Додати ліцензію",
@@ -280,15 +281,7 @@ export default {
     "This password reset token is invalid.": "Посилання для скидання пароля є недійсним.",
     "Your password has been reset.": "Ваш пароль було змінено.",
 	"Enter password to confirm"	: "Введіть пароль для підтвердження",
-
-    // Заміна пароля службового користувача, заданого при встановленні
-    "Change password": "Зміна пароля",
-    "Change the installation password": "Змініть встановлений пароль",
-    "system-password-message": "Цей обліковий запис досі входить із паролем, заданим під час встановлення. Задайте власний пароль, щоб продовжити роботу.",
-    "Save password": "Зберегти пароль",
-    "Password changed": "Пароль змінено",
-    "Choose a password other than the installed one.": "Оберіть пароль, відмінний від встановленого.",
-
+    
     "Quick Service"     : "Швидкий сервіс",
     "Orders Management" : "Керування замовленнями",
     "Kitchen Display"   : "Кухонний дисплей",
@@ -524,6 +517,39 @@ export default {
     "Fiscalization"         : "Фіскалізація",
 
     "Configuration"         : "Конфігурація",
+
+    // SITE / CABINET SETTINGS (cabinet.sitesettings, cabinet.cabinetsettings)
+    "Site settings"         : "Налаштування сайту",
+    "Cabinet settings"      : "Налаштування кабінету",
+        "Site identity"         : "Ідентичність сайту",
+        "Site name"             : "Назва сайту",
+        "sitesettings-name-note" : "Використовується як заголовок вкладки та назва бренду в мікророзмітці. Порожнє поле означає назву за замовчуванням; налаштування конкретної сторінки в розділі SEO мають вищий пріоритет.",
+        "Images"                : "Зображення",
+        "Favicon"               : "Значок вкладки",
+        "Logo for dark theme"   : "Логотип для темної теми",
+        "Logo for light theme"  : "Логотип для світлої теми",
+        "Symbol for dark theme" : "Знак для темної теми",
+        "Symbol for light theme": "Знак для світлої теми",
+        "sitesettings-main-note" : "Оформлення, значок вкладки та логотипи публічної частини сайту.",
+        "sitesettings-cabinet-note" : "Оформлення, значок вкладки та логотипи кабінету.",
+        "sitesettings-symbol-hint" : "Коротке накреслення для згорнутого бічного меню",
+        "Default theme"         : "Тема за замовчуванням",
+        "Dark"                  : "Темна",
+        "Light"                 : "Світла",
+        "sitesettings-main-theme-note" : "Тема, з якою відкривається публічна частина сайту.",
+        "sitesettings-cabinet-theme-note" : "Тема, з якою кабінет відкривається новому користувачу; власний вибір користувача має вищий пріоритет.",
+        "Recommended 32x32 px"  : "Рекомендований розмір 32x32 px",
+        "Site settings were updated" : "Налаштування сайту оновлено",
+        "Standard image"        : "Стандартне зображення",
+        "Restore standard image?" : "Повернути стандартне зображення?",
+        "No image"              : "Немає зображення",
+        "Upload image"          : "Завантажити зображення",
+        "File is too large"     : "Файл завеликий",
+        "Image is too small"    : "Зображення замале",
+        "Image is too large"    : "Зображення завелике",
+        "Error loading photo"   : "Помилка завантаження зображення",
+        "Data update error"     : "Помилка оновлення даних",
+
     "Permissions"           : "Дозволи",
         "Roles and permissions" : "Ролі та дозволи",
         "Debug: roles & permissions" : "Дебаг: ролі та дозволи",
@@ -1357,6 +1383,7 @@ export default {
     // Filters
     'Deleted'           : 'Видалені',
     'Show deleted'      : 'Показати видалені',
+    'Hide deleted'      : 'Сховати видалені',
     'Show trashed'      : 'Показати викинуті в кошик',
     'Show cashboxes'    : 'Показати каси',
     'Only payments'     : 'Тільки оплати',
@@ -1709,6 +1736,7 @@ export default {
 		"Activation"			: "Активація",
 		"License transfer"		: "Перенесення ліцензії",
 		"Cashbox sign in"		: "Вхід каси",
+		"Cashier login"			: "Вхід касира",
 		"Manual registration"	: "Ручна реєстрація",
 		"Registration released"	: "Реєстрацію знято",
 		"Transfers granted"		: "Видано перенесення",

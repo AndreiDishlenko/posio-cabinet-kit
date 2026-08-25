@@ -1,0 +1,25 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+// Платформенные настройки главного сайта (бренд, favicon, логотипы) — одна строка
+// на настройку; отсутствие строки означает «взять дефолт проекта».
+return new class extends Migration {
+    public function up(): void {
+        if ( Schema::hasTable('site_settings') )
+            return;
+
+        Schema::create('site_settings', function (Blueprint $table) {
+            $table->id();
+            $table->string('key', 50)->unique();
+            $table->text('value')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void {
+        Schema::dropIfExists('site_settings');
+    }
+};

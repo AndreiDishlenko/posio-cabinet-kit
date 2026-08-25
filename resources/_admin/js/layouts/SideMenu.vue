@@ -37,10 +37,12 @@
                     :aria-label="$t('Main menu')"
                     @click="onBurger"
                     >
-                    <img src="/cabinet-assets/images/cabinet_symbol_dark_theme.svg?v=3"  class="gm-brand-img gm-brand-symbol gm-brand-theme-dark"  alt="Posio"/>
-                    <img src="/cabinet-assets/images/cabinet_logo_dark_theme.svg?v=3"    class="gm-brand-img gm-brand-logo   gm-brand-theme-dark"  alt="Posio"/>
-                    <img src="/cabinet-assets/images/cabinet_symbol_light_theme.svg?v=3" class="gm-brand-img gm-brand-symbol gm-brand-theme-light" alt="Posio"/>
-                    <img src="/cabinet-assets/images/cabinet_logo_light_theme.svg?v=3"   class="gm-brand-img gm-brand-logo   gm-brand-theme-light" alt="Posio"/>
+                    <!-- Начертания приходят из настроек сайта: там же лежат и штатные
+                         файлы проекта, поэтому запасных путей в разметке нет. -->
+                    <img :src="brand.symbol_dark"  class="gm-brand-img gm-brand-symbol gm-brand-theme-dark"  :alt="brand_name"/>
+                    <img :src="brand.logo_dark"    class="gm-brand-img gm-brand-logo   gm-brand-theme-dark"  :alt="brand_name"/>
+                    <img :src="brand.symbol_light" class="gm-brand-img gm-brand-symbol gm-brand-theme-light" :alt="brand_name"/>
+                    <img :src="brand.logo_light"   class="gm-brand-img gm-brand-logo   gm-brand-theme-light" :alt="brand_name"/>
                 </button>
 
                 <button type="button" class="gm-toggle"
@@ -202,6 +204,12 @@
             }
         },
         computed: {
+            brand() {
+                return this.$page.props.site?.cabinet ?? {};
+            },
+            brand_name() {
+                return this.$page.props.site?.name || '';
+            },
             // Показывать подписи пунктов (панель развёрнута любым способом)
             isExpanded() {
                 return !this.isFolded || this.isPullout || this.forceExpand;

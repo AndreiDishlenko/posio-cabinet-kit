@@ -128,6 +128,43 @@ return [
         'route_path' => 'admin/log-viewer',
     ],
 
+    // Brand and appearance an operator edits from the cabinet ("Site settings" /
+    // "Cabinet settings"): site name, favicon, default theme, logos.
+    //
+    // `views` lists the host Blade views that receive $site_name, $site_favicon
+    // and $site_theme through a view composer. The cabinet's own root view is
+    // always covered; add the public site's layout view name here (e.g. 'main')
+    // and print those variables in it — see docs/cabinet-kit/site-settings.md.
+    //
+    // The favicon/theme keys a view gets are chosen by `scopes`: the cabinet
+    // scope for cabinet views, the main scope for everything else. A view mapped
+    // to `null` gets the site name only — that is how an app whose own icon and
+    // theme are part of the product itself opts out.
+    'site' => [
+        'views' => [
+            'cabinet-kit::app' => 'cabinet',
+        ],
+        // Share the `site` Inertia prop (name + logos) on every Inertia response,
+        // not only cabinet pages — the public site's header reads it too.
+        'share_prop' => true,
+    ],
+
+    // Per-page SEO meta, Open Graph and JSON-LD for the host's public pages.
+    // Content lives in the `seo_meta` table, edited in the cabinet's SEO section;
+    // site-wide values (organization, navigation) live in config/seo.php.
+    'seo' => [
+        // Share the `seo` Inertia prop consumed by SeoMeta.vue. Turn off on a
+        // project with no public site: nothing reads the prop there.
+        'share_prop' => true,
+        // Route name prefilled during installation, and the one JSON-LD treats
+        // as the site's front page.
+        'home_route' => 'home',
+        // Class with a generate(array): array method behind the "Generate with
+        // AI" button of the SEO card. Without it the button answers "not
+        // configured" — the package ships no language model of its own.
+        'meta_generator' => null,
+    ],
+
     // Side menu groups. Each item needs either a `route` name (Inertia visit)
     // or a `link` (plain href). `permission` gates visibility (null = always shown).
     'menu' => [

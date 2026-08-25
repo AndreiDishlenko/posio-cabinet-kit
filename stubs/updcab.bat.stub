@@ -9,7 +9,8 @@ echo == 1/6 composer update posio/cabinet-kit
 call composer update posio/cabinet-kit
 if errorlevel 1 goto :failed
 
-rem No-op when the composer post-update hook already ran it.
+rem No-op when the composer post-update hook already ran it. Also refreshes the
+rem integration docs in docs/cabinet-kit/ that assistants read.
 echo == 2/6 php artisan cabinet-kit:sync-config
 call php artisan cabinet-kit:sync-config
 if errorlevel 1 goto :failed

@@ -14,6 +14,12 @@ Keep here:
   account switcher, settings shell.
 - Generic UI kit and generic SCSS tokens/classes.
 - Database needed by the shell itself.
+- Site/cabinet brand settings and the SEO layer. These two reach outside the
+  cabinet — they change how the host's public pages look to a visitor and to a
+  crawler — so anything product-specific in them stays config-driven
+  (`seo.sitenav_routes`, `seo.software.*`, `cabinet-kit.site.views`), never
+  hardcoded. Host-facing instructions live in `docs/host/` and are copied into
+  consumer projects; keep them current when the contract changes.
 
 Keep out:
 

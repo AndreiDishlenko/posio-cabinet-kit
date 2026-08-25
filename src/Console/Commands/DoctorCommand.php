@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Schema;
 use Posio\CabinetKit\Support\CabinetRedirects;
 use Posio\CabinetKit\Support\FrontendDependencies;
 use Posio\CabinetKit\Support\HostComposerJson;
+use Posio\CabinetKit\Support\HostDocs;
 use Posio\CabinetKit\Support\HostTailwindConfig;
 use Posio\CabinetKit\Support\HostViteConfig;
 
@@ -51,6 +52,12 @@ class DoctorCommand extends Command
 
         $this->check(File::exists(public_path('cabinet-assets/images/cabinet_logo_dark_theme.svg')), 'CabinetKit original menu assets are published', 'Run php artisan vendor:publish --tag=cabinet-kit-assets --force.');
 
+        $this->check(Schema::hasTable('site_settings'), 'Site settings table exists', 'Run php artisan migrate.');
+        $this->check(Schema::hasTable('seo_meta'), 'SEO table exists', 'Run php artisan migrate.');
+        $this->check(File::exists(public_path('storage')), 'Public storage is linked', 'Run php artisan storage:link — uploaded logos and favicons are served from storage/app/public/site.');
+        $this->check($this->seoRecordsExist(), 'At least one SEO record exists', 'Run the SEO seeder (part of cabinet-kit:install) or add a record in the cabinet SEO section.');
+        $this->check(File::exists(base_path(HostDocs::TARGET_DIR.'/README.md')), 'Integration docs are present in the project', 'Run php artisan cabinet-kit:sync-config.');
+
         if ($this->failures > 0) {
             $this->newLine();
             $this->error("CabinetKit doctor found {$this->failures} problem(s).");
@@ -61,6 +68,17 @@ class DoctorCommand extends Command
         $this->info('CabinetKit doctor is green.');
 
         return self::SUCCESS;
+    }
+
+    // Пустой раздел SEO читается как поломка, поэтому отсутствие записей —
+    // повод для подсказки, а не молчания.
+    protected function seoRecordsExist(): bool
+    {
+        if (! Schema::hasTable('seo_meta')) {
+            return false;
+        }
+
+        return \Posio\CabinetKit\Models\SeoMeta::query()->withTrashed()->exists();
     }
 
     protected function check(bool $ok, string $label, string $hint): void

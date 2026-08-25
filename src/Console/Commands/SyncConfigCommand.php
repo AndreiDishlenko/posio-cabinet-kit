@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use Posio\CabinetKit\Support\CabinetRedirects;
 use Posio\CabinetKit\Support\FrontendDependencies;
 use Posio\CabinetKit\Support\HostComposerJson;
+use Posio\CabinetKit\Support\HostDocs;
 use Posio\CabinetKit\Support\HostTailwindConfig;
 use Posio\CabinetKit\Support\HostViteConfig;
 
@@ -34,6 +35,7 @@ class SyncConfigCommand extends Command
         $this->syncPackageJsonDependencies();
         $this->syncViteConfig();
         $this->syncTailwindContent();
+        $this->syncHostDocs();
 
         $hostPath = config_path('cabinet-kit.php');
         $packagePath = __DIR__.'/../../../config/cabinet-kit.php';
@@ -63,6 +65,26 @@ class SyncConfigCommand extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Инструкции по интеграции обновляются вместе с остальной обвязкой: отдельный
+     * шаг в процедуре обновления никто бы не выполнял, а устаревшая инструкция
+     * вреднее отсутствующей. Указатели в AGENTS.md / CLAUDE.md здесь только
+     * обновляются — файлов, которых в проекте нет, команда не создаёт.
+     */
+    protected function syncHostDocs(): void
+    {
+        try {
+            $result = HostDocs::sync(false);
+        } catch (\Throwable $e) {
+            $this->warn('Integration docs were not updated: '.$e->getMessage());
+            return;
+        }
+
+        if ($result['copied'] !== []) {
+            $this->info('Integration docs updated: '.implode(', ', $result['copied']));
+        }
     }
 
     /**

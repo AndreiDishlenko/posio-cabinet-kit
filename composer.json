@@ -13,13 +13,17 @@
     "suggest": {
         "tightenco/ziggy": "Required in practice: CabinetKit Vue pages resolve every URL through route(), and the bundled root view prints @routes.",
         "laravel/socialite": "Required for the bundled Google/Apple sign-in routes (config cabinet-kit.social_auth).",
-        "socialiteproviders/apple": "Required for Apple sign-in on top of laravel/socialite."
+        "socialiteproviders/apple": "Required for Apple sign-in on top of laravel/socialite.",
+        "spatie/laravel-sitemap": "Required by the bundled sitemap:generate command (SEO section). Without it the command is not registered."
     },
     "autoload": {
         "psr-4": {
             "Posio\\CabinetKit\\": "src/",
             "Posio\\CabinetKit\\Database\\Seeders\\": "database/seeders/"
-        }
+        },
+        "files": [
+            "src/helpers.php"
+        ]
     },
     "extra": {
         "laravel": {

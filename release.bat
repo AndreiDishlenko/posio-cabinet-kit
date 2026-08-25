@@ -11,14 +11,19 @@ rem  Self-contained: no PowerShell script, no project-specific paths. Copy this
 rem  file into the root of any repository and it works there.
 rem
 rem  Usage:
-rem    release.bat            0.3.33 -> 0.3.34, commit, tag, push
-rem    release.bat -DryRun    print the plan, change nothing
-rem    release.bat -NoPush    commit and tag locally, push nothing
-rem    release.bat -h         show this help
+rem    release.bat               0.3.33 -> 0.3.34, commit, tag, push
+rem    release.bat -Same         repeat commit with the current version, no new tag
+rem    release.bat -Version X.Y.Z  commit, tag and push exactly this version instead
+rem                              of auto-incrementing patch; becomes the new baseline
+rem                              that subsequent plain "release.bat" runs bump from
+rem    release.bat -DryRun       print the plan, change nothing
+rem    release.bat -NoPush       commit and tag locally, push nothing
+rem    release.bat -h            show this help
 rem
 rem  Tag format follows the current tag: 0.3.33 -> 0.3.34, v0.3.33 -> v0.3.34.
 rem  The commit message is always the bare version, without the "v".
 rem  Minor and major bumps stay manual: git tag X.Y.0 && git push origin X.Y.0
+rem  (or use -Version X.Y.0 to also commit and push in one step).
 rem ---------------------------------------------------------------------------
 
 rem Captured before any shift: shift moves %0 too, and %~dp0 would then resolve
@@ -27,17 +32,35 @@ set "SELFDIR=%~dp0"
 
 set "DRYRUN="
 set "NOPUSH="
+set "SAME="
+set "NEWVERSION="
 
 :parse
 if "%~1"=="" goto :parsed
 if /i "%~1"=="-DryRun" (set "DRYRUN=1" & shift /1 & goto :parse)
 if /i "%~1"=="-NoPush" (set "NOPUSH=1" & shift /1 & goto :parse)
+if /i "%~1"=="-Same"   (set "SAME=1"   & shift /1 & goto :parse)
+if /i "%~1"=="-Version" (
+    if "%~2"=="" (
+        echo ERROR: -Version requires a value, e.g. -Version 2.6.0
+        exit /b 1
+    )
+    set "NEWVERSION=%~2"
+    shift /1
+    shift /1
+    goto :parse
+)
 if /i "%~1"=="-h" goto :help
 if /i "%~1"=="--help" goto :help
 if /i "%~1"=="/?" goto :help
 echo ERROR: unknown argument "%~1"
 goto :help
 :parsed
+
+if defined SAME if defined NEWVERSION (
+    echo ERROR: -Same and -Version cannot be combined.
+    exit /b 1
+)
 
 rem Work in the repository the batch file itself lives in, not the caller's cwd.
 cd /d "!SELFDIR!"
@@ -71,12 +94,47 @@ if not defined CURRENT (
         if not defined CURRENT set "CURRENT=%%t"
     )
 )
-if not defined CURRENT (
+if not defined CURRENT if not defined NEWVERSION (
     echo ERROR: no X.Y.Z tag found - create the first one by hand, e.g. git tag 0.1.0
     exit /b 1
 )
 
 rem --- next version -----------------------------------------------------------
+
+rem Explicit version: skip auto-increment entirely, this becomes the new
+rem baseline that later plain "release.bat" runs bump the patch number from.
+if defined NEWVERSION (
+    set "PREFIX="
+    set "NUMBER=!NEWVERSION!"
+    if /i "!NEWVERSION:~0,1!"=="v" (
+        set "PREFIX=v"
+        set "NUMBER=!NEWVERSION:~1!"
+    )
+
+    echo !NUMBER!| findstr /r /c:"^[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$" >nul
+    if errorlevel 1 (
+        echo ERROR: cannot parse "-Version !NEWVERSION!" as X.Y.Z
+        exit /b 1
+    )
+
+    set "VERSION=!NUMBER!"
+    set "TAG=!NEWVERSION!"
+
+    git rev-parse -q --verify "refs/tags/!TAG!" >nul 2>&1
+    if not errorlevel 1 (
+        echo ERROR: tag !TAG! already exists.
+        exit /b 1
+    )
+
+    echo Branch:          !BRANCH!
+    if defined CURRENT (
+        echo Current release: !CURRENT!
+    ) else (
+        echo Current release: ^(none^)
+    )
+    echo New release:     !TAG! ^(explicit -Version, new baseline^)
+    goto :remote
+)
 
 set "PREFIX="
 set "NUMBER=!CURRENT!"
@@ -97,6 +155,15 @@ if errorlevel 1 (
     exit /b 1
 )
 
+rem Repeat release: keep the current version, no bump and no new tag.
+if defined SAME (
+    set "VERSION=!NUMBER!"
+    set "TAG=!CURRENT!"
+    echo Branch:          !BRANCH!
+    echo Current release: !CURRENT! ^(repeat commit, no new tag^)
+    goto :remote
+)
+
 rem Leading zeros would make arithmetic read the patch as an octal literal.
 for /f "tokens=* delims=0" %%n in ("!PATCH!") do set "PATCHNUM=%%n"
 if not defined PATCHNUM set "PATCHNUM=0"
@@ -114,6 +181,8 @@ if not errorlevel 1 (
 echo Branch:          !BRANCH!
 echo Current release: !CURRENT!
 echo New release:     !TAG!
+
+:remote
 
 rem --- remote -----------------------------------------------------------------
 
@@ -138,10 +207,17 @@ if defined DIRTY (
         git commit -m "!VERSION!" || goto :fail
     )
 ) else (
+    if defined SAME (
+        echo ERROR: nothing to commit - a repeat release needs changes in the working tree.
+        exit /b 1
+    )
     echo No changes - tagging the current HEAD.
 )
 
 rem --- tag and push -----------------------------------------------------------
+
+rem A repeat release reuses the existing tag: only the branch moves forward.
+if defined SAME goto :push
 
 if defined DRYRUN (
     echo DRY-RUN: git tag -a "!TAG!" -m "!VERSION!"
@@ -149,9 +225,13 @@ if defined DRYRUN (
     git tag -a "!TAG!" -m "!VERSION!" || goto :fail
 )
 
+:push
+set "PUSHARGS=!BRANCH! !TAG!"
+if defined SAME set "PUSHARGS=!BRANCH!"
+
 if defined NOPUSH (
     if defined REMOTE (
-        echo Done locally. Push with: git push --atomic !REMOTE! !BRANCH! !TAG!
+        echo Done locally. Push with: git push --atomic !REMOTE! !PUSHARGS!
     ) else (
         echo Done locally. No remote configured.
     )
@@ -159,17 +239,21 @@ if defined NOPUSH (
 )
 
 if not defined REMOTE (
-    echo No remote configured - commit and tag stay local.
+    echo No remote configured - commit stays local.
     exit /b 0
 )
 
 if defined DRYRUN (
-    echo DRY-RUN: git push --atomic !REMOTE! !BRANCH! !TAG!
+    echo DRY-RUN: git push --atomic !REMOTE! !PUSHARGS!
 ) else (
-    git push --atomic !REMOTE! !BRANCH! !TAG! || goto :fail
+    git push --atomic !REMOTE! !PUSHARGS! || goto :fail
 )
 
-echo Released !TAG!
+if defined SAME (
+    echo Released !TAG! ^(repeat commit^)
+) else (
+    echo Released !TAG!
+)
 exit /b 0
 
 :fail
@@ -183,12 +267,16 @@ echo  release.bat - one-step patch release for any git repository.
 echo  Reads the current release tag, increments its third number, commits the
 echo  working tree with the bare version as the message, tags it and pushes.
 echo.
-echo    release.bat            0.3.33 -^> 0.3.34, commit, tag, push
-echo    release.bat -DryRun    print the plan, change nothing
-echo    release.bat -NoPush    commit and tag locally, push nothing
-echo    release.bat -h         show this help
+echo    release.bat               0.3.33 -^> 0.3.34, commit, tag, push
+echo    release.bat -Same         repeat commit with the current version, no new tag
+echo    release.bat -Version X.Y.Z  commit, tag and push exactly this version;
+echo                              becomes the new baseline for later plain runs
+echo    release.bat -DryRun       print the plan, change nothing
+echo    release.bat -NoPush       commit and tag locally, push nothing
+echo    release.bat -h            show this help
 echo.
 echo  Tag format follows the current tag ^(0.3.33 or v0.3.33^); the commit
-echo  message is always the bare version. Minor/major bumps stay manual.
+echo  message is always the bare version. Minor/major bumps stay manual
+echo  ^(or use -Version X.Y.0 to also commit and push in one step^).
 echo.
 exit /b 0

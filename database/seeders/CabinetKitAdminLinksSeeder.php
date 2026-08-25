@@ -70,6 +70,38 @@ class CabinetKitAdminLinksSeeder extends Seeder
                 'is_header' => false,
                 'is_published' => true,
             ],
+            // Операторские разделы: бренд публичной части, бренд кабинета и
+            // постраничная SEO-мета — все три за одним системным правом.
+            [
+                'order_id' => 6,
+                'name' => 'Site settings',
+                'icon' => 'mdi:web',
+                'link' => null,
+                'route' => 'cabinet-kit.sitesettings',
+                'permissions' => 'sysper-site',
+                'is_header' => false,
+                'is_published' => true,
+            ],
+            [
+                'order_id' => 7,
+                'name' => 'Cabinet settings',
+                'icon' => 'mdi:monitor-dashboard',
+                'link' => null,
+                'route' => 'cabinet-kit.cabinetsettings',
+                'permissions' => 'sysper-site',
+                'is_header' => false,
+                'is_published' => true,
+            ],
+            [
+                'order_id' => 8,
+                'name' => 'SEO',
+                'icon' => 'mdi:google',
+                'link' => null,
+                'route' => 'cabinet-kit.seo',
+                'permissions' => 'sysper-site',
+                'is_header' => false,
+                'is_published' => true,
+            ],
         ];
 
         // Logs used to be a placeholder page of the cabinet itself; the row is

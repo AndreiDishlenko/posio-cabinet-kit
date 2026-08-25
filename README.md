@@ -103,6 +103,10 @@ Not a finished product — a **shell** you extend per project. See
   list.
 - A `User` model with `password`/`email_verified_at` columns (Laravel's
   default `users` migration already has both)
+- `php artisan storage:link` — the brand images an operator uploads in the
+  site/cabinet settings sections are served from `storage/app/public/site/`
+- Optional: `spatie/laravel-sitemap`, needed only by `sitemap:generate` of the
+  SEO section
 
 ## Install (in a consumer project)
 
@@ -217,6 +221,11 @@ cached clone — `composer clearcache`, then update again.
   re-declare element classes — never edit the package's own scss).
 - Deeper changes → `resources/_admin/overrides/pages/...` (checked before
   the package's own version — see `docs/EXTENDING.md`).
+- Brand (site name, favicon, logos, default theme) → the **Site settings** and
+  **Cabinet settings** sections of the cabinet itself. To make the host's own
+  public pages follow them, and to drive their meta from the **SEO** section,
+  follow `docs/cabinet-kit/` — installed into the project and refreshed on
+  every update (source: `docs/host/` here).
 
 ## Uninstall (remove from a project)
 
