@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased — Shared import prefixes resolve by the side of the importing file
+
+**Fixed**
+- A project with its own `resources/js/components` could not build: the package
+  took the whole `@/js` prefix into `vendor`, so the project had to claim the
+  colliding folders back with an alias of its own — and that alias then sent
+  the package's own imports into the project (`Could not load
+  .../resources/js/components/BurgerMenu/BurgerMenu.vue (imported by
+  vendor/posio/cabinet-kit/.../CabinetBurgerMenu.vue)`). The two shared
+  prefixes, `@/js` and `@/_admin`, now resolve by the side of the importing
+  file: a file of the package gets the package's copy, a file of the project
+  gets the project's, and whatever is missing on one side is looked up on the
+  other. A project that carried such a workaround alias can drop it; one that
+  has no folder of its own sees no change.
+- The side is chosen by what is actually stored on disk, and on Windows the
+  spelling has to match the stored one: a path differing only in case counts as
+  missing, so the choice does not depend on the platform — passing locally and
+  failing on a case-sensitive build server is how the previous folder-case bug
+  reached production. Only the tail below the shared folder is compared, so a
+  project that installs the package through a symlinked path repository
+  resolves the same way as one installed from git.
+
 ## Unreleased — The one-step update runs on a production server too
 
 **Added**

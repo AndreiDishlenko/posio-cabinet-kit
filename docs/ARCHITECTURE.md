@@ -19,6 +19,14 @@ there** via an alias (`@cabinet-kit`) and `server.fs.allow`. Nothing gets
 copied, so `composer update posio/cabinet-kit` is enough to pick up frontend
 changes — there is nothing to merge.
 
+Two more import prefixes, `@/js` and `@/_admin`, are shared with the host: the
+same folder names exist on both sides, so the plugin resolves them by the side
+of the importing file — a file of the package gets the package's copy, a file of
+the host gets the host's, and what is missing on one side is looked up on the
+other. A host therefore keeps its own `resources/js/components` without
+redeclaring the prefix, and the package never has to spell its internal imports
+differently from the upstream cabinet they are ported from.
+
 Backend works the same way: the service provider calls
 `loadMigrationsFrom()` / `loadRoutesFrom()` straight from `vendor/`. Only
 `config/cabinet-kit.php` is ever published, because config is meant to be
