@@ -3,25 +3,32 @@ setlocal EnableExtensions EnableDelayedExpansion
 rem ---------------------------------------------------------------------------
 rem  release.bat - one-step patch release for any git repository.
 rem
-rem  Reads the current release tag reachable from HEAD, increments its third
-rem  number (patch), commits the whole working tree with the bare version as the
-rem  commit message, tags that commit and pushes branch + tag in one atomic push.
+rem  Reads the current release version, increments its third number (patch),
+rem  commits the whole working tree with that version as the commit message,
+rem  tags that commit and pushes branch + tag in one atomic push.
 rem
 rem  Self-contained: no PowerShell script, no project-specific paths. Copy this
 rem  file into the root of any repository and it works there.
 rem
 rem  Usage:
-rem    release.bat               0.3.33 -> 0.3.34, commit, tag, push
-rem    release.bat -Same         repeat commit with the current version, no new tag
-rem    release.bat -Version X.Y.Z  commit, tag and push exactly this version instead
-rem                              of auto-incrementing patch; becomes the new baseline
-rem                              that subsequent plain "release.bat" runs bump from
-rem    release.bat -DryRun       print the plan, change nothing
-rem    release.bat -NoPush       commit and tag locally, push nothing
-rem    release.bat -h            show this help
+rem    release.bat                    0.3.33 -> 0.3.34, commit, tag, push
+rem    release.bat fixed the header   same, plus a description: commit and tag
+rem                                   read "0.3.34 fixed the header"
+rem    release.bat -m "fixed header"  the same description, given explicitly
+rem    release.bat -Same              repeat commit with the current version, no new tag
+rem    release.bat -Version X.Y.Z     commit, tag and push exactly this version instead
+rem                                   of auto-incrementing patch; becomes the new
+rem                                   baseline that later plain runs bump from
+rem    release.bat -DryRun            print the plan, change nothing
+rem    release.bat -NoPush            commit and tag locally, push nothing
+rem    release.bat -h                 show this help
+rem
+rem  Anything that is not a switch is free text and joins the description, so it
+rem  can be typed straight after the command without quotes. Switches and text
+rem  may be mixed in any order.
 rem
 rem  Tag format follows the current tag: 0.3.33 -> 0.3.34, v0.3.33 -> v0.3.34.
-rem  The commit message is always the bare version, without the "v".
+rem  The commit message always starts with the bare version, without the "v".
 rem  Minor and major bumps stay manual: git tag X.Y.0 && git push origin X.Y.0
 rem  (or use -Version X.Y.0 to also commit and push in one step).
 rem ---------------------------------------------------------------------------
@@ -34,6 +41,7 @@ set "DRYRUN="
 set "NOPUSH="
 set "SAME="
 set "NEWVERSION="
+set "DESC="
 
 :parse
 if "%~1"=="" goto :parsed
@@ -50,11 +58,33 @@ if /i "%~1"=="-Version" (
     shift /1
     goto :parse
 )
+if /i "%~1"=="-m" (
+    if "%~2"=="" (
+        echo ERROR: -m requires a value, e.g. -m "fixed the header"
+        exit /b 1
+    )
+    call :adddesc "%~2"
+    shift /1
+    shift /1
+    goto :parse
+)
 if /i "%~1"=="-h" goto :help
 if /i "%~1"=="--help" goto :help
 if /i "%~1"=="/?" goto :help
-echo ERROR: unknown argument "%~1"
-goto :help
+rem Free text: everything that does not look like a switch describes the release,
+rem so a message can be typed right after the command without quoting it.
+set "ARG=%~1"
+if "!ARG:~0,1!"=="-" (
+    echo ERROR: unknown argument "%~1"
+    goto :help
+)
+if "!ARG:~0,1!"=="/" (
+    echo ERROR: unknown argument "%~1"
+    goto :help
+)
+call :adddesc "%~1"
+shift /1
+goto :parse
 :parsed
 
 if defined SAME if defined NEWVERSION (
@@ -79,23 +109,42 @@ if "!BRANCH!"=="HEAD" (
 
 rem --- current release --------------------------------------------------------
 
-rem The tag reachable from HEAD, not the highest-sorted one: version sort puts
-rem a legacy "v0.3.3" ahead of "0.3.33" and would walk the numbering backwards.
+rem The baseline is the highest version reachable from HEAD, never the nearest
+rem tag: the nearest one walks the numbering backwards whenever a newer release
+rem sits on a side path. Commit subjects are weighed in as well, so a version
+rem that was committed but never tagged still moves the baseline forward instead
+rem of being silently released a second time under an older number.
 set "CURRENT="
-for /f "delims=" %%t in ('git describe --tags --abbrev^=0 --match "[0-9]*.[0-9]*.[0-9]*" --match "v[0-9]*.[0-9]*.[0-9]*" 2^>nul') do set "CURRENT=%%t"
+set "BESTKEY="
 
-if not defined CURRENT (
-    for /f "delims=" %%t in ('git tag --list --sort^=-v:refname "[0-9]*.[0-9]*.[0-9]*" 2^>nul') do (
-        if not defined CURRENT set "CURRENT=%%t"
-    )
+set "TOPTAG="
+for /f "delims=" %%t in ('git tag -l "[0-9]*.[0-9]*.[0-9]*" --merged HEAD --sort^=-v:refname 2^>nul') do (
+    if not defined TOPTAG set "TOPTAG=%%t"
 )
-if not defined CURRENT (
-    for /f "delims=" %%t in ('git tag --list --sort^=-v:refname "v[0-9]*.[0-9]*.[0-9]*" 2^>nul') do (
-        if not defined CURRENT set "CURRENT=%%t"
-    )
+if defined TOPTAG call :consider "!TOPTAG!"
+
+rem The two tag formats are ranked separately: one version sort over both puts a
+rem legacy "v0.3.3" ahead of "0.3.33".
+set "TOPVTAG="
+for /f "delims=" %%t in ('git tag -l "v[0-9]*.[0-9]*.[0-9]*" --merged HEAD --sort^=-v:refname 2^>nul') do (
+    if not defined TOPVTAG set "TOPVTAG=%%t"
 )
+if defined TOPVTAG call :consider "!TOPVTAG!"
+
+rem Only subjects newer than the best tag can add anything - older history is
+rem already covered by that tag.
+if defined CURRENT (
+    set "LOGSPEC=!CURRENT!..HEAD"
+) else (
+    set "LOGSPEC=-n 200 HEAD"
+)
+
+for /f "usebackq tokens=1 delims= " %%m in (`git log --format^=%%s !LOGSPEC! 2^>nul ^| findstr /r /c:"^[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$" /c:"^[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]* " /c:"^v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$" /c:"^v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]* "`) do (
+    call :consider "%%m"
+)
+
 if not defined CURRENT if not defined NEWVERSION (
-    echo ERROR: no X.Y.Z tag found - create the first one by hand, e.g. git tag 0.1.0
+    echo ERROR: no X.Y.Z version found - create the first tag by hand, e.g. git tag 0.1.0
     exit /b 1
 )
 
@@ -133,7 +182,7 @@ if defined NEWVERSION (
         echo Current release: ^(none^)
     )
     echo New release:     !TAG! ^(explicit -Version, new baseline^)
-    goto :remote
+    goto :message
 )
 
 set "PREFIX="
@@ -161,7 +210,7 @@ if defined SAME (
     set "TAG=!CURRENT!"
     echo Branch:          !BRANCH!
     echo Current release: !CURRENT! ^(repeat commit, no new tag^)
-    goto :remote
+    goto :message
 )
 
 rem Leading zeros would make arithmetic read the patch as an octal literal.
@@ -182,7 +231,15 @@ echo Branch:          !BRANCH!
 echo Current release: !CURRENT!
 echo New release:     !TAG!
 
-:remote
+:message
+
+rem --- message ----------------------------------------------------------------
+
+rem The version stays the first word of the subject: that is what the baseline
+rem scan above reads back on the next run.
+set "MSG=!VERSION!"
+if defined DESC set "MSG=!VERSION! !DESC!"
+echo Message:         !MSG!
 
 rem --- remote -----------------------------------------------------------------
 
@@ -201,10 +258,10 @@ if defined DIRTY (
     echo Committing working tree as !VERSION! ...
     if defined DRYRUN (
         echo DRY-RUN: git add -A
-        echo DRY-RUN: git commit -m "!VERSION!"
+        echo DRY-RUN: git commit -m "!MSG!"
     ) else (
         git add -A || goto :fail
-        git commit -m "!VERSION!" || goto :fail
+        git commit -m "!MSG!" || goto :fail
     )
 ) else (
     if defined SAME (
@@ -220,9 +277,9 @@ rem A repeat release reuses the existing tag: only the branch moves forward.
 if defined SAME goto :push
 
 if defined DRYRUN (
-    echo DRY-RUN: git tag -a "!TAG!" -m "!VERSION!"
+    echo DRY-RUN: git tag -a "!TAG!" -m "!MSG!"
 ) else (
-    git tag -a "!TAG!" -m "!VERSION!" || goto :fail
+    git tag -a "!TAG!" -m "!MSG!" || goto :fail
 )
 
 :push
@@ -261,22 +318,62 @@ echo.
 echo RELEASE FAILED - fix the error above. Nothing was pushed.
 exit /b 1
 
+rem --- subroutines ------------------------------------------------------------
+
+:adddesc
+if defined DESC (
+    set "DESC=!DESC! %~1"
+) else (
+    set "DESC=%~1"
+)
+goto :eof
+
+:consider
+rem Keeps the largest version seen so far. Ranking runs on a zero-padded key
+rem because a plain string compare reads 1.0.10 as older than 1.0.9, and set /a
+rem cannot be used on a whole X.Y.Z at once.
+set "_V=%~1"
+set "_N=!_V!"
+if /i "!_N:~0,1!"=="v" set "_N=!_N:~1!"
+echo !_N!|findstr /r /c:"^[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$" >nul
+if errorlevel 1 goto :eof
+for /f "tokens=1,2,3 delims=." %%a in ("!_N!") do (
+    set "_A=00000%%a"
+    set "_B=00000%%b"
+    set "_C=00000%%c"
+)
+set "_KEY=!_A:~-5!.!_B:~-5!.!_C:~-5!"
+if defined BESTKEY if not "!_KEY!" gtr "!BESTKEY!" goto :eof
+set "BESTKEY=!_KEY!"
+set "CURRENT=!_V!"
+goto :eof
+
 :help
 echo.
 echo  release.bat - one-step patch release for any git repository.
-echo  Reads the current release tag, increments its third number, commits the
-echo  working tree with the bare version as the message, tags it and pushes.
+echo  Reads the current release version, increments its third number, commits the
+echo  working tree with that version as the message, tags it and pushes.
 echo.
-echo    release.bat               0.3.33 -^> 0.3.34, commit, tag, push
-echo    release.bat -Same         repeat commit with the current version, no new tag
-echo    release.bat -Version X.Y.Z  commit, tag and push exactly this version;
-echo                              becomes the new baseline for later plain runs
-echo    release.bat -DryRun       print the plan, change nothing
-echo    release.bat -NoPush       commit and tag locally, push nothing
-echo    release.bat -h            show this help
+echo    release.bat                    0.3.33 -^> 0.3.34, commit, tag, push
+echo    release.bat fixed the header   same, plus a description: commit and tag
+echo                                   read "0.3.34 fixed the header"
+echo    release.bat -m "fixed header"  the same description, given explicitly
+echo    release.bat -Same              repeat commit with the current version, no new tag
+echo    release.bat -Version X.Y.Z     commit, tag and push exactly this version;
+echo                                   becomes the new baseline for later plain runs
+echo    release.bat -DryRun            print the plan, change nothing
+echo    release.bat -NoPush            commit and tag locally, push nothing
+echo    release.bat -h                 show this help
 echo.
-echo  Tag format follows the current tag ^(0.3.33 or v0.3.33^); the commit
-echo  message is always the bare version. Minor/major bumps stay manual
+echo  Anything that is not a switch is free text and joins the description, so it
+echo  can be typed straight after the command without quotes.
+echo.
+echo  The next version is taken from the highest version reachable from HEAD -
+echo  tags and commit subjects alike - so a bump that was committed without a tag
+echo  is not released again under an older number.
+echo.
+echo  Tag format follows the current tag ^(0.3.33 or v0.3.33^); the commit message
+echo  always starts with the bare version. Minor/major bumps stay manual
 echo  ^(or use -Version X.Y.0 to also commit and push in one step^).
 echo.
 exit /b 0

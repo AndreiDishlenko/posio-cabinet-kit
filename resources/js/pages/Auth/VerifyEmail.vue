@@ -40,7 +40,7 @@
 
     import sharedMixins     from '@/js/_sharedMixins.js'
     
-    import AuthLayout      from '../../Layouts/AuthLayout.vue';
+    import AuthLayout      from '../../layouts/AuthLayout.vue';
 
     export default {
         mixins: [sharedMixins],

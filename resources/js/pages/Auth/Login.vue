@@ -74,7 +74,7 @@
     import sharedMixins     from '@/js/_sharedMixins.js'
     import _formMixins     from '@/js/_formMixins';
 
-    import AuthLayout          from '../../Layouts/AuthLayout.vue';
+    import AuthLayout          from '../../layouts/AuthLayout.vue';
     import SocialAuthButtons   from './SocialAuthButtons.vue';
 
     export default {

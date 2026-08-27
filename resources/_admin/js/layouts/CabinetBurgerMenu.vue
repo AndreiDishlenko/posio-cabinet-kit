@@ -71,9 +71,9 @@
 	import { Icon }         from "@iconify/vue";
 
 	import Selectable        from '@/js/Elements/Forms/Selectable.vue';
-	import BurgerMenu   	from '@/js/Components/BurgerMenu/BurgerMenu.vue';
-	import BurgerMenuItem    from '@/js/Components/BurgerMenu/BurgerMenuItem.vue';
-	import BurgerMenuDivider from '@/js/Components/BurgerMenu/BurgerMenuDivider.vue';
+	import BurgerMenu   	from '@/js/components/BurgerMenu/BurgerMenu.vue';
+	import BurgerMenuItem    from '@/js/components/BurgerMenu/BurgerMenuItem.vue';
+	import BurgerMenuDivider from '@/js/components/BurgerMenu/BurgerMenuDivider.vue';
 
 	export default {
 		components: { Link, Icon, Selectable, BurgerMenu, BurgerMenuItem, BurgerMenuDivider },

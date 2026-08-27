@@ -34,9 +34,10 @@ Vite — nothing is copied into the project.
    most requests. Only when they cannot, use
    `resources/_admin/overrides/pages/...` (Vue) or
    `resources/_admin/scss/cabinet-kit-overrides.scss` (styles).
-4. **Update with one command:** `updcab.bat` in the project root (composer
-   update → config/docs sync → migrate → clear → build → doctor). Do not invent
-   your own update sequence.
+4. **Update with one command:** `updcab.bat` in the project root, or `./updcab`
+   on a Linux/macOS host over ssh (composer update → config/docs sync →
+   migrate → clear → build → doctor, plus a re-cache when `APP_ENV=production`).
+   Do not invent your own update sequence.
 5. **Diagnose with `php artisan cabinet-kit:doctor`** before concluding that
    something is broken in the package.
 

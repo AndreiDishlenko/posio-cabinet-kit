@@ -17,7 +17,7 @@
 </template>
 
 <script>
-    import Preloader from '@/js/Components/PreloaderDotsLine.vue'
+    import Preloader from '@/js/components/PreloaderDotsLine.vue'
 
     export default {
         components: {

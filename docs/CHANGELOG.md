@@ -1,5 +1,70 @@
 # Changelog
 
+## Unreleased — The one-step update runs on a production server too
+
+**Added**
+- `updcab` — the shell twin of `updcab.bat`, for updating a project on a
+  Linux/macOS host over ssh (`cd /var/www/example.com && ./updcab`). Same six
+  steps in the same order, stopping at the first failure, with what a server
+  needs on top: `migrate --force` (no tty to confirm a production migration
+  with), `php artisan optimize` after the clear when `APP_ENV=production` (the
+  update cleared caches the site serves from), `--no-build` for a deploy whose
+  assets are built elsewhere, `PHP_BIN` for a specific PHP binary, and a local
+  `composer.phar` when `composer` is not in `PATH`. A missing `npm` without
+  `--no-build` stops the update instead of leaving stale assets behind.
+- `Posio\CabinetKit\Support\HostUpdateLaunchers` — writes both launchers into
+  the host root. Both are written on every platform: a project is developed on
+  one and deployed to another, and the launcher travels with the repository.
+  The shell one is written with LF endings (CRLF makes it unrunnable), given
+  the executable bit, and registered as executable in the host's git index so
+  the bit survives a commit made from Windows.
+- `.gitattributes` pins the line endings of the two launcher stubs, so a
+  checkout on any machine keeps the shell script runnable and the batch file
+  intact.
+
+**Changed**
+- `cabinet-kit:sync-config` creates missing update launchers. Projects
+  installed before this version get `updcab` from their next update — through
+  the composer post-update hook or step 2 of their existing `updcab.bat` —
+  instead of having to re-run the installer for one file. An existing launcher
+  is never overwritten: a host may have adapted it to its deploy.
+
+## Unreleased — Import paths match the folder names on a case-sensitive disk
+
+**Fixed**
+- The build of a consumer project failed on Linux (`Could not resolve
+  "../../Layouts/AuthLayout.vue"`) while passing on Windows: twelve imports
+  spelled two package folders with a capital first letter — `Layouts/` and
+  `Components/` — while the folders committed to git are lowercase. A
+  case-insensitive filesystem hid the mismatch locally and the production
+  build is where it surfaced. The imports now spell the folders as they are
+  stored.
+- The Vite plugin carried an alias for the capitalised components folder,
+  which resolved to a path that does not exist outside Windows. It was a
+  longer spelling of the alias right below it, so it is gone rather than
+  corrected.
+
+## Unreleased — Config keys the package dropped are reported instead of lingering
+
+**Fixed**
+- `cabinet-kit:sync-config` compared the published config with the package's
+  in one direction only: it listed the keys a release had **added** and said
+  nothing about the ones it had **removed**. A retired key therefore stayed in
+  `config/cabinet-kit.php` of every updated project, reading like a live
+  setting while nothing looked at it — which is how a `login_redirect_route`
+  pointing at the long-gone `cabinet-kit.dashboard` survived every update of a
+  consumer project, and how `settings_tabs` still sits in projects installed
+  before the settings page was taken over. Both directions are reported now,
+  the removed ones under "delete these".
+- `cabinet-kit:doctor` gained the matching check, so the drift surfaces on the
+  last step of the update procedure and not only in the output of a step that
+  scrolls past. Missing keys stay out of the doctor on purpose: the package's
+  own value is merged in underneath them, so they change no behaviour.
+
+**Added**
+- `Posio\CabinetKit\Support\HostConfigDrift` — the both-way comparison of the
+  published config against the installed version, shared by the two commands.
+
 ## Unreleased — Row actions, floating elements and page actions
 
 Ported from the upstream cabinet through release `2.5.38`. The point is

@@ -66,9 +66,13 @@ php artisan cabinet-kit:doctor        # verifies frontend/backend wiring
 npm install && npm run build
 ```
 
-On Windows the install command drops `updcab.bat` in the project root — running
-it performs the whole [Update](#update) procedure in order and stops at the
-first failing step.
+The install command drops two launchers in the project root — `updcab.bat` for
+Windows and `updcab` for a Linux/macOS host over ssh. Either one performs the
+whole [Update](#update) procedure in order and stops at the first failing step:
+
+```bash
+cd /var/www/example.com && ./updcab
+```
 
 Requirements and what those commands actually do — below; the full
 step-by-step is in [Update](#update).
@@ -117,9 +121,9 @@ The install command publishes `config/cabinet-kit.php` and
 Permission teams before migrations, resolves auth-route conflicts, scaffolds
 the cabinet Vite entry (`resources/_admin/js/cabinet.ts` by default),
 patches `vite.config`, `tailwind.config` and `app/Models/User.php` with
-`.bak` backups, drops `updcab.bat` (the one-step update launcher) in the
-project root, runs migrations, seeds base roles, and finishes with
-`cabinet-kit:doctor`.
+`.bak` backups, drops `updcab.bat` and `updcab` (the one-step update
+launchers) in the project root, runs migrations, seeds base roles, and
+finishes with `cabinet-kit:doctor`.
 
 If the database already contains users, the command asks whether to delete
 them (with their accounts, memberships and role assignments) before seeding.
@@ -137,10 +141,29 @@ no separate account-creation step for a brand-new install.
 
 ## Update
 
-Windows: run `updcab.bat` from the project root — it is scaffolded by the
-install command and runs exactly the six steps below, stopping at the first
-one that fails. Everything after this paragraph describes what it does (and
-what to run by hand elsewhere).
+Run the launcher from the project root — `updcab.bat` on Windows, `./updcab`
+on a Linux/macOS host (that one is the whole update on a production server
+over ssh). Both are scaffolded by the install command, run exactly the six
+steps below and stop at the first one that fails. Everything after this
+paragraph describes what they do (and what to run by hand elsewhere).
+
+`./updcab` differs from the batch file only where a server differs from a
+workstation:
+
+- `migrate --force` — a production run has no tty to answer the confirmation
+  prompt with;
+- when `APP_ENV=production`, `php artisan optimize` runs after the caches are
+  cleared, so the site does not stay uncached (see the note after step 6);
+- `./updcab --no-build` skips `npm install && npm run build` for a deploy
+  whose assets are built elsewhere; without the flag a missing `npm` stops the
+  update instead of silently leaving stale assets;
+- `PHP_BIN=/usr/bin/php8.3 ./updcab` picks a specific PHP; a local
+  `composer.phar` is used when `composer` is not in `PATH`.
+
+If the server answers `Permission denied`, the executable bit did not survive
+the trip (a file committed from Windows carries none): `chmod +x updcab` there,
+or `git update-index --chmod=+x updcab` in the repository so it arrives set on
+the next deploy. `sh updcab` works regardless.
 
 Full procedure, in order:
 
@@ -285,6 +308,7 @@ resources/_admin/overrides/
 resources/_admin/scss/cabinet-kit-overrides.scss
 resources/_admin/js/cabinet.ts        # the Vite entry, if it serves nothing else
 updcab.bat
+updcab
 *.bak                                 # the install-time backups, once you are done with them
 ```
 

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Schema;
 use Posio\CabinetKit\Support\CabinetRedirects;
 use Posio\CabinetKit\Support\FrontendDependencies;
 use Posio\CabinetKit\Support\HostComposerJson;
+use Posio\CabinetKit\Support\HostConfigDrift;
 use Posio\CabinetKit\Support\HostDocs;
 use Posio\CabinetKit\Support\HostTailwindConfig;
 use Posio\CabinetKit\Support\HostViteConfig;
@@ -29,6 +30,7 @@ class DoctorCommand extends Command
         $this->check(HostComposerJson::receivesNewReleases(), 'composer.json can receive new cabinet-kit releases', $this->composerConstraintHint());
         $this->check(File::exists(config_path('cabinet-kit.php')), 'config/cabinet-kit.php is published', 'Run php artisan cabinet-kit:install.');
         $this->check(File::exists(config_path('cabinet-kit-redirects.php')), 'config/cabinet-kit-redirects.php is published', 'Run php artisan cabinet-kit:sync-config.');
+        $this->check(HostConfigDrift::obsoleteKeys() === [], 'config/cabinet-kit.php has no keys the package dropped', $this->obsoleteConfigKeysHint());
         $this->check(CabinetRedirects::unresolvable() === [], 'Auth flow landing pages resolve to registered routes', $this->unresolvableRedirectsHint());
         $this->check($this->unresolvableMenuRoutes() === [], 'Menu items point at registered routes', 'These items are hidden until their route exists: '.implode(', ', $this->unresolvableMenuRoutes()).'.');
         $this->check(File::exists(base_path($entry)), "Vite entry exists: {$entry}", "Create {$entry} or update config/cabinet-kit.php.");
@@ -104,6 +106,17 @@ class DoctorCommand extends Command
 
         return "\"{$constraint}\" is an exact version to composer, not a range — it matches one release only. "
             ."Change it to \"{$widened}\" in composer.json require, or run php artisan cabinet-kit:sync-config, then composer update posio/cabinet-kit.";
+    }
+
+    // A setting nothing reads any more has no symptom at all: it sits in the
+    // published file looking live, and the release notes that retired it are
+    // the only place saying otherwise.
+    protected function obsoleteConfigKeysHint(): string
+    {
+        $keys = implode(', ', array_keys(HostConfigDrift::obsoleteKeys()));
+
+        return "The installed version no longer reads these keys: {$keys}. "
+            .'Delete them from config/cabinet-kit.php — see docs/CHANGELOG.md of the package for what replaced each one.';
     }
 
     // A landing page naming a route the project dropped is invisible until

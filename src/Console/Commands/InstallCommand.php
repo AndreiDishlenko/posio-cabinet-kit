@@ -10,6 +10,7 @@ use Posio\CabinetKit\Support\FrontendDependencies;
 use Posio\CabinetKit\Support\HostComposerJson;
 use Posio\CabinetKit\Support\HostDocs;
 use Posio\CabinetKit\Support\HostTailwindConfig;
+use Posio\CabinetKit\Support\HostUpdateLaunchers;
 use Posio\CabinetKit\Support\HostViteConfig;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -299,20 +300,11 @@ MD);
         $this->info("Prepared {$entry}.");
     }
 
-    // Updating spans several ordered steps across composer, artisan and npm;
-    // a launcher in the project root keeps that order from being remembered
-    // (and mis-remembered) by hand on every release.
     protected function scaffoldUpdateScript(): void
     {
-        $path = base_path('updcab.bat');
-
-        if (File::exists($path)) {
-            return;
+        foreach (HostUpdateLaunchers::scaffold() as $name) {
+            $this->info("Created {$name} — runs the whole CabinetKit update.");
         }
-
-        File::copy(__DIR__.'/../../../stubs/updcab.bat.stub', $path);
-
-        $this->info('Created updcab.bat — runs the whole CabinetKit update.');
     }
 
     protected function patchViteConfig(string $entry): void

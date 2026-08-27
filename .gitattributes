@@ -1,0 +1,5 @@
+# The update launchers are copied into host projects byte for byte, so their
+# line endings must survive a checkout on any machine: a shell script with CRLF
+# is unrunnable, a batch file with LF is unreliable.
+stubs/updcab.stub text eol=lf
+stubs/updcab.bat.stub text eol=crlf

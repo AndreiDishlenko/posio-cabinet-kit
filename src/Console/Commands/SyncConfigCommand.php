@@ -9,8 +9,10 @@ use Illuminate\Support\Str;
 use Posio\CabinetKit\Support\CabinetRedirects;
 use Posio\CabinetKit\Support\FrontendDependencies;
 use Posio\CabinetKit\Support\HostComposerJson;
+use Posio\CabinetKit\Support\HostConfigDrift;
 use Posio\CabinetKit\Support\HostDocs;
 use Posio\CabinetKit\Support\HostTailwindConfig;
+use Posio\CabinetKit\Support\HostUpdateLaunchers;
 use Posio\CabinetKit\Support\HostViteConfig;
 
 /**
@@ -36,35 +38,66 @@ class SyncConfigCommand extends Command
         $this->syncViteConfig();
         $this->syncTailwindContent();
         $this->syncHostDocs();
+        $this->syncUpdateLaunchers();
 
-        $hostPath = config_path('cabinet-kit.php');
-        $packagePath = __DIR__.'/../../../config/cabinet-kit.php';
-
-        if (! File::exists($hostPath)) {
+        if (! File::exists(config_path('cabinet-kit.php'))) {
             $this->warn('config/cabinet-kit.php is not published yet — run cabinet-kit:install first.');
             return self::SUCCESS;
         }
 
         $this->publishRedirectsConfig();
 
-        $hostConfig = require $hostPath;
-        $packageConfig = require $packagePath;
+        $missing = HostConfigDrift::missingKeys();
+        $obsolete = HostConfigDrift::obsoleteKeys();
 
-        $missing = array_diff_key($packageConfig, $hostConfig);
-
-        if (empty($missing)) {
+        if ($missing === [] && $obsolete === []) {
             $this->info('config/cabinet-kit.php is up to date with the installed package version.');
             return self::SUCCESS;
         }
 
-        $this->warn('New config keys introduced by the installed cabinet-kit version — add these to your config/cabinet-kit.php:');
-        $this->newLine();
+        if ($missing !== []) {
+            $this->warn('New config keys introduced by the installed cabinet-kit version — add these to your config/cabinet-kit.php:');
+            $this->newLine();
 
-        foreach ($missing as $key => $value) {
-            $this->line("    '{$key}' => ".Str::of(var_export($value, true))->replace("\n", ' ').",");
+            foreach ($missing as $key => $value) {
+                $this->line("    '{$key}' => ".Str::of(var_export($value, true))->replace("\n", ' ').",");
+            }
+
+            $this->newLine();
+        }
+
+        if ($obsolete !== []) {
+            $this->warn('Config keys the installed cabinet-kit version no longer reads — delete these from your config/cabinet-kit.php:');
+            $this->newLine();
+
+            foreach (array_keys($obsolete) as $key) {
+                $this->line("    '{$key}'");
+            }
+
+            $this->newLine();
+            $this->line('    They change nothing while they stay, which is the whole problem: they read as live settings.');
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Лаунчер обновления, появившийся в новой версии пакета, доезжает до уже
+     * установленных проектов здесь: переустанавливать пакет ради одного файла
+     * никто не станет, а эта команда выполняется на каждом обновлении.
+     */
+    protected function syncUpdateLaunchers(): void
+    {
+        try {
+            $created = HostUpdateLaunchers::scaffold();
+        } catch (\Throwable $e) {
+            $this->warn('Update launchers were not created: '.$e->getMessage());
+            return;
+        }
+
+        foreach ($created as $name) {
+            $this->info("Created {$name} — runs the whole CabinetKit update.");
+        }
     }
 
     /**

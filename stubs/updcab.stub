@@ -1,0 +1,123 @@
+#!/bin/sh
+# Full CabinetKit update procedure (README "Update"), in the order the steps
+# depend on each other. Stops at the first failing step so a broken update is
+# not hidden by the steps after it.
+#
+# Same procedure as updcab.bat, for a Linux/macOS host over ssh:
+#     cd /var/www/example.com && ./updcab
+#
+#     ./updcab --no-build   assets are built elsewhere (CI, another machine)
+#     PHP_BIN=/usr/bin/php8.3 ./updcab
+set -u
+
+cd "$(dirname "$0")" || exit 1
+
+php_bin="${PHP_BIN:-php}"
+skip_build=0
+
+for arg in "$@"; do
+	case "$arg" in
+		--no-build)
+			skip_build=1
+			;;
+		-h|--help)
+			echo "usage: ./updcab [--no-build]"
+			exit 0
+			;;
+		*)
+			echo "unknown option: $arg" >&2
+			exit 1
+			;;
+	esac
+done
+
+# Global binary on a workstation, local phar on most shared hosting.
+composer_runner=""
+composer_bin="composer"
+if ! command -v composer >/dev/null 2>&1; then
+	if [ -f composer.phar ]; then
+		composer_runner="$php_bin"
+		composer_bin="composer.phar"
+	else
+		echo "composer was not found in PATH and there is no composer.phar here." >&2
+		exit 1
+	fi
+fi
+
+composer_cmd() {
+	if [ -n "$composer_runner" ]; then
+		"$composer_runner" "$composer_bin" "$@"
+	else
+		"$composer_bin" "$@"
+	fi
+}
+
+# Production serves from cached config/routes/views, and the update clears
+# them; leaving the site uncached afterwards is a silent performance
+# regression, so there the caches are rebuilt as a step of the update.
+app_env="${APP_ENV:-}"
+if [ -z "$app_env" ] && [ -f .env ]; then
+	app_env=$(sed -n 's/^[[:space:]]*APP_ENV[[:space:]]*=[[:space:]]*//p' .env | head -n 1 | tr -d "\"' \r")
+fi
+
+recache=0
+if [ "$app_env" = "production" ]; then
+	recache=1
+fi
+
+steps=6
+[ "$recache" -eq 1 ] && steps=$((steps + 1))
+[ "$skip_build" -eq 1 ] && steps=$((steps - 1))
+step=0
+
+fail() {
+	echo ""
+	echo "Update stopped: the step above failed. Fix it and run ./updcab again." >&2
+	exit 1
+}
+
+announce() {
+	step=$((step + 1))
+	echo ""
+	echo "== $step/$steps $*"
+}
+
+announce "composer update posio/cabinet-kit"
+composer_cmd update posio/cabinet-kit --no-interaction || fail
+
+# No-op when the composer post-update hook already ran it. Also refreshes the
+# integration docs in docs/cabinet-kit/ that assistants read.
+announce "php artisan cabinet-kit:sync-config"
+"$php_bin" artisan cabinet-kit:sync-config || fail
+
+# --force because a production run has no tty to answer the confirmation
+# prompt with; harmless in any other environment.
+announce "php artisan migrate"
+"$php_bin" artisan migrate --force || fail
+
+announce "php artisan optimize:clear"
+"$php_bin" artisan optimize:clear || fail
+
+if [ "$skip_build" -eq 1 ]; then
+	echo ""
+	echo "== skipped: npm install && npm run build (--no-build)"
+elif command -v npm >/dev/null 2>&1; then
+	announce "npm install && npm run build"
+	npm install || fail
+	npm run build || fail
+else
+	echo "npm was not found. Install Node.js, or run with --no-build when the" >&2
+	echo "assets of this deploy are built elsewhere." >&2
+	fail
+fi
+
+if [ "$recache" -eq 1 ]; then
+	announce "php artisan optimize"
+	"$php_bin" artisan optimize || fail
+fi
+
+announce "php artisan cabinet-kit:doctor"
+"$php_bin" artisan cabinet-kit:doctor || fail
+
+echo ""
+echo "CabinetKit updated."

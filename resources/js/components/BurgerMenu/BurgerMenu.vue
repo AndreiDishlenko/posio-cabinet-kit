@@ -41,7 +41,7 @@
 
 <script>
 	import BottomSheet    from '@/js/Elements/BottomSheet.vue';
-	import BurgerMenuBody from '@/js/Components/BurgerMenu/BurgerMenuBody.vue';
+	import BurgerMenuBody from '@/js/components/BurgerMenu/BurgerMenuBody.vue';
 
 	export default {
 		components: { BottomSheet, BurgerMenuBody },

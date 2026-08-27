@@ -44,7 +44,6 @@ function createAliases(packageDir) {
         { find: '@cabinet-kit', replacement: path.join(packageDir, 'resources/js') },
         { find: '@/_admin', replacement: path.join(packageDir, 'resources/_admin') },
         { find: '@/scss', replacement: path.join(packageDir, 'resources/scss') },
-        { find: '@/js/Components', replacement: path.join(packageDir, 'resources/js/Components') },
         { find: '@/js', replacement: path.join(packageDir, 'resources/js') },
     ];
 }

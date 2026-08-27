@@ -61,8 +61,8 @@
 	import { Icon } from '@iconify/vue';
 
 	import Avatar            from '@/js/Elements/Avatar.vue';
-	import BurgerMenuItem    from '@/js/Components/BurgerMenu/BurgerMenuItem.vue';
-	import BurgerMenuDivider from '@/js/Components/BurgerMenu/BurgerMenuDivider.vue';
+	import BurgerMenuItem    from '@/js/components/BurgerMenu/BurgerMenuItem.vue';
+	import BurgerMenuDivider from '@/js/components/BurgerMenu/BurgerMenuDivider.vue';
 
 	export default {
 		name: 'BurgerMenuBody',
