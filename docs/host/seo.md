@@ -52,7 +52,7 @@ name (`pricing`). Locales come from `config('general.locales')`.
 </template>
 
 <script>
-    import SeoMeta from '@cabinet-kit/Components/SeoMeta.vue';
+    import SeoMeta from '@cabinet-kit/components/SeoMeta.vue';
 
     export default {
         components: { SeoMeta },

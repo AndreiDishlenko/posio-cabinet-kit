@@ -21,6 +21,15 @@
   reached production. Only the tail below the shared folder is compared, so a
   project that installs the package through a symlinked path repository
   resolves the same way as one installed from git.
+- The same case check now covers `@cabinet-kit` and `@/scss`, the prefixes that
+  always point into the package. A path spelled with the wrong case stops the
+  build on the spot, naming what was asked for and what is stored, instead of
+  passing on Windows and reaching the build server as `Could not load
+  .../resources/js/Components/SeoMeta.vue`.
+- `docs/host/seo.md` told a host to import `@cabinet-kit/Components/SeoMeta.vue`
+  — the folder is `components`. A project that followed the guide built locally
+  and failed on deploy; the same spelling is corrected in `config/seo.php` and
+  in the sync manifest's copy target.
 
 ## Unreleased — The one-step update runs on a production server too
 
@@ -36,8 +45,11 @@
   assets behind.
 - Composer is looked for beyond `PATH`, because a shared host rarely puts it
   there: `composer2`, then a phar or binary in the project root, in `~`, in
-  `~/bin` and in the common system locations; `COMPOSER_BIN` names one kept
-  anywhere else. When nothing is found, the launcher prints both ways out
+  `~/bin` and in the common system locations, then whatever the login shell
+  resolves — a host that adds it to `PATH` in `~/.bashrc`, or declares it there
+  as an alias over a phar, gives it to an interactive session only, so it runs
+  by hand while the update stops on its first step. `COMPOSER_BIN` names one
+  kept anywhere else. When nothing is found, the launcher prints both ways out
   instead of only stating the absence.
 - `Posio\CabinetKit\Support\HostUpdateLaunchers` — writes both launchers into
   the host root. Both are written on every platform: a project is developed on

@@ -161,10 +161,14 @@ workstation:
 
 When `composer` is not in `PATH` — the usual case on shared hosting — the
 launcher looks for `composer2`, then for a phar or binary in the project root,
-in `~`, in `~/bin` and in the common system locations. If the host keeps it
-somewhere else, name it: `COMPOSER_BIN=/opt/php83/bin/composer ./updcab`. If the
-host has no Composer at all, install it once into the project root and the
-launcher picks it up from there:
+in `~`, in `~/bin` and in the common system locations, and finally asks the
+login shell to resolve it (a host that adds Composer to `PATH` in `~/.bashrc`,
+or declares it there as an alias over a phar, gives it to an interactive
+session only — which is why it runs by hand while the update does not find it).
+If the host keeps it somewhere else, name it:
+`COMPOSER_BIN=/opt/php83/bin/composer ./updcab`. If the host has no Composer at
+all, install it once into the project root and the launcher picks it up from
+there:
 
 ```bash
 curl -sS https://getcomposer.org/installer | php

@@ -44,11 +44,62 @@ export default function cabinetKit(options = {}) {
 
 function createAliases(packageDir, root) {
     return [
-        { find: '@cabinet-kit', replacement: path.join(packageDir, 'resources/js') },
+        packageAlias('@cabinet-kit', packageDir, 'resources/js'),
         sharedAlias('@/_admin', packageDir, 'resources/_admin', root),
-        { find: '@/scss', replacement: path.join(packageDir, 'resources/scss') },
+        packageAlias('@/scss', packageDir, 'resources/scss'),
         sharedAlias('@/js', packageDir, 'resources/js', root),
     ];
+}
+
+// Префикс, который всегда ведёт в пакет. Регистр пути проверяется на месте:
+// иначе опечатка проходит на Windows и всплывает только на сервере сборки.
+function packageAlias(find, packageDir, packagePath) {
+    const base = path.join(packageDir, packagePath);
+
+    return {
+        find,
+        replacement: base,
+        customResolver(id, importer, options) {
+            assertStoredCase(base, id, importer);
+
+            return this.resolve(id, importer, { skipSelf: true, ...options })
+                .then((resolved) => resolved ?? { id });
+        },
+    };
+}
+
+// Файл, найденный на Windows под чужим регистром, на Linux не существует. Такой
+// импорт обрывается сразу и с понятной причиной, вместо «нет такого файла» на
+// сервере: там путь выглядит правильным, и виноватой кажется установка пакета.
+function assertStoredCase(base, id, importer) {
+    if (process.platform !== 'win32') return;
+
+    const target = id.split('?')[0];
+
+    for (const suffix of RESOLVED_SUFFIXES) {
+        const candidate = target + suffix;
+
+        try {
+            if (! fs.statSync(candidate).isFile()) continue;
+        } catch {
+            continue;
+        }
+
+        const asked = path.relative(base, candidate);
+        const stored = path.relative(fs.realpathSync.native(base), fs.realpathSync.native(candidate));
+
+        if (asked === stored) return;
+
+        throw new Error(
+            `[cabinet-kit] Регистр пути расходится с файлом на диске: запрошено "${toPosix(asked)}", `
+            + `на диске "${toPosix(stored)}"${importer ? ` (импорт из ${toPosix(importer.split('?')[0])})` : ''}. `
+            + 'На Windows такой импорт работает, на сервере сборки — нет.',
+        );
+    }
+}
+
+function toPosix(filePath) {
+    return filePath.replace(/\\/g, '/');
 }
 
 // Папки с одинаковыми именами есть и у пакета, и у проекта, поэтому префикс импорта

@@ -31,66 +31,88 @@ for arg in "$@"; do
 	esac
 done
 
-# Global binary on a workstation; on shared hosting it is as often a versioned
-# name, a phar in the home directory or a binary outside the login PATH — so the
-# well-known places are probed before giving up on the deploy.
-composer_runner=""
-composer_bin=""
+# A workstation has composer in PATH; a shared host usually does not, and the
+# whole update dies on its first step for a tool the operator can run by hand.
+# Hence the four sources below, in order of how explicit they are.
+composer_launch=""
+
+# A phar needs the interpreter in front of it; anything else runs on its own.
+launch_for() {
+	case "$1" in
+		*.phar) printf '%s %s' "$php_bin" "$1" ;;
+		*) printf '%s' "$1" ;;
+	esac
+}
 
 if [ -n "${COMPOSER_BIN:-}" ]; then
-	composer_bin="$COMPOSER_BIN"
-	case "$composer_bin" in
-		*.phar) composer_runner="$php_bin" ;;
-	esac
-else
+	composer_launch=$(launch_for "$COMPOSER_BIN")
+fi
+
+if [ -z "$composer_launch" ]; then
 	for candidate in composer composer2; do
 		if command -v "$candidate" >/dev/null 2>&1; then
-			composer_bin="$candidate"
+			composer_launch="$candidate"
 			break
 		fi
 	done
 fi
 
-if [ -z "$composer_bin" ]; then
+if [ -z "$composer_launch" ]; then
 	for candidate in \
 		./composer.phar \
 		"$HOME/composer.phar" \
 		"$HOME/bin/composer" \
 		"$HOME/bin/composer.phar" \
 		/usr/local/bin/composer \
+		/usr/local/bin/composer.phar \
 		/opt/cpanel/composer/bin/composer
 	do
 		[ -f "$candidate" ] || continue
 
-		# A phar needs the interpreter; a wrapper script must be runnable as is.
 		case "$candidate" in
-			*.phar) composer_runner="$php_bin" ;;
+			*.phar) ;;
 			*) [ -x "$candidate" ] || continue ;;
 		esac
 
-		composer_bin="$candidate"
+		composer_launch=$(launch_for "$candidate")
 		break
 	done
 fi
 
-if [ -z "$composer_bin" ]; then
-	echo "composer was not found: not in PATH, and none of the usual locations" >&2
-	echo "on a shared host has it either." >&2
+# Last resort: ask the login shell. A host that adds composer to PATH in
+# ~/.bashrc, or declares it there as an alias over a phar, gives it to an
+# interactive session only — and this script is not one, which is why composer
+# runs by hand and the update still cannot find it.
+if [ -z "$composer_launch" ] && command -v bash >/dev/null 2>&1; then
+	# Startup files may print banners; only the resolution is on the last line.
+	resolved=$(bash -lic 'command -v composer' 2>/dev/null | tr -d '\r' | tail -n 1)
+
+	case "$resolved" in
+		alias*)
+			# alias composer='php /path/composer.phar' — the quoted part is the command.
+			composer_launch=$(printf '%s' "$resolved" | sed "s/^[^=]*=//; s/^'//; s/'\$//")
+			;;
+		/*)
+			composer_launch=$(launch_for "$resolved")
+			;;
+	esac
+fi
+
+if [ -z "$composer_launch" ]; then
+	echo "composer was not found: not in PATH, not in the usual places on a" >&2
+	echo "shared host, and the login shell does not resolve it either." >&2
 	echo "" >&2
-	echo "Point the launcher at an existing one:" >&2
+	echo "If it does run by hand, see what it actually is and pass that here:" >&2
+	echo "    type composer" >&2
 	echo "    COMPOSER_BIN=/path/to/composer ./updcab" >&2
 	echo "" >&2
-	echo "or install it next to the project once:" >&2
+	echo "If the host has none, install it next to the project once:" >&2
 	echo "    curl -sS https://getcomposer.org/installer | $php_bin" >&2
 	exit 1
 fi
 
 composer_cmd() {
-	if [ -n "$composer_runner" ]; then
-		"$composer_runner" "$composer_bin" "$@"
-	else
-		"$composer_bin" "$@"
-	fi
+	eval "$composer_launch \"\$@\""
 }
 
 # Production serves from cached config/routes/views, and the update clears
