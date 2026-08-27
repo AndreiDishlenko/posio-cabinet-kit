@@ -25,8 +25,8 @@
   always point into the package. A path spelled with the wrong case stops the
   build on the spot, naming what was asked for and what is stored, instead of
   passing on Windows and reaching the build server as `Could not load
-  .../resources/js/Components/SeoMeta.vue`.
-- `docs/host/seo.md` told a host to import `@cabinet-kit/Components/SeoMeta.vue`
+  .../resources/js/сomponents/SeoMeta.vue`.
+- `docs/host/seo.md` told a host to import `@cabinet-kit/сomponents/SeoMeta.vue`
   — the folder is `components`. A project that followed the guide built locally
   and failed on deploy; the same spelling is corrected in `config/seo.php` and
   in the sync manifest's copy target.
@@ -47,10 +47,16 @@
   site on the PHP its panel selected while the shell of the same account still
   starts an old default, and the update then died on `composer update` with
   sixteen numbered conflicts whose only cause was `your php version (7.4.33)`.
-  A `php` older than 8.2 is replaced by the newest suitable binary found under
-  the usual names and per-version paths (`php8.3`, `/opt/php83/bin/php`,
+  A `php` older than 8.2 is replaced by another binary found under the usual
+  names and per-version paths (`php8.3`, `/opt/php83/bin/php`,
   `/opt/alt/php83/usr/bin/php`, `/opt/cpanel/ea-php83/root/usr/bin/php`), and
-  the launcher says which one it took. Composer is run under that same
+  the launcher says which one it took. Preference goes to the version the site
+  is served with, read from the handler line of `.htaccess` — a host offering
+  six alt-php versions has no newest-is-right answer, and resolving on a CLI
+  newer than the site's installs code the site cannot execute, which shows up
+  as a white page and not in this output. Without such a line the oldest
+  supported version wins, for the same reason in the other direction. A handler
+  line naming a version below 8.2 is reported, not obeyed. Composer is run under that same
   interpreter — as a phar or as a shebang script it would otherwise pick the
   default `php` back up and resolve dependencies for the wrong version.
   `PHP_BIN` overrides the choice; when it names a too-old binary, that is

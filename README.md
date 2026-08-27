@@ -161,12 +161,15 @@ workstation:
   version its panel selected while the shell of the same account still starts an
   old default, and on that one step 1 fails with a wall of `your php version
   (7.4.33) does not satisfy that requirement`. When `php` is older than 8.2, the
-  launcher looks for `php8.4`/`php8.3`/`php8.2` and for the usual per-version
-  paths (`/opt/php83/bin/php`, `/opt/alt/php83/usr/bin/php`,
-  `/opt/cpanel/ea-php83/root/usr/bin/php`), takes the newest suitable one and
-  says which it took. Composer runs under the same interpreter — a phar and a
-  shebang script both otherwise fall back to the default `php`.
-  `PHP_BIN=/usr/bin/php8.3 ./updcab` overrides the choice.
+  launcher picks another binary — from the usual names and per-version paths
+  (`php8.3`, `/opt/php83/bin/php`, `/opt/alt/php83/usr/bin/php`,
+  `/opt/cpanel/ea-php83/root/usr/bin/php`) — and says which one it took.
+  Preference goes to the version the site is actually served with, read from the
+  handler line of `.htaccess`; without one it takes the oldest supported, since
+  what Composer resolves for 8.2 also runs on a newer binary while the reverse
+  installs code the site cannot execute. Composer runs under the same
+  interpreter — a phar and a shebang script both otherwise fall back to the
+  default `php`. `PHP_BIN=/usr/bin/php8.3 ./updcab` overrides the choice.
 
 When `composer` is not in `PATH` — the usual case on shared hosting — the
 launcher looks for `composer2`, then for a phar or binary in the project root,
