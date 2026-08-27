@@ -43,6 +43,18 @@
   assets are built elsewhere, and `PHP_BIN` for a specific PHP binary. A
   missing `npm` without `--no-build` stops the update instead of leaving stale
   assets behind.
+- The interpreter is settled before the first step. Shared hosting serves the
+  site on the PHP its panel selected while the shell of the same account still
+  starts an old default, and the update then died on `composer update` with
+  sixteen numbered conflicts whose only cause was `your php version (7.4.33)`.
+  A `php` older than 8.2 is replaced by the newest suitable binary found under
+  the usual names and per-version paths (`php8.3`, `/opt/php83/bin/php`,
+  `/opt/alt/php83/usr/bin/php`, `/opt/cpanel/ea-php83/root/usr/bin/php`), and
+  the launcher says which one it took. Composer is run under that same
+  interpreter — as a phar or as a shebang script it would otherwise pick the
+  default `php` back up and resolve dependencies for the wrong version.
+  `PHP_BIN` overrides the choice; when it names a too-old binary, that is
+  reported instead of guessed around.
 - Composer is looked for beyond `PATH`, because a shared host rarely puts it
   there: `composer2`, then a phar or binary in the project root, in `~`, in
   `~/bin` and in the common system locations, then whatever the login shell
