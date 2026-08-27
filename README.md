@@ -157,8 +157,18 @@ workstation:
 - `./updcab --no-build` skips `npm install && npm run build` for a deploy
   whose assets are built elsewhere; without the flag a missing `npm` stops the
   update instead of silently leaving stale assets;
-- `PHP_BIN=/usr/bin/php8.3 ./updcab` picks a specific PHP; a local
-  `composer.phar` is used when `composer` is not in `PATH`.
+- `PHP_BIN=/usr/bin/php8.3 ./updcab` picks a specific PHP.
+
+When `composer` is not in `PATH` — the usual case on shared hosting — the
+launcher looks for `composer2`, then for a phar or binary in the project root,
+in `~`, in `~/bin` and in the common system locations. If the host keeps it
+somewhere else, name it: `COMPOSER_BIN=/opt/php83/bin/composer ./updcab`. If the
+host has no Composer at all, install it once into the project root and the
+launcher picks it up from there:
+
+```bash
+curl -sS https://getcomposer.org/installer | php
+```
 
 If the server answers `Permission denied`, the executable bit did not survive
 the trip (a file committed from Windows carries none): `chmod +x updcab` there,

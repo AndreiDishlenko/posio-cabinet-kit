@@ -31,9 +31,14 @@
   needs on top: `migrate --force` (no tty to confirm a production migration
   with), `php artisan optimize` after the clear when `APP_ENV=production` (the
   update cleared caches the site serves from), `--no-build` for a deploy whose
-  assets are built elsewhere, `PHP_BIN` for a specific PHP binary, and a local
-  `composer.phar` when `composer` is not in `PATH`. A missing `npm` without
-  `--no-build` stops the update instead of leaving stale assets behind.
+  assets are built elsewhere, and `PHP_BIN` for a specific PHP binary. A
+  missing `npm` without `--no-build` stops the update instead of leaving stale
+  assets behind.
+- Composer is looked for beyond `PATH`, because a shared host rarely puts it
+  there: `composer2`, then a phar or binary in the project root, in `~`, in
+  `~/bin` and in the common system locations; `COMPOSER_BIN` names one kept
+  anywhere else. When nothing is found, the launcher prints both ways out
+  instead of only stating the absence.
 - `Posio\CabinetKit\Support\HostUpdateLaunchers` — writes both launchers into
   the host root. Both are written on every platform: a project is developed on
   one and deployed to another, and the launcher travels with the repository.

@@ -31,17 +31,58 @@ for arg in "$@"; do
 	esac
 done
 
-# Global binary on a workstation, local phar on most shared hosting.
+# Global binary on a workstation; on shared hosting it is as often a versioned
+# name, a phar in the home directory or a binary outside the login PATH — so the
+# well-known places are probed before giving up on the deploy.
 composer_runner=""
-composer_bin="composer"
-if ! command -v composer >/dev/null 2>&1; then
-	if [ -f composer.phar ]; then
-		composer_runner="$php_bin"
-		composer_bin="composer.phar"
-	else
-		echo "composer was not found in PATH and there is no composer.phar here." >&2
-		exit 1
-	fi
+composer_bin=""
+
+if [ -n "${COMPOSER_BIN:-}" ]; then
+	composer_bin="$COMPOSER_BIN"
+	case "$composer_bin" in
+		*.phar) composer_runner="$php_bin" ;;
+	esac
+else
+	for candidate in composer composer2; do
+		if command -v "$candidate" >/dev/null 2>&1; then
+			composer_bin="$candidate"
+			break
+		fi
+	done
+fi
+
+if [ -z "$composer_bin" ]; then
+	for candidate in \
+		./composer.phar \
+		"$HOME/composer.phar" \
+		"$HOME/bin/composer" \
+		"$HOME/bin/composer.phar" \
+		/usr/local/bin/composer \
+		/opt/cpanel/composer/bin/composer
+	do
+		[ -f "$candidate" ] || continue
+
+		# A phar needs the interpreter; a wrapper script must be runnable as is.
+		case "$candidate" in
+			*.phar) composer_runner="$php_bin" ;;
+			*) [ -x "$candidate" ] || continue ;;
+		esac
+
+		composer_bin="$candidate"
+		break
+	done
+fi
+
+if [ -z "$composer_bin" ]; then
+	echo "composer was not found: not in PATH, and none of the usual locations" >&2
+	echo "on a shared host has it either." >&2
+	echo "" >&2
+	echo "Point the launcher at an existing one:" >&2
+	echo "    COMPOSER_BIN=/path/to/composer ./updcab" >&2
+	echo "" >&2
+	echo "or install it next to the project once:" >&2
+	echo "    curl -sS https://getcomposer.org/installer | $php_bin" >&2
+	exit 1
 fi
 
 composer_cmd() {
