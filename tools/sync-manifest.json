@@ -93,27 +93,6 @@
       "notes": "Original shared icons."
     },
     {
-      "id": "layout-cabinet-layout",
-      "mode": "manual",
-      "source": "resources/_admin/js/layouts/CabinetLayout.vue",
-      "target": "resources/js/layouts/CabinetLayout.vue",
-      "notes": "Package layout excludes product tour, hints, AI widgets and Posio-specific shared props."
-    },
-    {
-      "id": "layout-cabinet-header",
-      "mode": "manual",
-      "source": "resources/_admin/js/layouts/CabinetHeader.vue",
-      "target": "resources/js/layouts/CabinetHeader.vue",
-      "notes": "Port only generic header UX. Package uses @cabinet-kit imports and cabinetKit* props."
-    },
-    {
-      "id": "layout-side-menu",
-      "mode": "manual",
-      "source": "resources/_admin/js/layouts/SideMenu.vue",
-      "target": "resources/js/layouts/SideMenu.vue",
-      "notes": "Source menu is tied to Posio permissions/routes; package menu is config-driven."
-    },
-    {
       "id": "settings-page",
       "mode": "copy",
       "source": "resources/_admin/js/pages/CabinetSettings.vue",
@@ -280,10 +259,10 @@
     },
     {
       "id": "helpers-arrays",
-      "mode": "copy",
+      "mode": "manual",
       "source": "resources/js/posio/helpers/Arrays.js",
       "target": "resources/js/posio/helpers/Arrays.js",
-      "notes": "Ported verbatim minus the dead removeFromArray stub. Table.vue reaches it through the global $H set by resources/js/posio/helpers.js."
+      "notes": "Package version is ahead of upstream: upstream still carries a broken remove-by-key helper that references fields of an unrelated object. Do not overwrite from upstream until that is fixed there."
     },
     {
       "id": "helpers-aggregator",
@@ -559,6 +538,69 @@
       "source": "config/seo.php",
       "target": "config/seo.php",
       "notes": "Same keys, neutral values; adds seo.software.* and seo.sitenav_routes, which are hardcoded upstream."
+    },
+    {
+      "id": "elements-floating-dock-queue",
+      "mode": "copy",
+      "source": "resources/js/floatingDock.js",
+      "target": "resources/js/floatingDock.js",
+      "notes": "Shared queue behind every bottom-right floating element; a second element stacks above the first instead of covering it."
+    },
+    {
+      "id": "elements-floating-dock",
+      "mode": "copy",
+      "source": "resources/js/Elements/FloatingDock.vue",
+      "target": "resources/js/Elements/FloatingDock.vue",
+      "notes": "Wrapper every FAB/CTA goes through; owns the fixed positioning so no floating element declares its own."
+    },
+    {
+      "id": "elements-status-dot",
+      "mode": "copy",
+      "source": "resources/js/Elements/StatusDot.vue",
+      "target": "resources/js/Elements/StatusDot.vue",
+      "notes": "Generic status dot used by the table's `dot` column type."
+    },
+    {
+      "id": "table-row-actions",
+      "mode": "copy",
+      "source": "resources/js/Elements/Table/rowActions.js",
+      "target": "resources/js/Elements/Table/rowActions.js",
+      "notes": "Registry of standard row/group actions (event -> icon -> tooltip) plus the colour resolver. Pages describe only the event."
+    },
+    {
+      "id": "table-group-actions",
+      "mode": "copy",
+      "source": "resources/js/Elements/Table/TableGroupActions.vue",
+      "target": "resources/js/Elements/Table/TableGroupActions.vue",
+      "notes": "Action icons of a group row; reads the same registry as the row bar."
+    },
+    {
+      "id": "table-group-title",
+      "mode": "copy",
+      "source": "resources/js/Elements/Table/TableGroupTitle.vue",
+      "target": "resources/js/Elements/Table/TableGroupTitle.vue",
+      "notes": "Group row title cell."
+    },
+    {
+      "id": "table-show-deleted-toggle",
+      "mode": "copy",
+      "source": "resources/js/Elements/Table/ShowDeletedToggle.vue",
+      "target": "resources/js/Elements/Table/ShowDeletedToggle.vue",
+      "notes": "Soft-delete toggle shared by the tools panel and the row-bar header."
+    },
+    {
+      "id": "admin-page-menu-mixin",
+      "mode": "copy",
+      "source": "resources/_admin/js/mixins/_pageMenuMixins.js",
+      "target": "resources/_admin/js/mixins/_pageMenuMixins.js",
+      "notes": "Registers a nested block's page actions in the layout registry so they reach the user panel. Generic: the descriptor carries no product fields."
+    },
+    {
+      "id": "admin-cabinet-burger-menu",
+      "mode": "manual",
+      "source": "resources/_admin/js/layouts/CabinetBurgerMenu.vue",
+      "target": "resources/_admin/js/layouts/CabinetBurgerMenu.vue",
+      "notes": "User panel; renders page actions above Settings. Package version drops Posio-only entries and keeps cabinet-kit.* route names."
     }
   ]
 }

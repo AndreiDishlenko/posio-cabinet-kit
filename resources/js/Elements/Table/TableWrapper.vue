@@ -4,7 +4,7 @@
 	<!-- Table scrolled wrapper -->
 
 	 <!-- hide-scrollbar scrollbar -->
-	<div ref="wrapperEl" class="t-wrapper flex h-full w-full grow min-h-0 flex-col scrollbar-thin items-stretch !relative"
+	<div ref="wrapperEl" class="t-wrapper flex h-full w-full grow min-h-0 flex-col  items-stretch !relative"
         :class="{
 				// 'overflow-y-auto': scrolled && !sticky_header,
 				// 'rounded-table' : rounded,
@@ -14,7 +14,7 @@
 				'overflow-x-auto x-scroll': x_scroll,
 				// Vertical-only scroll box: the body scrolls inside the table's own
 				// height and the header sticks to it (x_scroll already covers both axes).
-				'overflow-y-auto y-scroll': y_scroll && !x_scroll
+				'overflow-y-auto y-scroll scrollbar-thin': y_scroll && !x_scroll
 			}">
         
         <div class="t-block grid" 

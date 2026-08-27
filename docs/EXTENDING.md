@@ -71,6 +71,56 @@ Everything the settings controller shares (`profile`, `own_account`,
 as a prop on the page, so widening `tab_props()` is a one-line change in your
 override — no backend edit needed.
 
+## Giving a page its own actions
+
+Extra actions of a screen — "Export XLS", "Import", "Print" — are not a button
+on the page. They go into the user panel (the burger menu in the header), above
+Settings, so the same menu serves desktop and mobile and nothing competes with
+the filters row for space.
+
+A page passes them to the layout:
+
+```html
+<CabinetLayout :page_menu="page_menu">
+```
+
+```js
+computed: {
+    page_menu() {
+        return [
+            { name: 'Export XLS', icon: 'mdi:file-export', action: () => this.exportXls() },
+            { name: 'Import',     icon: 'mdi:upload',      action: () => this.$refs.importCard.open() },
+            { name: 'Docs',       icon: 'mdi:help',        href: 'https://example.test/docs' },
+        ];
+    },
+},
+```
+
+One descriptor everywhere: `{ name, icon?, action | href, disabled?, in_burger? }`.
+`name` is an English `$t` key; `action` is a closure, so `this.$refs` works;
+`in_burger: false` keeps an item out of the panel.
+
+A block nested inside the page — a tab, for instance — cannot pass a prop up to
+the layout. It registers itself instead:
+
+```js
+import pageMenuMixin from '@/_admin/js/mixins/_pageMenuMixins.js';
+
+export default {
+    mixins: [pageMenuMixin],
+    computed: {
+        page_menu() { return [ /* ... */ ]; },
+    },
+}
+```
+
+The mixin needs exactly one thing from the component: a `page_menu` property.
+The panel collects registered blocks when it opens, not reactively, and keeps
+only the ones actually visible — tabs stay mounted after switching, so several
+live `page_menu`s coexist and only the on-screen one is meant. Changing
+`page_menu` while the panel is open will not redraw it; reopening re-reads
+everything.
+
 ## Overriding a page
 
 ```

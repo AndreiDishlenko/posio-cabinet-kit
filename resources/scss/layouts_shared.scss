@@ -57,7 +57,7 @@
 .scrollbar:not(.scrolled-wrapper),
 .scrollbar-thin:not(.scrolled-wrapper),
 .scrollbar-thin-x:not(.scrolled-wrapper) {
-	padding-right: 0.3rem;
+	// padding-right: 0.3rem;
 }
 
 .scrolled-wrapper,
@@ -67,6 +67,7 @@
 	// Возвращает полосу контейнерам прокрутки, которые прячут её по умолчанию.
 	scrollbar-width: auto;
 	// border:1px solid green;
+	padding-right: 0.1rem;
 
 	&::-webkit-scrollbar {
 		// width:  11px;

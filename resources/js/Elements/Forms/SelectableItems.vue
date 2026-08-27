@@ -97,7 +97,9 @@
                 type: String,
                 default: ''
             },
-            // Overridable font size of the items. Empty -> current size-based token.
+            // Ключ розмірного токена підпису пунктів ('sm', 'base', 'lg'…) — коли
+            // підпис списку має бути іншого розміру, ніж дає розмір самого контрола
+            // (напр. кнопка з укрупненим підписом). Порожній — розмір контрола.
             'font_size': {
                 type: String,
                 default: ''
@@ -123,9 +125,7 @@
                 return `calc(var(--ui-h-${s}) + 2px)`;
             },
             fontSize() {
-                if ( this.font_size )
-                    return this.font_size;
-                const s = this.size || 'base';
+                const s = this.font_size || this.size || 'base';
                 return `var(--text-${s})`;
             },
             bgColor() {

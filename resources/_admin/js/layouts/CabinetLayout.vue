@@ -15,7 +15,7 @@
 
         <div class="page-layout relative grow min-w-0 flex flex-col" >
 
-            <CabinetHeader class="min-h-0 px-3 sm:px-5" :page_name="page_name"/>
+            <CabinetHeader class="min-h-0 px-3 sm:px-5" :page_name="page_name" :page_menu="page_menu"/>
 
 			<div class="page-content-wrapper p-2 lg:p-4 flex flex-col overflow-hidden "
 				:class="['space-y-'+space_y]"
@@ -79,6 +79,12 @@
                 type: String,
                 default: ''
             },
+            // Действия страницы, которые дополняют панель пользователя перед настройками:
+            // { name, icon?, action | href, disabled?, in_burger? }.
+            page_menu: {
+                type: Array,
+                default: () => []
+            },
             disable_menu: {
                 type: Boolean,
                 default: false
@@ -96,10 +102,36 @@
 				default: true
 			}
         },
+        provide() {
+            return {
+                // Вложенные блоки (вкладки страницы) не видят шапку и регистрируют
+                // свои действия здесь — забираются в момент открытия панели.
+                pageMenuRegistry: {
+                    register:   (source) => {
+                        if ( !this.page_menu_sources.includes(source) )
+                            this.page_menu_sources.push(source);
+                    },
+                    unregister: (source) => {
+                        this.page_menu_sources = this.page_menu_sources.filter(item => item !== source);
+                    },
+                    collect:    () => this.collectPageMenu(),
+                },
+            }
+        },
         data() {
             return {
                 if_pause: false,
+                page_menu_sources: [],
             }
+        },
+        methods: {
+            // Вкладки страницы остаются смонтированными после переключения, поэтому
+            // в меню попадают действия только той, что сейчас на экране.
+            collectPageMenu() {
+                return this.page_menu_sources
+                    .filter(source => source.$el && typeof source.$el.getClientRects === 'function' && source.$el.getClientRects().length)
+                    .flatMap(source => source.page_menu || []);
+            },
         },
         mounted() {
             // this.$nextTick(() => {

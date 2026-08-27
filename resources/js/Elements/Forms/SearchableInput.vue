@@ -2,13 +2,16 @@
 
 	<label ref="root" class="searchable-input relative block">
 
-		<Icon icon="mdi:magnify" class="icon absolute left-3 top-1/2 -translate-y-1/2" />
+		<Icon icon="mdi:magnify" class="icon search-icon absolute left-3 top-1/2 -translate-y-1/2" />
 
 		<input
 			ref="input"
 			type="text"
 			:value="modelValue"
 			:placeholder="$t(placeholder)"
+			autocapitalize="none"
+			autocorrect="off"
+			spellcheck="false"
 			class="form-control w-full !pl-10 !pr-9"
 			:class="size ? `form-control-${size}` : ''"
 			@input="onInput"
@@ -229,6 +232,12 @@
 </script>
 
 <style lang="scss" scoped>
+	// Лупа — така сама підказка, як і текст-заповнювач поруч: одного тону з ним,
+	// щоб порожнє поле читалося цілком як підказка, а не як заповнений контрол.
+	.search-icon {
+		color: var(--placeholder-color);
+	}
+
 	.search-dropdown {
 		background-color: var(--selectable-background-color, var(--dropdown-background-color, var(--card-background)));
 		border: 1px solid var(--card-divider, rgba(148, 163, 184, 0.2));

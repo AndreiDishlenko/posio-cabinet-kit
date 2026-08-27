@@ -160,36 +160,17 @@
 			     інакше вільний простір ділиться між ними й іконка фільтрів їде до центру). -->
 			<div class="ml-auto flex items-center gap-2">
 
+				<!-- Перезавантаження даних сторінки поточними фільтрами (значення не скидаються). -->
+				<button v-if="show_refresh" type="button"
+					class="flex items-center justify-center text-secondary px-1 button button-md !w-9"
+					:title="$t('Refresh')"
+					@click="refresh">
+					<Icon icon="mdi:refresh" class="icon icon-md" />
+				</button>
+
 				<span class="lt-md:hidden flex items-center text-secondary px-1 button button-md !w-9">
 					<Icon icon="mdi:tune-variant" class="icon icon-md" />
 				</span>
-
-				<!-- Page menu: додаткові дії зі звітом (кнопка-близнюк фільтрів; на мобільному
-				     залишається видимою — на відміну від іконки фільтрів — щоб дії були доступні) -->
-				<Dropdown v-if="menu.length" ref="menu_dropdown"
-					:align="'right'"
-					:downOnClick="true"
-					:transition="'menu'"
-					:area_radius="'var(--ui-radius-md, 0.625rem)'"
-					:buttonclass="'flex'"
-					:offset="10"
-					>
-					<template #button>
-						<span class="flex items-center text-secondary px-1 button button-md !w-9">
-							<Icon icon="mdi:dots-vertical" class="icon icon-md" />
-						</span>
-					</template>
-					<template #dropdownitems>
-						<SelectableItems class="py-1"
-							:in_data="menu"
-							:text_field="'name'"
-							:items_class="'rounded-md'"
-							:keyboard="true"
-							@selectItem="onMenuSelect"
-							@close="$refs.menu_dropdown.close()"
-							/>
-					</template>
-				</Dropdown>
 
 			</div>
 
@@ -210,8 +191,6 @@
 
 	import Selectable		from '@/js/Elements/Forms/Selectable.vue';
 	import SelectableInput	from '@/js/Elements/Forms/SelectableInput.vue';
-	import Dropdown			from '@/js/Elements/Dropdown.vue';
-	import SelectableItems	from '@/js/Elements/Forms/SelectableItems.vue';
 
 	// Реєстр фільтрів: порядок записів задає порядок колонок у рядку (порядок ключів,
 	// з якими сторінка перелічила фільтри, на вигляд не впливає).
@@ -346,7 +325,7 @@
 	const DICTIONARIES_WAIT = 5000;
 
 	export default {
-		components: { Icon, Selectable, SelectableInput, VueDatePicker, Dropdown, SelectableItems },
+		components: { Icon, Selectable, SelectableInput, VueDatePicker },
 		inject: {
 			// Затвор первинного завантаження сторінки (дає міксин таблиці). Панель фільтрів
 			// сама повідомляє, коли значення підставлені й запит матиме сенс.
@@ -374,12 +353,6 @@
 			no_persist: {
 				type: Boolean,
 				default: false,
-			},
-			// Пункти меню «додаткові дії зі звітом» (перенесено з End Button таблиці —
-			// settings.dropdownmenu.items). Кожен пункт: { name, icon?, action }.
-			menu: {
-				type: Array,
-				default: () => [],
 			},
 		},
 		emits: ['onChange', 'ready'],
@@ -415,6 +388,10 @@
 		computed: {
 			accountId() {
 				return this.$page?.props?.account?.id ?? null;
+			},
+			// Кнопка перезавантаження є на кожній сторінці з фільтрами; вимикається явно.
+			show_refresh() {
+				return this.options.refresh !== false;
 			},
 			// Фільтри, замовлені сторінкою, у канонічному порядку реєстру.
 			visible_filters() {
@@ -595,12 +572,12 @@
 				}
 			},
 
-			// Клік по пункту меню звіту: закриваємо dropdown і виконуємо action пункту.
-			onMenuSelect(e, item) {
-				this.$refs.menu_dropdown?.close();
-				if (typeof item.action === 'function')
-					item.action(e);
+			// Повторний запит даних сторінки з тими самими фільтрами: значення не чіпаємо,
+			// тому й знімок стану лишається як був.
+			refresh() {
+				this.$emit('onChange', 'refresh');
 			},
+
 			getShowClass(filter_name) {
 				const opts = this.options[filter_name];
 

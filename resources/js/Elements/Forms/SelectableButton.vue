@@ -2,11 +2,11 @@
 
     <button v-if="singleAction"
         class="button flex items-center"
-        :class="[ typeClass, size ? 'button-'+size : null ]"
+        :class="[ typeClass, size ? 'button-'+size : null, button_class ]"
         @click="typeof current_action.action === 'function' ? current_action.action($event) : $emit(current_action.action)"
         >
         <slot :current_action="current_action"/>
-        <span class="action-name">{{ $t(current_action.name) }}</span>
+        <span class="action-name">{{ $t(buttonLabel) }}</span>
     </button>
 
     <Dropdown v-else ref="dropdown" class="selectable-dropdown"
@@ -15,7 +15,7 @@
         :offset="offset"
         :area_radius="buttonRadius"
         :bg_color="bgColor"
-        :downOnClick="false"
+        :downOnClick="plain"
         :transition="'menu'"
         :buttonclass="'dropdown-button flex items-center p-0'"
         :dropareaclass="dropareaclass + (offset ? '' : (direction === 'up' ? ' rounded-b-none' : ' rounded-t-none'))"
@@ -25,13 +25,22 @@
 
         <template #button>
 
-            <div class="button flex space-x-2 items-center pe-0" :class="[ typeClass, size ? 'button-'+size : null, (state && !offset) ? (direction === 'up' ? 'rounded-t-none' : 'rounded-b-none') : null ]">
+            <!-- Простий режим: кнопка нічим не відрізняється від звичайної (без
+                 стрілки й роздільника), а список вибору відкриває саме натискання. -->
+            <div v-if="plain" class="button flex items-center justify-center"
+                :class="[ typeClass, size ? 'button-'+size : null, button_class, (state && !offset) ? (direction === 'up' ? 'rounded-t-none' : 'rounded-b-none') : null ]"
+                >
+                <slot :current_action="current_action"/>
+                <span class="action-name">{{ $t(buttonLabel) }}</span>
+            </div>
+
+            <div v-else class="button flex space-x-2 items-center pe-0" :class="[ typeClass, size ? 'button-'+size : null, button_class, (state && !offset) ? (direction === 'up' ? 'rounded-t-none' : 'rounded-b-none') : null ]">
 
                 <span class='flex items-center pt-[1px]'
                     @click="typeof current_action.action === 'function' ? current_action.action($event) : $emit(current_action.action)"
                     >
                     <slot :current_action="current_action"/>
-                    <span class="action-name">{{ $t(current_action.name) }}</span>
+                    <span class="action-name">{{ $t(buttonLabel) }}</span>
                 </span>
                 <div class="button-button h-[70%] border-l flex items-center ps-2 pe-3"
                     @click="$refs.dropdown.switchState()"
@@ -114,7 +123,28 @@
                 type: String,
                 default: ''
             },
+            // Ключ розмірного токена підпису пунктів списку: потрібен, коли підпис
+            // кнопки укрупнено окремо від її розміру — інакше список читається
+            // дрібнішим за кнопку, що його відкриває.
             font_size: {
+                type: String,
+                default: ''
+            },
+            // Кнопка виглядає як звичайна — без стрілки й роздільника, — а список
+            // вибору відкривається самим натисканням по ній.
+            plain: {
+                type: Boolean,
+                default: false
+            },
+            // Власний підпис кнопки, спільний для всіх дій ('Додати' над списком
+            // «Додати товар» / «Додати категорію'). Порожній — підпис поточної дії.
+            label: {
+                type: String,
+                default: ''
+            },
+            // Додаткові класи саме кнопки (не обгортки-дропдауна): напр. більший
+            // жирний підпис на вузькому екрані.
+            button_class: {
                 type: String,
                 default: ''
             },
@@ -141,6 +171,9 @@
             },
             current_action() {
                 return this.actions[this.selected_id];
+            },
+            buttonLabel() {
+                return this.label || this.current_action?.name || '';
             },
             typeClass() {
                 return (this.type || 'primary') + '-button';

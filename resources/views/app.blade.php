@@ -2,7 +2,11 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
 	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
+	{{-- Фиксированный масштаб гасит автоматический зум Safari при фокусе в поле:
+	     иначе поле мельче 16px растягивает страницу и обратно она не отъезжает.
+	     Так размер текста в полях остаётся свободным. viewport-fit=cover открывает
+	     доступ к безопасным отступам вокруг «чёлки» и индикатора жеста. --}}
+	<meta name="viewport" content="width=device-width, minimum-scale=1, maximum-scale=1, initial-scale=1, user-scalable=no, viewport-fit=cover">
 
 	{{-- Название и значок вкладки — из настроек кабинета (раздел «Налаштування
 	     кабінету»); пока настройки недоступны, работает имя приложения. --}}

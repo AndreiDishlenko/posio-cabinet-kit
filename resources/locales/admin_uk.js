@@ -1527,6 +1527,7 @@ export default {
         'Confirm Order'     : 'Підтвердити замовлення',
         'Change Order'      : 'Змінити замовлення',
         'Edit'              : 'Редагувати',
+        'Open'              : 'Відкрити',
         'Ship out'          : 'Відвантажити',
         'Pay QR'            : 'QR-платіж',
         'Pay and ship out'  : 'Сплатити та відвантажити',

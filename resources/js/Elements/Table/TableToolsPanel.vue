@@ -2,16 +2,22 @@
 
     <div class="table-tools-panel flex items-center space-x-3 pb-2 !ps-0 mt-1 overflow-x-auto no-scrollbar min-h-max">
 
-		<!-- CTA Button -->
-		<div v-if="settings.groupactions?.add || settings.ctabutton?.type === 'button' || (settings.ctabutton?.type === 'SelectButton' && ctabuttonActions.length)"
-			class="cta-buttons flex items-center gap-3">
+		<!-- CTA Button. Типове місце — на початку панелі; settings.ctabutton.align='end'
+		     переносить блок у правий край (порядком, а не окремою розміткою). -->
+		<div v-if="add_button || settings.ctabutton?.type === 'button' || (settings.ctabutton?.type === 'SelectButton' && ctabuttonActions.length)"
+			class="cta-buttons flex items-center gap-3"
+			:class="{ 'order-last': settings.ctabutton?.align === 'end' }">
 
-			<button v-if="settings.groupactions?.add" class="t-panel-item button button-sm primary-button" @click="$emit('addRow')">
-				{{ $t('Add') }}
+			<button v-if="add_button" class="t-panel-item button button-sm md:button-md primary-button !space-x-0"
+				:class="add_button.class"
+				@click="$emit('addRow')"
+				>
+				<Icon v-if="add_button.icon" class="icon icon-md" :icon="add_button.icon" />
+				<span>{{ $t(add_button.name || 'Add') }}</span>
 			</button>
 
 			<button v-if="settings.ctabutton?.type === 'button'"
-				class="t-panel-item button button-sm space-x-1"
+				class="t-panel-item button button-sm md:button-md"
 				:class="[ settings.ctabutton.class || 'primary-button', { disabled: settings.ctabutton.disabled } ]"
 				@click="onCtaButtonClick"
 				>
@@ -22,10 +28,16 @@
 			<SelectableButton
 				v-if="settings.ctabutton?.type === 'SelectButton' && ctabuttonActions.length"
 				:actions="ctabuttonActions"
-				:size="'sm'"
+				:label="settings.ctabutton.label"
+				:plain="!!settings.ctabutton.plain"
+				:button_class="settings.ctabutton.button_class || ''"
+				:font_size="settings.ctabutton.font_size || ''"
+				:size="'md'"
 				:offset="5"
 				@click.stop
-			/>
+			>
+				<Icon v-if="settings.ctabutton.icon" class="icon icon-md" :icon="settings.ctabutton.icon" />
+			</SelectableButton>
 
 		</div>
 
@@ -70,7 +82,7 @@
 				/>
 
 			<div v-else
-				class="t-panel-item button button-sm space-x-1"
+				class="t-panel-item button button-sm md:button-md space-x-1"
 				:class="[
 					item.class,
 					{
@@ -117,13 +129,13 @@
 					:model-value="item.model"
 					:label="item.name"
 					:label-mobile="item.name_mobile"
-					:size="item.size || 'sm'"
+					:size="item.size || 'md'"
 					:disabled="item.disabled"
 					@update:modelValue="(v) => { item.model = v; if (item.action) item.action(!!v) }"
 					/>
 
 				<div v-else
-					class="t-panel-item button button-sm"
+					class="t-panel-item button button-sm md:button-md"
 					:class="[
 						item.class,
 						{
@@ -145,11 +157,9 @@
 
 			<!-- Show Deleted toggle — only when the rowbar column is hidden; otherwise it
 			     lives in the rowbar header (see TableHeader). -->
-			<Checkbox v-if="settings.filters?.deleted && !show_rowbar"
+			<ShowDeletedToggle v-if="settings.filters?.deleted && !show_rowbar"
 				v-model="panel_data.showDeleted"
 				class="t-panel-item"
-				size="md"
-				:label="'Deleted'"
 				/>
 
 		</div>
@@ -175,13 +185,14 @@
 <script>
     import { Icon }         from '@iconify/vue'
 
-    import SelectableButton from '../Forms/SelectableButton.vue'
-    import CheckboxButton   from '../Forms/CheckboxButton.vue'
-    import Checkbox         from '../Forms/Checkbox.vue'
-    import SearchableInput  from '../Forms/SearchableInput.vue'
+    import SelectableButton  from '../Forms/SelectableButton.vue'
+    import CheckboxButton    from '../Forms/CheckboxButton.vue'
+    import Checkbox          from '../Forms/Checkbox.vue'
+    import SearchableInput   from '../Forms/SearchableInput.vue'
+    import ShowDeletedToggle from '@/js/Elements/Table/ShowDeletedToggle.vue'
 
     export default {
-        components: { Icon, SelectableButton, CheckboxButton, Checkbox, SearchableInput },
+        components: { Icon, SelectableButton, CheckboxButton, Checkbox, SearchableInput, ShowDeletedToggle },
         props: {
             settings: {
                 type: Object,
@@ -201,8 +212,22 @@
                 type: Boolean,
                 default: false
             },
+            // Вузький екран: контроли панелі лишаються компактними, на десктопі — на розмір більші.
+            is_mobile: {
+                type: Boolean,
+                default: false
+            },
         },
 		computed: {
+			// Кнопка додавання: булеве значення дає типовий вигляд (підпис «Add», без іконки),
+			// обʼєкт дозволяє задати власну іконку, підпис і класи.
+			add_button() {
+				const add = this.settings.groupactions?.add;
+				if ( !add )
+					return null;
+
+				return typeof add === 'object' ? add : {};
+			},
 			ctabuttonActions() {
 				return (this.settings.ctabutton?.actions ?? []).map(item => ({
 					...item,
@@ -245,11 +270,20 @@
 		flex-shrink: 0;
 	}
 
+	// CTA перенесено в правий край порядком розкладки, а відступи між сусідами
+	// рахуються за порядком у розмітці — повертаємо їх вручну: зліва від кнопки
+	// і на початку панелі, де вона більше не стоїть.
+	.table-tools-panel > .cta-buttons.order-last {
+		margin-left: 0.75rem;
+	}
+
+	.table-tools-panel > .cta-buttons.order-last + * {
+		margin-left: 0;
+	}
+
     .t-panel-item {
         display: inline-flex;
         align-items: center;
-		// color: var(--primary-button-background);
-		// background-color: var(--table-selection-color)!important;
 
 		span {
             // Не text-wrap: его Apple понимает только с 17.4, ниже подпись фильтра переносится.

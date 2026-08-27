@@ -1,13 +1,26 @@
-.lightblue-button {
-	@apply
-		text-white
-		!bg-blue-600;
-}
+@layer components {
+	.button-sm {
+		@apply
+			gap-0 !space-x-1
+	}
 
-.transparent-button {
-	@apply
-		px-4
-		!bg-transparent 
-		!shadow-none 
-		hover:!shadow-none;
+	.button-md {
+		font-size: var(--text-sm)!important;
+		@apply 
+			gap-0 !space-x-1.5
+	}
+
+	.lightblue-button {
+		@apply
+			text-white
+			!bg-blue-600;
+	}
+
+	.transparent-button {
+		@apply
+			px-4
+			!bg-transparent 
+			!shadow-none 
+			hover:!shadow-none;
+	}
 }

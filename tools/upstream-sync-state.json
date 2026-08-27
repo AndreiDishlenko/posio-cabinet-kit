@@ -1,0 +1,28 @@
+{
+	"schema": "cabinet-kit/upstream-sync-state@1",
+	"description": "Точка, до которой изменения апстрима перенесены в пакет. Следующий перенос смотрит только то, что появилось ПОСЛЕ synced_through.commit. Обновляется через tools/Sync-CabinetKitFromPosio.ps1 -RecordBaseline.",
+	"upstream": {
+		"name": "posio.cabinet",
+		"root_hint": "F:\\OpenServer\\home\\posio.cabinet",
+		"branch": "main"
+	},
+	"synced_through": {
+		"version": "2.5.38",
+		"commit": "c7985a2404ef509bfd42776363b1b662d0d3f7a8",
+		"short_commit": "c7985a24",
+		"commit_subject": "2.5.38 Table, products, page menu",
+		"commit_date": "2026-08-27",
+		"synced_at": "2026-08-27",
+		"package_version": "0.3.38",
+		"notes": "Реестр действий строки таблицы, FAB через общую очередь плавающих элементов, действия страницы в панели пользователя."
+	},
+	"history": [
+		{
+			"version": "2.5.37",
+			"commit": "d1015bc3",
+			"synced_at": "2026-08-25",
+			"package_version": "0.3.37",
+			"notes": "Site settings, cabinet settings, SEO."
+		}
+	]
+}

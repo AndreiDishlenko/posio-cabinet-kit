@@ -27,11 +27,13 @@
 
 <script>
 	import SelectableItems from '@/js/Elements/Forms/SelectableItems.vue';
+	import { STANDARD_ROW_ACTIONS } from '@/js/Elements/Table/rowActions.js';
 
 	// Standard items, shared by every table. Each carries an `event` the host
 	// table re-emits (the page already listens for onDelete / onRestore).
-	const STANDARD_DELETE  = { key: 'delete',  name: 'Delete',  icon: 'material-symbols:delete-outline-rounded',           event: 'onDelete' };
-	const STANDARD_RESTORE = { key: 'restore', name: 'Restore', icon: 'material-symbols:restore-from-trash-outline-rounded', event: 'onRestore' };
+	// Іконка й назва — з єдиного реєстру стандартних дій рядка.
+	const STANDARD_DELETE  = { key: 'delete',  name: STANDARD_ROW_ACTIONS.onDelete.tooltip,  icon: STANDARD_ROW_ACTIONS.onDelete.icon,  event: 'onDelete' };
+	const STANDARD_RESTORE = { key: 'restore', name: STANDARD_ROW_ACTIONS.onRestore.tooltip, icon: STANDARD_ROW_ACTIONS.onRestore.icon, event: 'onRestore' };
 
 	export default {
 		name: 'TableContextMenu',

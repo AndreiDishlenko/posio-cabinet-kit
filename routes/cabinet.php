@@ -1,12 +1,14 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Cookie;
 use Posio\CabinetKit\Http\Controllers\Admin\PermissionsController;
 use Posio\CabinetKit\Http\Controllers\Admin\UsersController;
 use Posio\CabinetKit\Http\Controllers\AccountController;
 use Posio\CabinetKit\Http\Controllers\Api\SeoApiController;
 use Posio\CabinetKit\Http\Controllers\Api\SiteSettingsApiController;
+use Posio\CabinetKit\Http\Controllers\HomeController;
+use Posio\CabinetKit\Http\Controllers\LocaleController;
+use Posio\CabinetKit\Http\Controllers\PackageAssetController;
 use Posio\CabinetKit\Http\Controllers\SeoPageController;
 use Posio\CabinetKit\Http\Controllers\SiteSettingsController;
 use Posio\CabinetKit\Http\Controllers\Auth\LoginController;
@@ -22,56 +24,19 @@ use Posio\CabinetKit\Http\Middleware\RequireSystemPasswordChange;
 use Posio\CabinetKit\Http\Middleware\SetPermissionTeam;
 use Posio\CabinetKit\Http\Middleware\ShareCabinetKitData;
 use Posio\CabinetKit\Http\Middleware\UseCabinetKitRootView;
-use Posio\CabinetKit\Support\CabinetRedirects;
 
-Route::get('cabinet-assets/{path}', function (string $path) {
-    $assetRoot = realpath(__DIR__.'/../public/cabinet-assets');
-    $assetPath = $assetRoot ? realpath($assetRoot.DIRECTORY_SEPARATOR.$path) : false;
+// Ни один маршрут пакета не объявляется замыканием: хост обязан сохранить
+// возможность закэшировать свои маршруты, а замыкания не сериализуются.
+Route::get('cabinet-assets/{path}', [PackageAssetController::class, 'cabinet'])
+    ->where('path', '.*')->name('cabinet-kit.assets');
 
-    if (! $assetRoot || ! $assetPath || ! str_starts_with($assetPath, $assetRoot.DIRECTORY_SEPARATOR)) {
-        abort(404);
-    }
-
-    return response()->file($assetPath);
-})->where('path', '.*')->name('cabinet-kit.assets');
-
-// Обезличенные заготовки бренда отдаются из пакета: пока оператор не загрузил
-// свои картинки, значок вкладки и логотипы должны работать без шага публикации.
-Route::get('brand-assets/{path}', function (string $path) {
-    $assetRoot = realpath(__DIR__.'/../public/brand-assets');
-    $assetPath = $assetRoot ? realpath($assetRoot.DIRECTORY_SEPARATOR.$path) : false;
-
-    if (! $assetRoot || ! $assetPath || ! str_starts_with($assetPath, $assetRoot.DIRECTORY_SEPARATOR)) {
-        abort(404);
-    }
-
-    return response()->file($assetPath);
-})->where('path', '.*')->name('cabinet-kit.brand-assets');
+Route::get('brand-assets/{path}', [PackageAssetController::class, 'brand'])
+    ->where('path', '.*')->name('cabinet-kit.brand-assets');
 
 Route::middleware(['web', UseCabinetKitRootView::class])
     ->prefix(config('cabinet-kit.route_prefix', 'cabinet'))
     ->group(function () {
-        Route::post('setlocale', function () {
-            $locale = request()->string('locale')->toString();
-            $locales = collect(config('cabinet-kit.translations.locales', []))
-                ->keys()
-                ->map(fn ($code) => (string) $code)
-                ->all();
-
-            abort_unless(in_array($locale, $locales, true), 422);
-
-            session(['locale' => $locale]);
-            app()->setLocale($locale);
-
-            if ($user = request()->user()) {
-                if (method_exists($user, 'setSetting')) {
-                    $user->setSetting('locale', $locale);
-                }
-            }
-
-            return response()->json(['locale' => $locale])
-                ->withCookie(Cookie::forever('locale', $locale));
-        })->name('app.setlocale');
+        Route::post('setlocale', [LocaleController::class, 'update'])->name('app.setlocale');
 
         // Guest-only auth routes. Names stay Laravel's own unprefixed
         // convention (login, register, ...) so framework internals (the
@@ -122,7 +87,7 @@ Route::middleware(['web', UseCabinetKitRootView::class])
             ))
             ->name(config('cabinet-kit.route_name_prefix', 'cabinet-kit.'))
             ->group(function () {
-                Route::get('/', fn () => redirect(CabinetRedirects::url('home')))->name('home');
+                Route::get('/', HomeController::class)->name('home');
                 Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
 
                 // The one pair of routes the gate above lets a seeded account

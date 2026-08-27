@@ -6,7 +6,7 @@
 			isSortingAllowed && 'is-sortable',
 			isLast && 'top-right',
 			headerAlign ? 'justify-' + headerAlign : null,
-			(column.type == 'checkbox' || column.type == 'checkicon') && '!justify-center',
+			(column.type == 'checkbox' || column.type == 'checkicon' || column.type == 'dot') && '!justify-center',
 			column.hide && column.hide + '-hidden',
 			column.nowrap && 'whitespace-nowrap'
 		]"

@@ -37,7 +37,19 @@
 				</div>
 			</div>
 
-			<!-- <BurgerMenuDivider/> -->
+			<!-- Действия текущей страницы — выше общих настроек кабинета -->
+			<template v-if="burger_items.length">
+				<BurgerMenuItem
+					v-for		= "item in burger_items"
+					:key		= "item.name"
+					:icon		= "item.icon"
+					:label		= "$t(item.name)"
+					:href		= "item.href || null"
+					:disabled	= "!!item.disabled"
+					@click		= "runPageAction(item)"
+					/>
+				<BurgerMenuDivider/>
+			</template>
 
 			<BurgerMenuItem
 				icon="proicons:settings"
@@ -65,9 +77,21 @@
 
 	export default {
 		components: { Link, Icon, Selectable, BurgerMenu, BurgerMenuItem, BurgerMenuDivider },
+		props: {
+			// Действия текущей страницы: { name, icon?, action | href, disabled?, in_burger? }.
+			page_menu: {
+				type: Array,
+				default: () => [],
+			},
+		},
+		inject: {
+			pageMenuRegistry: { default: null },
+		},
 		data() {
 			return {
 				user: this.$page.props.user,
+				// Действия вложенных блоков собираются в момент открытия панели.
+				registered_items: [],
 				// Выбор в списке — всегда переход на другой аккаунт, поэтому поле
 				// ничего не «держит»: текущий показан подписью.
 				selected_account: '',
@@ -96,6 +120,10 @@
 
 				return result;
 			},
+			// Действия страницы и её вложенных блоков; пункт можно скрыть флагом.
+			burger_items() {
+				return [...this.page_menu, ...this.registered_items].filter(item => item.in_burger !== false);
+			},
 			// Переключаться есть куда только при нескольких доступных аккаунтах;
 			// тогда селектор встаёт под профилем вместо разделителя.
 			can_switch_account() {
@@ -111,11 +139,24 @@
 		methods: {
 			// Открытие панели пользователя и левого меню взаимоисключающи.
 			onPanelOpen() {
+				this.registered_items = this.pageMenuRegistry ? this.pageMenuRegistry.collect() : [];
 				this.$emitter.emit('burger_menu_opened');
 			},
 			closePanel() {
 				if (this.$refs.mobilePanel)
 					this.$refs.mobilePanel.close();
+			},
+			// Действие страницы обычно открывает свой оверлей — панель убираем раньше,
+			// иначе карточка окажется под ней и под её записью в истории.
+			// Переход по ссылке закрывает панель, не трогая историю.
+			runPageAction(item) {
+				if ( item.href )
+					return this.$refs.mobilePanel?.closeSilently();
+
+				this.closePanel();
+
+				if ( typeof item.action === 'function' )
+					this.$nextTick(() => item.action());
 			},
 			selectAccount(val, old_val) {
 				// console.log('selectAccount', val);

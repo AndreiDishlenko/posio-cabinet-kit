@@ -4,14 +4,17 @@
 
 		<div v-bind="button_attrs" @click="toggleItem()" :class="[button_class, cells_mode ? 'acc-header-cells' : 'flex items-center pe-2']" :style="button_styles" class="acc-header cursor-pointer" >
 			<template v-if="cells_mode">
-				<slot name="acc_button" />
-
+				<!-- Стрілка стоїть перед клітинками, хоч і виведена з потоку: інакше вона
+				     стає останнім елементом шапки і крайня клітинка групи не отримує
+				     крайового поля таблиці — колонка розходиться з тією ж колонкою рядків. -->
 				<span v-if="button_arrow" class="acc-arrow-pos">
 					<span class="acc-arrow inline-flex items-center justify-center w-3 h-3 shrink-0 origin-center transition-transform duration-200 ease-in-out"
 						:class="state ? 'rotate-0' : 'rotate-180'">
 						<Icon icon="ep:arrow-down-bold" width="12px" height="12px"/>
 					</span>
 				</span>
+
+				<slot name="acc_button" />
 			</template>
 			<template v-else>
 				<span v-if="button_arrow && arrow_position == 'start'" class="acc-arrow me-2 inline-flex items-center justify-center w-3 h-3 shrink-0 origin-center transition-transform duration-200 ease-in-out"

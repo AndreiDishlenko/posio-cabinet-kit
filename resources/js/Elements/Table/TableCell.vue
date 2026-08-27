@@ -3,7 +3,7 @@
 		:class="[
 			is_bottom_left && 'bottom-left',
 			column.align ? 'justify-' + column.align : '',
-			(column.type == 'checkbox' || column.type == 'checkicon') && '!justify-center',
+			(column.type == 'checkbox' || column.type == 'checkicon' || column.type == 'dot') && '!justify-center',
 			column.type == 'indicator' && 'indicator-cell !justify-center',
 			column.type == 'button' && column.icon && '!justify-center',
 			column.hide && column.hide + '-hidden',
@@ -44,25 +44,27 @@
 			     звичайний текст. Інакше — plain-текст без посилання. -->
 			<a v-if="column.drill && row[column.drill.flag] && row[column.field]"
 				class="cell-drill-link"
+				:class="text_flow_class"
 				:href="column.drill.href(row, column)"
 				target="_blank"
 				:title="$t('Show breakdown')"
 				@click.stop
-				>{{ column.translate ? $t(row[column.field] ?? column.default ?? '') : (row[column.field] ?? column.default) }}</a>
+				>{{ string_value }}</a>
 			<!-- Іконка перед назвою, коли колонка задає поле-джерело іконки (наприклад,
 			     значок категорії, обраний користувачем у картці) -->
 			<template v-else-if="column.icon_field">
 				<Icon :icon="row[column.icon_field] || column.icon_default || 'mdi:shape-outline'" class="icon icon-sm me-1.5 shrink-0" />
-				<span class="truncate">{{ column.translate ? $t(row[column.field] ?? column.default ?? '') : (row[column.field] ?? column.default) }}</span>
+				<span :class="text_flow_class || 'truncate'">{{ string_value }}</span>
 			</template>
-			<template v-else>{{ column.translate ? $t(row[column.field] ?? column.default ?? '') : (row[column.field] ?? column.default) }}</template>
+			<span v-else-if="text_flow_class" :class="text_flow_class">{{ string_value }}</span>
+			<template v-else>{{ string_value }}</template>
 		</template>
 
 		<!-- Main label + secondary sub-text (менший приглушений підпис під основним).
 		     Значення підпису — з поля column.subfield того ж рядка. -->
 		<template v-else-if="column.type == 'subtext'">
 			<div class="cell-subtext !py-4">
-				<span class="cell-subtext-main">{{ column.translate ? $t(row[column.field] ?? column.default ?? '') : (row[column.field] ?? column.default) }}</span>
+				<span class="cell-subtext-main" :class="text_flow_class">{{ string_value }}</span>
 				<span v-if="column.subfield && row[column.subfield]" class="cell-subtext-sub !text-xs disabled">
 					{{ column.translate ? $t(row[column.subfield]) : row[column.subfield] }}
 				</span>
@@ -72,7 +74,7 @@
 		<!-- Прев'ю знімка. Порожній рядок теж займає плитку-заглушку, інакше
 		     колонка стрибала б по ширині від рядка до рядка. -->
 		<template v-else-if="column.type == 'image'">
-			<span class="cell-image">
+			<span class="cell-image" :class="image_size_class">
 				<img v-if="image_source" :src="image_source" :alt="image_alt" loading="lazy">
 				<Icon v-else :icon="column.icon || 'ph:image'" class="icon icon-md text-secondary opacity-40" />
 			</span>
@@ -114,6 +116,12 @@
 		<!-- Checkbox rendered as an icon (compact, e.g. mobile): coloured when truthy, faded when falsy -->
 		<template v-else-if="column.type == 'checkicon'">
 			<Icon :icon="column.icon" class="icon icon-md" :class="row[column.field] ? 'text-success' : 'opacity-20'" />
+		</template>
+
+		<!-- Точка стану замість чекбокса: колір і підпис беруть із мап колонки
+		     (labels/classes по ключах on/off) або з дефолтів «увімкнено/вимкнено». -->
+		<template v-else-if="column.type == 'dot'">
+			<StatusDot :active="dot_on" :state="dot_state" :label="dot_label" :pulse="!!column.pulse" />
 		</template>
 
 		<!-- Indicator -->
@@ -164,9 +172,11 @@
 <script>
 	import { Icon } from '@iconify/vue';
 
+	import StatusDot from '@/js/Elements/StatusDot.vue';
+
 	export default {
 		name: 'TableCell',
-		components: { Icon },
+		components: { Icon, StatusDot },
 		props: {
 			column: {
 				type: Object,
@@ -202,6 +212,31 @@
 			inline_value_filled() {
 				return !!String(this.row[this.column.field] ?? '').trim();
 			},
+			// Текстове значення комірки: словникові значення (англ. ключі) проганяються
+			// через переклад, користувацькі — ні.
+			string_value() {
+				const value = this.row[this.column.field] ?? this.column.default;
+
+				return this.column.translate ? this.$t(value ?? '') : value;
+			},
+			// Розкладка тексту в комірці: типово текст в один рядок і обрізається краєм
+			// комірки. Колонка може ввімкнути перенос (без обмеження) або задати ліміт
+			// рядків — після останнього ставиться трикрапка.
+			text_flow_class() {
+				const lines = Number(this.column.lines) || 0;
+
+				if ( lines > 0 )
+					return 'cell-multiline cell-lines-' + Math.min(lines, 5);
+
+				return this.column.wrap ? 'cell-multiline' : '';
+			},
+			// Пресет розміру плитки прев'ю; без нього розмір задає таблиця (у режимі
+			// високих рядків прев'ю більше, ніж у звичайному списку).
+			image_size_class() {
+				const size = this.column.image_size;
+
+				return ['sm', 'md', 'lg', 'xl'].includes(size) ? 'cell-image-' + size : '';
+			},
 			// Посилання на знімок: або готове значення поля, або обчислене колонкою —
 			// знімок зазвичай лежить у вкладеній структурі рядка, а не окремим полем.
 			image_source() {
@@ -213,6 +248,27 @@
 			},
 			image_alt() {
 				return this.column.alt_field ? (this.row[this.column.alt_field] ?? '') : '';
+			},
+			// Значення прапорця комірки: рядок '0' з бекенда — теж «вимкнено».
+			dot_on() {
+				const value = typeof this.column.getter === 'function'
+					? this.column.getter(this.row)
+					: this.row[this.column.field];
+
+				return !!value && value !== '0';
+			},
+			dot_state() {
+				if ( !this.column.classes )
+					return '';
+
+				return (this.dot_on ? this.column.classes.on : this.column.classes.off) ?? '';
+			},
+			// Підпис — або окремий на кожен стан, або спільний (стан тоді читається кольором).
+			dot_label() {
+				if ( this.column.labels )
+					return (this.dot_on ? this.column.labels.on : this.column.labels.off) ?? '';
+
+				return this.column.label ?? '';
 			},
 		},
 		watch: {
@@ -272,11 +328,40 @@
 		overflow: hidden;
 	}
 
+	// Пресети розміру плитки прев'ю (перекривають розмір, заданий таблицею).
+	.cell-image.cell-image-sm { width: 1.5rem; height: 1.5rem; }
+	.cell-image.cell-image-md { width: 2rem;   height: 2rem;   }
+	.cell-image.cell-image-lg { width: 3rem;   height: 3rem;   }
+	.cell-image.cell-image-xl { width: 5rem;   height: 5rem;   }
+
 	.cell-image img {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
 	}
+
+	// Багаторядковий текст комірки. Комірка — flex-контейнер, тож перенос вмикається
+	// на самому тексті; без min-width:0 довге слово розпирало б колонку.
+	.cell-multiline {
+		min-width: 0;
+		white-space: normal;
+		overflow-wrap: break-word;
+		line-height: 1.25;
+	}
+
+	// Ліміт рядків: після останнього — трикрапка. Префіксована реалізація потрібна
+	// нижній планці підтримуваних браузерів.
+	.cell-multiline[class*="cell-lines-"] {
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	.cell-lines-1 { -webkit-line-clamp: 1; }
+	.cell-lines-2 { -webkit-line-clamp: 2; }
+	.cell-lines-3 { -webkit-line-clamp: 3; }
+	.cell-lines-4 { -webkit-line-clamp: 4; }
+	.cell-lines-5 { -webkit-line-clamp: 5; }
 
 	// Клітинка-розшифровка: число-посилання. Підкреслення завжди видиме (сигнал «клікабельно»),
 	// курсор — pointer навіть коли рядки таблиці мають default-курсор.

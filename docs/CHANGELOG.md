@@ -1,5 +1,62 @@
 # Changelog
 
+## Unreleased — Row actions, floating elements and page actions
+
+Ported from the upstream cabinet through release `2.5.38`. The point is
+recorded in `tools/upstream-sync-state.json`, so the next pass reviews only
+what lands after it.
+
+**Added**
+- **A registry of standard row actions.** A page's row bar now names only the
+  event — `{ event: 'onEdit' }` — and the table supplies the icon and the
+  tooltip from one place (`Elements/Table/rowActions.js`), so "open" no longer
+  appears as a folder on one screen and a pencil on the next. Any key in the
+  descriptor still overrides the standard, and non-standard buttons work as
+  before. The delete/restore pair, its visibility conditions and the rule that
+  delete sits rightmost are built in; `{ event: 'onActions' }` folds the whole
+  set into a single "⋮" dropdown. The context menu and group rows read the same
+  registry. Colours come from a palette key (`color: 'danger'`, or a function of
+  the row).
+- **One queue for floating elements** (`FloatingDock.vue` + `js/floatingDock.js`).
+  Anything living in the bottom-right corner — the table's CTA, the
+  scroll-to-top button, a host's own reminder — joins a shared column and
+  stacks *above* what is already visible instead of covering it; when the lower
+  one disappears, the rest slide down. `local` keeps an element in its own
+  container's corner. Floating elements must not declare their own
+  `position: fixed` any more.
+- **Page actions live in the user panel.** `CabinetLayout` accepts a `page_menu`
+  array (`{ name, icon?, action | href, disabled?, in_burger? }`) and passes it
+  to the burger panel, where the items render above Settings. Nested blocks that
+  cannot reach the header — report tabs — register themselves through
+  `resources/_admin/js/mixins/_pageMenuMixins.js`; the panel collects them when
+  it opens and keeps only the tab actually on screen (tabs stay mounted after
+  switching). The per-page "⋮" button is gone from the filters row.
+- `StatusDot.vue` and the table's `dot` column type; `ShowDeletedToggle`; the
+  `auto-rows` table mode (row height follows content but never drops below the
+  size's normal row); a refresh button in the filters row (`options.refresh`).
+
+**Changed**
+- The cabinet root view pins the viewport scale. Safari zooms the page when a
+  field smaller than 16px takes focus and never zooms back; the meta tag now
+  prevents it, so the 16px-minimum rule that used to fight it in
+  `forms_admin.scss` is gone and field text sizes are free again.
+- `.button-sm` / `.button-md` moved into `@layer components` and lost their gap
+  in favour of `space-x`.
+
+## Unreleased — Package routes are controller actions, not closures
+
+**Changed**
+- The four routes the package still declared as closures — the two asset
+  routes (`cabinet-assets`, `brand-assets`), the locale switch and the cabinet
+  root redirect — now point at `PackageAssetController`, `LocaleController` and
+  `HomeController`. Same paths, same route names, same behaviour: `route:list`
+  and `route:cache` in a host project were verified to resolve all four
+  identically before and after.
+- No fix is implied for hosts: Laravel serializes closure routes since 8.x, so
+  `php artisan route:cache` worked either way (verified on Laravel 12.67). The
+  point is readability and parity with the upstream cabinet, where the same
+  locale switch is a controller action.
+
 ## Unreleased — Site settings, cabinet settings and SEO move into the package
 
 **Added**

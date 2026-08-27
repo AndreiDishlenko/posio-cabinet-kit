@@ -34,6 +34,37 @@ For a low-token future pass, start with `.claude/context/index.md` and
 `.claude/context/modules/maintenance-sync.md`; they summarize package-specific
 decisions that should not be rediscovered from the full project context.
 
+### Start from the recorded sync point
+
+`tools/upstream-sync-state.json` records how far upstream has already been
+ported — `synced_through` holds the upstream version, its commit, the date and
+the package version that shipped it. Everything older is already in the
+package, so a pass only ever reviews what landed after that commit:
+
+```powershell
+.\tools\Sync-CabinetKitFromPosio.ps1 -ShowBaseline
+```
+
+That prints the sync point and the upstream commits after it. A normal audit
+run prints the same delta (commit list plus `git diff --stat`) into the report
+header, so no separate step is needed.
+
+When the pass is finished and the changes are in, move the point forward:
+
+```powershell
+.\tools\Sync-CabinetKitFromPosio.ps1 -RecordBaseline
+```
+
+It reads upstream `HEAD`, takes the version from the first word of the commit
+subject (the project commits releases as `2.5.38 ...`), pushes the previous
+point into `history` and rewrites the file. Fill in `synced_through.notes` with
+one line on what was ported — the next pass reads it before anything else.
+
+Never record a point that was not actually ported: the whole value of the file
+is that the range it excludes needs no review.
+
+### Audit run
+
 Run from the package root on Windows:
 
 ```powershell
@@ -60,6 +91,8 @@ without reintroducing Posio-specific logic.
 
 ## Recommended release checklist
 
+0. Read `tools/upstream-sync-state.json` and review only the upstream commits
+   after `synced_through.commit`.
 1. Run the sync audit and review every `different` or `missing` row.
 2. Port generic improvements into package files; leave product-specific code
    in `posio.cabinet` or in future feature packages. Ported files arrive with
@@ -74,7 +107,8 @@ Select-String -Path resources -Include *.vue,*.js -Recurse `
    Names the package genuinely does not own (host-only screens) must be
    resolved defensively, never inline in a template.
 3. Update `docs/CHANGELOG.md`, `docs/ARCHITECTURE.md` or `docs/EXTENDING.md`
-   when contracts change.
+   when contracts change, and move the sync point forward with
+   `.\tools\Sync-CabinetKitFromPosio.ps1 -RecordBaseline`.
 4. Run package-level syntax checks:
 
 ```powershell

@@ -14,7 +14,8 @@
 			'has-slaves': has_slaves,
 			'is-grouped': is_grouped,
 			'no-slave-marker': has_slaves && !slave_marker,
-			'wide-rows': wide_rows
+			'wide-rows': wide_rows,
+			'auto-rows': auto_rows
 		}"
 		>
 
@@ -63,6 +64,7 @@
 			:filters="filters"
 			:panel_data="panel_data"
 			:show_rowbar="show_rowbar"
+			:is_mobile="is_mobile"
 
 			@addRow="addRow()"
 			>
@@ -127,7 +129,7 @@
 				class	= "contents group-wrapper"
 				:button_arrow		= "group_entry.key ? true : false"
 				:accordion_class	= "'table-group'"
-				:cells_mode			= "group_entry.key && hasGroupTotals ? true : false"
+				:cells_mode			= "group_entry.key && hasGroupCells ? true : false"
 				:button_class		= "groupButtonClass(group_entry) + (group_entry.item?.is_deleted ? ' is-deleted' : '')"
 				:button_styles		= "{ gridColumn: `span ${columnsCount}` }"
 				:button_attrs		= "groupButtonAttrs(group_entry)"
@@ -139,53 +141,65 @@
 				>
 
 				<template #acc_button>
-					<template v-if="group_entry.key && hasGroupTotals">
-						<!-- group title spans columns from start until first totals column -->
+					<template v-if="group_entry.key && hasGroupCells">
+						<!-- Назва групи займає колонки від початку до першої, де в шапці
+						     стоїть власне значення групи або її підсумок -->
 						<div class="table-group-header table-cell group-name-cell"
-							:style="{ gridColumn: `1 / ${firstTotalsGridColumn}` }"
+							:style="{ gridColumn: `1 / ${firstGroupCellGridColumn}` }"
 							>
-							{{ group_entry.title }}
+							<TableGroupTitle
+								:group_entry="group_entry"
+								:settings="settings"
+								:actions="show_rowbar ? [] : groupActionsOf(group_entry)"
+								@action="(action) => groupAction(action, group_entry)"
+								/>
 						</div>
-						<!-- Per-column total cells -->
+						<!-- Значення самої групи та підсумки по колонках -->
 						<template v-for="(column, idx) in seenColumns" :key="column.field">
-							<div v-if="settings.group_totals.includes(column.field)"
+							<div v-if="isGroupTotalColumn(column)"
 								class="table-group-header table-cell font-bold"
 								:class="column.align ? 'justify-' + column.align : ''"
 								:style="{ gridColumnStart: idx + 1 + selectorOffset }"
 								>
 								{{ formatGroupTotalValue(column, getGroupTotal(group_entry.key, column.field)) }}
 							</div>
-						</template>
-					</template>
-					<template v-else>
-						<div class="flex items-center">
-							<!-- Іконка групи (напр. категорії) — з поля джерела групування,
-							     заданого settings.group_icon_field -->
-							<Icon v-if="settings.group_icon_field && group_entry.key"
-								:icon="group_entry.item?.[settings.group_icon_field] || settings.group_icon_default || 'mdi:shape-outline'"
-								class="icon icon-sm me-1.5 shrink-0"
+							<TableCell v-else-if="isGroupValueColumn(column)"
+								class="table-group-header"
+								:style="{ gridColumnStart: idx + 1 + selectorOffset }"
+								:column="column"
+								:row="group_entry.item || {}"
+								:select_sources="select_sources"
 								/>
-							<span class="min-w-0 truncate">{{ group_entry.title }}</span>
-							<span class="grow"></span>
-							<!-- Дії над самою групою (напр. керування категорією товарів):
-							     клік по них не має розкривати/згортати групу. -->
-							<span v-if="groupActionsOf(group_entry).length" class="group-actions" @click.stop>
-								<Icon v-for="action in groupActionsOf(group_entry)"
-									:key="action.event"
-									class="icon icon-md text-secondary cursor-pointer"
-									:icon="action.icon"
-									:title="action.tooltip ? $t(action.tooltip) : ''"
-									@click.stop.prevent="groupAction(action, group_entry)"
-									/>
-							</span>
+						</template>
+						<!-- Дії над групою — у колонці рядкових дій: край таблиці, одна
+						     вертикаль з іконками рядків. Клітинка є навіть без дій —
+						     інакше крайове поле таблиці дістається сусідній колонці. -->
+						<div v-if="show_rowbar"
+							class="table-group-header table-cell rowbar-cell group-actions-cell !justify-end"
+							:style="{ gridColumnStart: columnsCount }"
+							>
+							<TableGroupActions
+								:actions="groupActionsOf(group_entry)"
+								:item="group_entry.item || {}"
+								@action="(action) => groupAction(action, group_entry)"
+								/>
 						</div>
 					</template>
+					<TableGroupTitle v-else
+						:group_entry="group_entry"
+						:settings="settings"
+						:actions="groupActionsOf(group_entry)"
+						@action="(action) => groupAction(action, group_entry)"
+						/>
 				</template>
 
 				<template #acc_block>
 
 					<!-- Table rows — уже сплющене дерево: верхній рівень і розкриті
-					     підпорядковані рядки будь-якої глибини йдуть одним списком -->
+					     підпорядковані рядки будь-якої глибини йдуть одним списком.
+					     Таблиця без вибору рядка не підсвічує нічого, навіть якщо прапор
+					     виділення лишився на об'єкті рядка від іншої таблиці з тими самими
+					     записами довідника. -->
 					<template v-for="(entry, rowindex) in visibleRowsOf(group_entry.key)" :key="entry.row[row_key] ?? ('row' + rowindex)">
 
 						<div
@@ -196,12 +210,13 @@
 							@mousedown="canDragRow(entry) ? onRowMouseDown(entry.row, dragGroupOf(group_entry.key), $event) : null"
 							:class="[
 								{
-									'selected': entry.row.selected,
+									'selected': selectable && entry.row.selected,
 									'slave-row': entry.depth > 0,
 									'draggable-row': canDragRow(entry),
 									'dragging-row': drag.active && drag.candidateRow === entry.row,
 									'drop-into-row': drag.active && drag.overPos === 'into' && drag.overRow === entry.row,
-									'is-parent-expanded': entry.expanded
+									'is-parent-expanded': entry.expanded,
+									'deleted-row': !!entry.row.is_deleted
 								},
 								rowClass(entry.row)
 							]"
@@ -309,16 +324,25 @@
 		<!-- Floating action — appears in the bottom-right corner once the table
 		     is scrolled down. When the table defines a CTA button
 		     (settings.ctabutton) that CTA replaces the scroll-to-top FAB here;
-		     otherwise a scroll-to-top FAB returns the table to the top. -->
+		     otherwise a scroll-to-top FAB returns the table to the top.
+		     Место в углу — за общей очередью плавающих элементов: кнопка встаёт
+		     над тем, что уже висит в углу (напр. списком первых шагов), с тем же
+		     отступом от правого края экрана. -->
 		<Transition name="fab-fade">
-			<div v-if="showFab" class="table-scroll-fab">
+			<FloatingDock v-if="showFab" class="table-scroll-fab" :local="y_scroll">
 				<SelectableButton v-if="hasCtaButton"
 					:actions="ctabuttonActions"
+					:label="settings.ctabutton.label"
+					:plain="!!settings.ctabutton.plain"
+					:button_class="settings.ctabutton.button_class || ''"
+					:font_size="settings.ctabutton.font_size || ''"
 					type="primary"
 					size="md"
 					direction="up"
 					@click.stop
-					/>
+					>
+					<Icon v-if="settings.ctabutton.icon" class="icon icon-md" :icon="settings.ctabutton.icon" />
+				</SelectableButton>
 				<FabButton v-else
 					variant="primary"
 					size="md"
@@ -326,7 +350,7 @@
 					:aria-label="$t('Scroll to top')"
 					@click="$refs.tableWrapper?.scrollToTop()"
 					/>
-			</div>
+			</FloatingDock>
 		</Transition>
     </div>
 
@@ -344,22 +368,26 @@
     import TableWrapper     from './Table/TableWrapper.vue';
     import TableHeader      from './Table/TableHeader.vue';
     import TableCell        from './Table/TableCell.vue';
+    import TableGroupTitle  from './Table/TableGroupTitle.vue';
+    import TableGroupActions from './Table/TableGroupActions.vue';
     import TableChartRow    from './Table/TableChartRow.vue';
     import TableRowBar      from './Table/TableRowBar.vue';
     import TableTotals      from './Table/TableTotals.vue';
     import TableCopyHandler from './Table/TableCopyHandler.vue';
     import TableDragHandler from './Table/TableDragHandler.vue';
     import TableContextMenu from './Table/TableContextMenu.vue';
+	import { resolveRowAction, rowActionColorClass } from './Table/rowActions.js';
 
     import Checkbox from './Forms/Checkbox.vue';
     import SelectableButton from './Forms/SelectableButton.vue';
 	import AccordionItem2 from './AccordionItem2.vue';
-	import FabButton from './FabButton.vue';
+	import FabButton    from './FabButton.vue';
+	import FloatingDock from './FloatingDock.vue';
 
     // import ScrolledWrapper  from '@/js/Elements/ScrolledWrapper.vue';
 
     export default {
-        components: { Link, Icon, TableToolsPanel, TableWrapper, TableHeader, TableCell, TableChartRow, TableRowBar, TableTotals, TableCopyHandler, TableDragHandler, TableContextMenu, Checkbox, SelectableButton, AccordionItem2, FabButton },
+        components: { Link, Icon, TableToolsPanel, TableWrapper, TableHeader, TableCell, TableGroupTitle, TableGroupActions, TableChartRow, TableRowBar, TableTotals, TableCopyHandler, TableDragHandler, TableContextMenu, Checkbox, SelectableButton, AccordionItem2, FabButton, FloatingDock },
         props: { 
             header: {
                 type: String,
@@ -680,8 +708,17 @@
 				return this.table_data.some(row => row.is_selected);
 			},
 			// Table-specific context-menu actions declared in settings.contextmenu.
+			// Пункти зі стандартною подією отримують прошиті іконку й назву — сторінці
+			// достатньо вказати подію.
 			contextActions() {
-				return this.settings.contextmenu || [];
+				return (this.settings.contextmenu || []).map(action => {
+					const resolved = resolveRowAction(action);
+
+					return {
+						...resolved,
+						name: resolved.name || resolved.tooltip,
+					};
+				});
 			},
 			// Standard Delete/Restore item shows only where the table can actually delete.
 			showContextDelete() {
@@ -735,6 +772,17 @@
 
                 return result;
             },
+			// Висота рядка перестає бути фіксованою, щойно якась колонка просить більше
+			// за один рядок тексту або велику плитку прев'ю. Перемикається вся таблиця,
+			// а не одна комірка: сусіди з фіксованою висотою лишили б у рядку прогалини
+			// замість суцільного тла.
+			auto_rows() {
+				return this.seenColumns.some(column =>
+					column.wrap
+					|| Number(column.lines) > 1
+					|| ( column.type == 'image' && ['lg', 'xl'].includes(column.image_size) )
+				);
+			},
 			columnsCount() {
                 let result = this.seenColumns?.length;
 
@@ -910,11 +958,14 @@
 
 					const rows = data[key] || [];
 
-					// М'яко видалений запис довідника показуємо лише поки в ньому лишилися
-					// рядки або ввімкнено показ видалених — інакше порожня група лише
-					// засмічує список.
-					if ( item.is_deleted && !rows.length && !this.panel_data.showDeleted )
+					// М'яко видалений запис довідника ховається разом зі своїми рядками,
+					// поки не ввімкнено показ видалених: інакше видалена категорія лишалась
+					// би в списку тільки тому, що в ній ще є товари. Ключ позначаємо
+					// обробленим, щоб її рядки не виринули окремою групою нижче.
+					if ( item.is_deleted && !this.panel_data.showDeleted ) {
+						listed.add(key);
 						return;
+					}
 
 					listed.add(key);
 					result.push({ key, title: item.name ?? key, item, rows });
@@ -934,6 +985,16 @@
 			hasGroupTotals() {
 				return !!this.settings.group_totals?.length;
 			},
+			// Колонки, у яких шапка групи показує власне значення рядка-джерела
+			// групування (напр. «у продажу» для категорії) — тим самим стовпчиком,
+			// що й у рядків під нею.
+			hasGroupColumns() {
+				return !!this.settings.group_columns?.length;
+			},
+			// Шапка групи розкладається по сітці колонок, а не суцільним рядком.
+			hasGroupCells() {
+				return this.hasGroupTotals || this.hasGroupColumns;
+			},
 			// Accordion grouping is active when a groupBy field yields real (named) groups.
 			// In this mode a group header sits directly under the table header, so the
 			// header's bottom rounding is suppressed (see .is-grouped style override).
@@ -946,17 +1007,17 @@
 				if (this.has_slaves) offset++;
 				return offset;
 			},
-			firstTotalsColumnIndex() {
-				if ( !this.hasGroupTotals )
+			firstGroupCellIndex() {
+				if ( !this.hasGroupCells )
 					return -1;
 
-				return this.seenColumns.findIndex(c => this.settings.group_totals.includes(c.field));
+				return this.seenColumns.findIndex(c => this.isGroupTotalColumn(c) || this.isGroupValueColumn(c));
 			},
-			firstTotalsGridColumn() {
-				if ( this.firstTotalsColumnIndex < 0 )
+			firstGroupCellGridColumn() {
+				if ( this.firstGroupCellIndex < 0 )
 					return this.columnsCount + 1;
 
-				return this.firstTotalsColumnIndex + 1 + this.selectorOffset;
+				return this.firstGroupCellIndex + 1 + this.selectorOffset;
 			},
 			group_totals_data() {
 				const result = {};
@@ -1448,13 +1509,15 @@
 			groupTitle(group_key) {
 				return this.translate_groups ? this.$t(group_key) : group_key;
 			},
-			// Кнопки дій над групою; видимість може залежати від прапорця запису
-			// довідника (напр. видалити / відновити для м'яко видаленої категорії).
+			// Кнопки дій над групою; опис сторінки доповнюється стандартом своєї події
+			// (іконка, підказка, прапорець видимості). Видимість може залежати від
+			// прапорця запису довідника (напр. видалити / відновити для м'яко
+			// видаленої категорії).
 			groupActionsOf(group_entry) {
 				if ( !group_entry.key )
 					return [];
 
-				return (this.settings.group_actions || []).filter(action => {
+				return (this.settings.group_actions || []).map(action => resolveRowAction(action)).filter(action => {
 					if ( action.flag && !group_entry.item?.[action.flag] )
 						return false;
 
@@ -1463,6 +1526,10 @@
 
 					return true;
 				});
+			},
+			groupActionColor(action, group_entry) {
+				// Table.groupActionColor
+				return rowActionColorClass(action, group_entry.item || {});
 			},
 			groupAction(action, group_entry) {
 				// Table.groupAction
@@ -1562,8 +1629,12 @@
 								break;
 							case 'like':
 								// console.log(field_value);
-								
-								if ( !field_value.toLowerCase().includes(filter_value) )
+
+								// Обидві сторони порівнюємо в нижньому регістрі: мобільна
+								// клавіатура сама починає пошуковий рядок з великої літери,
+								// і пошук з великої не знаходив нічого. Порожнє чи нетекстове
+								// значення поля не має ламати весь список.
+								if ( !String(field_value ?? '').toLowerCase().includes( String(filter_value).toLowerCase() ) )
 									return false;
 								break;
 
@@ -2426,7 +2497,7 @@
 				if ( !group_name )
 					return 'table-group-header';
 
-				let result = this.hasGroupTotals
+				let result = this.hasGroupCells
 					? 'table-group-header'
 					: 'table-group-header table-cell';
 
@@ -2464,6 +2535,12 @@
 						event.preventDefault();
 					},
 				};
+			},
+			isGroupTotalColumn(column) {
+				return !!this.settings.group_totals?.includes(column.field);
+			},
+			isGroupValueColumn(column) {
+				return !!this.settings.group_columns?.includes(column.field);
 			},
 			getGroupTotal(group_name, field) {
 				return this.group_totals_data[group_name]?.[field] ?? 0;
@@ -2555,50 +2632,14 @@
 		color: var(--table-color);
 	}
 
-	// Pin the floating action (scroll-to-top FAB or CTA button) to the viewport's
-	// bottom-right corner. `fixed` (not the FabButton default `absolute`) is
-	// required because in sticky_header mode #table grows taller than the screen —
-	// an absolutely-positioned child would sit at the bottom of that tall content,
-	// off-screen.
-	.table-scroll-fab {
-		position: fixed;
-		bottom: 24px;
-		right: 24px;
-		z-index: 1000;
-
-		// Semi-transparent at rest so it doesn't dominate the scrolled content;
-		// becomes fully opaque on hover/focus when the user reaches for it.
-		opacity: 0.6;
-		transition: opacity 0.2s ease;
-
-		&:hover,
-		&:focus-within {
-			opacity: 1;
-		}
-	}
-
-	// Таблиця з власною прокруткою тіла не виходить за відведену їй область, тож
-	// кнопка живе в її куті, а не в куті екрана: інакше дві сусідні таблиці кладуть
-	// свої кнопки одну на одну.
-	#table.y-scroll .table-scroll-fab {
-		position: absolute;
-	}
-
-	// The FAB inside the wrapper flows naturally — the wrapper owns the placement,
-	// so neutralize FabButton's own absolute positioning.
+	// Место в углу, уступ соседям по стопке и приглушённость в покое задаёт общая
+	// обёртка; таблица со своей прокруткой тела просит у неё локальный режим —
+	// иначе две соседние таблицы положили бы кнопки одна на другую. Кнопка внутри
+	// обёртки течёт по потоку, поэтому её собственное позиционирование гасим.
 	.table-scroll-fab ::v-deep(.fab-button) {
 		position: static;
 		bottom: auto;
 		right: auto;
-	}
-
-	// Lift the action above the bottom tab bar on mobile so it stays reachable
-	// in the bottom-right corner (matches the selection-bar offset).
-	@media (max-width: 768px) {
-		.table-scroll-fab {
-			bottom: calc(1rem + var(--bottom-tab-bar-height, 0px));
-			right: 16px;
-		}
 	}
 
 	// Fade + slide transition for the FAB appearing/disappearing on scroll.
@@ -2649,8 +2690,16 @@
 		padding-left: 2rem !important;
 	}
 
-	::v-deep(.table-group-header.table-cell) {
+	// Поле лише для суцільної шапки на всю ширину. Клітинкам шапки в сітці колонок
+	// його давати не можна: вони мають стояти рівно під тими ж колонками рядків.
+	::v-deep(.acc-header.table-group-header.table-cell) {
 		padding-right: 1rem;
+	}
+
+	// Дії групи в колонці рядкових дій стоять біля самого краю — відступ від назви
+	// групи тут зайвий.
+	::v-deep(.group-actions-cell .group-actions) {
+		padding-left: 0;
 	}
 
 	// М'яко видалений запис довідника груп читається так само, як видалений рядок.
@@ -2748,12 +2797,14 @@
 	// 	padding-right: 0;
 	// }
 
-	// Header cell of the rowbar column (hosts the "Show deleted" toggle): center the
-	// toggle over the column. The last-child right inset is kept so the header
-	// background spans the full edge air like every other last cell.
+	// Header cell of the rowbar column (hosts the "Show deleted" toggle): pin the
+	// toggle to the right edge so it sits on the same vertical line as the row
+	// delete/restore icons (the trailing icons of each rowbar). The last-child
+	// right inset is kept so the header background spans the full edge air like
+	// every other last cell.
 	::v-deep(.header-cell.rowbar-cell),
 	::v-deep(.header-cell.rowbar-cell:last-child) {
-		justify-content: center;
+		justify-content: flex-end;
 	}
 
 	// On touch screens long-pressing a row opens the context menu — keep that
@@ -2840,6 +2891,20 @@
     .is-deleted {
         color: var(--error-color);
     }
+
+	// М'яко видалений рядок читається цілком червоним — крім іконки відновлення:
+	// єдина дія, що повертає запис, має лишатися впізнаваною на червоному тлі.
+	::v-deep(.table-row.deleted-row .table-cell),
+	::v-deep(.table-row.deleted-row .icon:not(.row-action-restore)),
+	::v-deep(.table-row.deleted-row .status-dot-label),
+	::v-deep(.table-row.deleted-row .cell-subtext-sub) {
+		color: var(--error-color);
+	}
+
+	// Точки стану (прапорці, індикатори статусу документа) — колір їм задає фон, не текст.
+	::v-deep(.table-row.deleted-row .status-indicator) {
+		background-color: var(--error-color);
+	}
 
     .rowbar {
         height: 100%;

@@ -86,19 +86,9 @@
 				     column is visible (this cell only renders when show_rowbar). When the
 				     rowbar is hidden (e.g. desktop with rowbar_mobile_only), it falls back
 				     to the Table toolbar instead — see TableToolsPanel. -->
-				<template v-if="settings.filters?.deleted">
-					<Checkbox
-						v-model="panel_data.showDeleted"
-						size="md"
-						:title="$t('Show deleted')"
-						/>
-					<!-- <span :title="$t('Show trashed')" class="ms-1 inline-flex">
-						<Icon icon="material-symbols:delete-outline-rounded"
-							class="icon icon-sm opacity-50 cursor-pointer"
-							@click="panel_data.showDeleted = !panel_data.showDeleted"
-							/>
-					</span> -->
-				</template>
+				<ShowDeletedToggle v-if="settings.filters?.deleted"
+					v-model="panel_data.showDeleted"
+					/>
 			</div>
 
 			<!-- Delete filter -->
@@ -127,13 +117,11 @@
 </template>
 
 <script>
-	import { Icon } from '@iconify/vue'
-
 	import TableHeaderCell from '@/js/Elements/Table/TableHeaderCell.vue'
-	import Checkbox from '@/js/Elements/Forms/Checkbox.vue'
+	import ShowDeletedToggle from '@/js/Elements/Table/ShowDeletedToggle.vue'
 
     export default {
-		components: { Icon, TableHeaderCell, Checkbox },
+		components: { TableHeaderCell, ShowDeletedToggle },
         props: {
             settings: {
                 type: Object,

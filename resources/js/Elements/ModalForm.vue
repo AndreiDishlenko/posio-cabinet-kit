@@ -141,4 +141,18 @@
     .modal-content > * {
         max-width: var(--modal-max-width, 90vw);
     }
+
+    // На телефоне поле от краёв экрана вдвое меньше: экран узкий, воздух по краям
+    // дороже обходится содержимому карточки.
+    @media (max-width: 767px) {
+        .modal {
+            --modal-max-width: calc(95vw - var(--cabinet-menu-width, 0px));
+        }
+
+        .modal-content {
+            // Статическая единица — фолбэк для Apple ниже 15.4.
+            max-height: 97.5vh;
+            max-height: 97.5dvh;
+        }
+    }
 </style>

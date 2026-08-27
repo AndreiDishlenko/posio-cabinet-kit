@@ -59,6 +59,8 @@
 	}
 
     .table-xs {
+		--table-row-height: 32px;
+
 		.header-cell, .footer-cell {
 			font-size: var(--text-sm)!important;
 			height: 32px!important;
@@ -76,6 +78,8 @@
     }
 
     .table-sm {
+		--table-row-height: var(--ui-h-sm);
+
 		.header-cell, .footer-cell {
 			font-size: calc(var(--text-sm) + 1px)!important;
 			// color: red;
@@ -94,6 +98,8 @@
     }
 
     .table-md {
+		--table-row-height: calc( var(--ui-h-md) + 4px );
+
         .header-cell, .footer-cell {
 			font-size: var(--text-md)!important;
 			min-height: calc( var(--ui-h-md) + 4px ); //40px!important;
@@ -110,6 +116,17 @@
 		// }
     }
 
+    // Висота рядка від вмісту: рядок росте під багаторядковий текст або велику
+    // плитку прев'ю, але не стає нижчим за звичайний рядок цього розміру таблиці.
+    .table.auto-rows {
+        .row-header-cell, .table-cell {
+            height: auto!important;
+            min-height: var(--table-row-height, 40px);
+            padding-top: 0.35rem;
+            padding-bottom: 0.35rem;
+        }
+    }
+
     // Режим високих рядків: висота рахується від вмісту, а не фіксується розміром
     // таблиці — рядок вміщує велике прев'ю знімка й підпис у два рядки.
     .table.wide-rows {
@@ -124,6 +141,8 @@
     }
 
     .table-lg {
+		--table-row-height: 48px;
+
 		.header-cell, .footer-cell {
 			font-size: var(--text-lg)!important;
 			height: 50px!important;

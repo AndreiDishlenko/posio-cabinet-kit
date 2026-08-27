@@ -45,7 +45,7 @@
 		<!-- </div> -->
 
 		<span class="cabinet-header-item pe-2">
-			<CabinetBurgerMenu class="w-full">
+			<CabinetBurgerMenu class="w-full" :page_menu="page_menu">
 				<template #default="{ toggle }">
 					<div class="burger-button flex items-center space-x-2 cursor-pointer" @click="toggle">
 						<Avatar
@@ -81,6 +81,12 @@
 			page_name: {
 				type: String,
 				default: ''
+			},
+			// Действия текущей страницы для панели пользователя — на мобильном она
+			// единственное место, где они доступны.
+			page_menu: {
+				type: Array,
+				default: () => []
 			}
 		},
 		computed: {

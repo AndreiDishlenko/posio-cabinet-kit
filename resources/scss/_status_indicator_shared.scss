@@ -25,6 +25,9 @@
   --status-indicator-color-intermediary-semi: rgba(255, 170, 0, .5);
   --status-indicator-color-intermediary-transparent: rgba(255, 170, 0, 0);
 
+  // Вимкнений стан: точка видима, але не претендує на увагу.
+  --status-indicator-color-off: rgba(160, 160, 160, .45);
+
   --status-indicator-color-negative: rgb(255, 77, 77);
   --status-indicator-color-negative-semi: rgba(255, 77, 77, .5);
   --status-indicator-color-negative-transparent: rgba(255, 77, 77, 0);
@@ -97,6 +100,10 @@
 	background-color: var(--status-indicator-color-positive);
 	animation-name: status-indicator-pulse-positive;
  }
+.status-indicator.off {
+	background-color: var(--status-indicator-color-off);
+	animation-name: none;
+}
 
 // .status-indicator.process {
 // 	background-color: var(--status-indicator-color-active);
