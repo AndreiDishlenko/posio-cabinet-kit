@@ -10,7 +10,7 @@
 
             <div class="grow flex items-center justify-center min-h-[70px]">
                 <!-- <a :href="route('home', { locale: $i18n.locale })"> -->
-                    <img src="/main-assets/images/logo_white.png" alt="Logo" class="h-[25px] w-auto opacity-25" />
+                    <img :src="brand_logo" :alt="brand_name" class="h-[50px] max-w-[200px] w-auto object-contain opacity-50" />
                 <!-- </a> -->
             </div>
 
@@ -63,6 +63,21 @@
             back_href: {
                 type: String,
                 default: null
+            },
+        },
+        computed: {
+            brand() {
+                return this.$page.props.site && this.$page.props.site.main
+                    ? this.$page.props.site.main
+                    : {};
+            },
+            brand_logo() {
+                return this.brand.logo_dark || '/brand-assets/logo_dark_theme.svg';
+            },
+            brand_name() {
+                return this.$page.props.site && this.$page.props.site.name
+                    ? this.$page.props.site.name
+                    : 'Logo';
             },
         }
     }

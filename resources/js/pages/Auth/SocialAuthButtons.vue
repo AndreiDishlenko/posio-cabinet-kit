@@ -1,5 +1,11 @@
 <template>
-	<div class="flex space-x-3">
+	<div v-if="google_enabled" class="social-auth-buttons">
+		<div class="relative flex justify-center items-center w-full !my-5">
+			<div class="absolute inset-0 flex items-center">
+				<div data-orientation="horizontal" role="none" data-slot="separator" class="shrink-0 bg-[var(--form-control-border-color)] data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px w-full"></div>
+			</div>
+		</div>
+
 		<a :href="route('auth.google')" class="w-full button secondary-button button-lg text-md flex items-center justify-center space-x-2">
 			<svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
 				<path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -22,5 +28,12 @@
 <script>
 export default {
 	name: 'SocialAuthButtons',
+	computed: {
+		google_enabled() {
+			return Boolean(this.$page.props.social_auth
+				&& this.$page.props.social_auth.google
+				&& this.$page.props.social_auth.google.enabled);
+		},
+	},
 }
 </script>

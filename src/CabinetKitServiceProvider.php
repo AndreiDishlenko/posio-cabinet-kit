@@ -24,6 +24,7 @@ class CabinetKitServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/cabinet-kit.php', 'cabinet-kit');
+        $this->mergeSocialAuthEnabledDefaults();
         $this->mergeConfigFrom(__DIR__.'/../config/cabinet-kit-redirects.php', 'cabinet-kit-redirects');
         // Оба конфига носят имена, под которыми их читает перенесённый SEO-код.
         // Слияние оставляет за хостом каждый ключ, который он объявил сам.
@@ -32,6 +33,25 @@ class CabinetKitServiceProvider extends ServiceProvider
 
         $this->bridgeLegacyRedirects();
         $this->mountLogViewer();
+    }
+
+    /**
+     * Laravel merges package config only at the first array level. Existing
+     * consumers already own the whole social_auth array, so a newly introduced
+     * nested enabled key would otherwise never reach them from the package
+     * defaults or its environment variable.
+     */
+    protected function mergeSocialAuthEnabledDefaults(): void
+    {
+        $defaults = (array) (require __DIR__.'/../config/cabinet-kit.php')['social_auth'];
+
+        foreach ($defaults as $provider => $settings) {
+            $key = "cabinet-kit.social_auth.{$provider}.enabled";
+
+            if (! $this->app['config']->has($key)) {
+                $this->app['config']->set($key, (bool) ($settings['enabled'] ?? true));
+            }
+        }
     }
 
     public function boot(): void
@@ -255,6 +275,14 @@ class CabinetKitServiceProvider extends ServiceProvider
                 $event->extendSocialite('apple', \SocialiteProviders\Apple\Provider::class);
             });
         }
+
+        Inertia::share('social_auth', fn () => [
+            'google' => [
+                'enabled' => (bool) config('cabinet-kit.social_auth.google.enabled', true)
+                    && filled(config('services.google.client_id'))
+                    && class_exists(\Laravel\Socialite\Facades\Socialite::class),
+            ],
+        ]);
     }
 
     /**

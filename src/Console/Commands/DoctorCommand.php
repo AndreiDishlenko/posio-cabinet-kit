@@ -280,6 +280,10 @@ class DoctorCommand extends Command
     protected function socialAuthLooksReady(): bool
     {
         foreach (array_keys((array) config('cabinet-kit.social_auth', [])) as $provider) {
+            if (! config("cabinet-kit.social_auth.{$provider}.enabled", true)) {
+                continue;
+            }
+
             if (blank(config("services.{$provider}.client_id"))) {
                 continue;
             }

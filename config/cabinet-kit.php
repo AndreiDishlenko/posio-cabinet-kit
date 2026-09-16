@@ -36,7 +36,9 @@ return [
     'auth_routes' => true,
 
     // Social sign-in through Laravel Socialite (requires laravel/socialite, plus
-    // socialiteproviders/apple for Apple). These credentials are bridged into
+    // socialiteproviders/apple for Apple). Set a provider's `enabled` flag to
+    // false to hide its form controls and make its endpoints answer 404. The
+    // credentials are bridged into
     // config('services.*') at boot unless the host already defines them there,
     // so a consumer only has to fill in the env vars. A provider left without a
     // client id answers 404: its routes stay registered either way so the
@@ -44,11 +46,13 @@ return [
     // the bundled callback route under `route_prefix`.
     'social_auth' => [
         'google' => [
+            'enabled' => env('GOOGLE_AUTH_ENABLED', true),
             'client_id' => env('GOOGLE_CLIENT_ID'),
             'client_secret' => env('GOOGLE_CLIENT_SECRET'),
             'redirect' => env('GOOGLE_REDIRECT_URI'),
         ],
         'apple' => [
+            'enabled' => env('APPLE_AUTH_ENABLED', true),
             'client_id' => env('APPLE_CLIENT_ID'),
             // Apple has no static secret: the driver signs a short-lived one
             // from the key/team identifiers and the private key below.

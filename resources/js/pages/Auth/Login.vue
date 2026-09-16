@@ -48,16 +48,6 @@
                 <Link as="button" :href="route('register')" class="hover:underline ">{{ $t('Sign up')}}</Link>
             </div>
 
-			<!-- Divider -->
-            <div class="relative flex justify-center items-center w-full !my-5">
-				<div class="absolute inset-0 flex items-center">
-					<div data-orientation="horizontal" role="none" data-slot="separator" class="shrink-0 bg-[var(--form-control-border-color)] data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px w-full"></div>
-				</div>
-                <!-- <div class="relative text-xs uppercase bg-card">
-                    <span class="px-3 text-sm text-secondary">{{ $t('Continue with') }}</span>
-                </div> -->
-            </div>
-
 			<!-- Login with Google / Apple -->
 			<SocialAuthButtons />
 

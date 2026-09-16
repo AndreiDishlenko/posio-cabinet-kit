@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased - Social sign-in switch and branded auth layout
+
+**Added**
+- `cabinet-kit.social_auth.<provider>.enabled` (Google reads
+  `GOOGLE_AUTH_ENABLED`, Apple reads `APPLE_AUTH_ENABLED`). A disabled provider
+  is rejected by its controller even when credentials remain configured. The
+  package also supplies missing nested flags after Laravel's shallow config
+  merge, so existing published configs pick up the env switch without being
+  overwritten.
+
+**Fixed**
+- Login and registration now show the Google button and its divider only when
+  Google sign-in is both enabled and configured; projects can turn it off
+  without overriding package Vue pages.
+- `AuthLayout` now renders the main-site logo from the shared `site` payload,
+  with the package brand asset as a safe fallback, instead of pointing at the
+  host-specific `/main-assets/images/logo_white.png` path.
+
 ## Unreleased — Shared import prefixes resolve by the side of the importing file
 
 **Fixed**

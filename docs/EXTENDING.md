@@ -242,6 +242,11 @@ rather than altering `accounts` directly.
 Login/register/reset/verify are real controllers + Vue pages (not a
 third-party package's opaque routes), so the usual override mechanisms
 apply directly:
+- Disable Google sign-in for one installation with
+  `GOOGLE_AUTH_ENABLED=false` (or set
+  `cabinet-kit.social_auth.google.enabled` directly). The button and its
+  divider disappear from login/registration, and both Google endpoints answer
+  404. Clear Laravel's config cache after changing the environment value.
 - Change wording/layout of a page → override it under `pages/Auth/`.
 - Change validation rules or add a field (e.g. a registration survey
   question) → this isn't config-driven; fork the relevant controller method
@@ -300,8 +305,8 @@ edited through the section built for it.
 
 ## Known gaps (intentionally out of scope)
 
-- Social login providers, 2FA, magic links — bring your own if needed, the
-  bundled auth is deliberately the plain email+password baseline.
+- Additional social login providers, 2FA and magic links are not bundled;
+  Google and Apple are the supported social providers.
 - `Table.vue` is a minimal client-side sortable table — no server pagination,
   no row context menu, no soft-delete UI. For anything more, either build on
   top of it or port the fuller `Table.vue` from posio.cabinet's

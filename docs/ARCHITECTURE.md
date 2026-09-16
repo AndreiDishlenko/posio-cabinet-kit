@@ -91,18 +91,25 @@ host's `User` implements `MustVerifyEmail` and adds the `verified`
 middleware itself — that's a deliberate opt-in, not assumed).
 
 Social sign-in (Google, Apple) rides in the same guest group via
-`SocialAuthController` + `UserRepository`. It is opt-in by credentials, not by
-a flag: `cabinet-kit.social_auth` reads them from env and the service provider
+`SocialAuthController` + `UserRepository`. Availability is controlled by both
+the `cabinet-kit.social_auth.<provider>.enabled` flag and credentials. The
+service provider reads them from env and
 bridges them into `config('services.*')` unless the host already declares them
 there — `config/services.php` belongs to the host and this package publishes
-nothing into it. Routes register regardless of credentials (so the sign-in page
-can resolve `route('auth.google')` unconditionally) and an unconfigured
-provider answers 404. Needs `laravel/socialite`, plus
+nothing into it. Routes stay registered so Ziggy can resolve their names;
+disabled or unconfigured providers disappear from the bundled forms and their
+endpoints answer 404. Needs `laravel/socialite`, plus
 `socialiteproviders/apple` for Apple; `cabinet-kit:doctor` flags credentials
 without a driver. A person arriving through a provider is matched on
 `google_id`/`apple_id` (added by the package's migration), falls back to
 linking an existing row with the same email, and otherwise gets a new user
 with a first account named after them.
+
+The provider fills missing nested `enabled` keys after Laravel's shallow
+package-config merge. Therefore an already-installed project can set
+`GOOGLE_AUTH_ENABLED=false` immediately after updating and clearing its config
+cache; republishing or rewriting its owned `config/cabinet-kit.php` is not
+required.
 
 Route **names** for the auth group are Laravel's own unprefixed convention
 (`login`, `register`, `logout`, `password.*`, `verification.*`) rather than
@@ -196,6 +203,9 @@ itself" and "what the host has to print".
   both are wrapped so an unmigrated or unreachable database degrades to
   placeholders instead of a 500. Either can be switched off in config on a
   project that has no public site.
+- **Auth layout.** The bundled authentication screens read the dark-theme main
+  logo from the same `site` prop, so an uploaded public-site logo also replaces
+  the package placeholder above login, registration and password forms.
 - **Blade.** A view composer feeds `$site_name` / `$site_favicon` /
   `$site_theme` to the views listed in `cabinet-kit.site.views`. The cabinet's
   own root view is in that list by default and prints them; a host view has to

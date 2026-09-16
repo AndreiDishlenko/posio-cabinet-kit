@@ -105,6 +105,7 @@ class SocialAuthController extends Controller
     // registered regardless so the sign-in page can still resolve their URLs.
     protected function ensureProviderIsUsable(string $provider): void
     {
+        abort_unless((bool) config("cabinet-kit.social_auth.{$provider}.enabled", true), 404);
         abort_unless(class_exists(Socialite::class), 404);
         abort_unless(filled(config("services.{$provider}.client_id")), 404);
     }
