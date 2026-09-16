@@ -167,7 +167,7 @@
       "mode": "manual",
       "source": "app/Http/Controllers/SocialAuthController.php",
       "target": "src/Http/Controllers/Auth/SocialAuthController.php",
-      "notes": "Package controller logs through the framework logger instead of the host app log, guards unconfigured providers, and redirects to the configured login route."
+      "notes": "Package controller logs through the framework logger instead of the host app log, guards unconfigured providers, and redirects to the configured login route. Like the source, a new user gets no account here: post-registration steps (config/cabinet_onboarding.php in the source) are not ported, i.e. all off."
     },
     {
       "id": "middleware-set-permission-team",
@@ -248,7 +248,7 @@
       "mode": "manual",
       "source": "resources/_admin/js/layouts/CabinetLayout.vue",
       "target": "resources/_admin/js/layouts/CabinetLayout.vue",
-      "notes": "Package's own _admin-section layout (used by Permissions/UsersAdmin pages), distinct from the generalized top-level copy tracked as layout-cabinet-layout. Strips ProductTour/FirstStepsChecklist/SpotlightHints."
+      "notes": "Package's own _admin-section layout (used by Permissions/UsersAdmin pages), distinct from the generalized top-level copy tracked as layout-cabinet-layout. ProductTour/SpotlightHints/FirstReceiptCongrats blocks, tour state and onTourFinished are carried verbatim and gated by the shared `onboarding` prop (config cabinet_onboarding, all off in the package). The menu layer / cabinetShellPresence rework and the FirstStepsChecklist dock are not ported."
     },
     {
       "id": "admin-side-menu",
@@ -374,7 +374,7 @@
       "mode": "manual",
       "source": "app/Http/Controllers/AuthenticateController.php",
       "target": "src/Http/Controllers/Auth/LoginController.php",
-      "notes": "One source controller is split across the package's Login/Register/PasswordReset/Verification controllers. Redirect targets are read from the redirects config on both sides; the package additionally falls back when a target names no registered route."
+      "notes": "One source controller is split across the package's Login/Register/PasswordReset/Verification controllers. Redirect targets are read from the redirects config on both sides; the package additionally falls back when a target names no registered route. Registration creates the user only, as in the source; the source's post-registration steps (config/cabinet_onboarding.php: account_setup, team_notification, user_milestones) are product logic and stay unported — the package runs with all of them off."
     },
     {
       "id": "package-system-password-policy",
@@ -601,6 +601,48 @@
       "source": "resources/_admin/js/layouts/CabinetBurgerMenu.vue",
       "target": "resources/_admin/js/layouts/CabinetBurgerMenu.vue",
       "notes": "User panel; renders page actions above Settings. Package version drops Posio-only entries and keeps cabinet-kit.* route names."
+    },
+    {
+      "id": "config-cabinet-onboarding",
+      "mode": "manual",
+      "source": "config/cabinet_onboarding.php",
+      "target": "config/cabinet_onboarding.php",
+      "notes": "Same file name and keys as the source, merged under the same config name so ported code reads it as is. Package values are all false; comments explain which steps the package does not ship (account setup, first-steps checklist, team notification, milestones)."
+    },
+    {
+      "id": "layout-product-tour",
+      "mode": "copy",
+      "source": "resources/_admin/js/layouts/ProductTour.vue",
+      "target": "resources/_admin/js/layouts/ProductTour.vue",
+      "notes": "Verbatim. Mounted only when cabinet_onboarding.product_tour is on; the built-in scenario targets posio.cabinet menu items — a host supplies its own via customSteps."
+    },
+    {
+      "id": "layout-spotlight-hints",
+      "mode": "copy",
+      "source": "resources/_admin/js/layouts/SpotlightHints.vue",
+      "target": "resources/_admin/js/layouts/SpotlightHints.vue",
+      "notes": "Verbatim. Mounted only when cabinet_onboarding.spotlight_hints is on."
+    },
+    {
+      "id": "service-spotlight-hints",
+      "mode": "copy",
+      "source": "resources/_admin/js/services/spotlightHints.js",
+      "target": "resources/_admin/js/services/spotlightHints.js",
+      "notes": "Verbatim hint registry used by SpotlightHints."
+    },
+    {
+      "id": "layout-first-receipt-congrats",
+      "mode": "copy",
+      "source": "resources/_admin/js/layouts/FirstReceiptCongrats.vue",
+      "target": "resources/_admin/js/layouts/FirstReceiptCongrats.vue",
+      "notes": "Verbatim. Shown only when the backend shares first_receipt_congrats, which the package never does (cabinet_onboarding.first_receipt_congrats is off)."
+    },
+    {
+      "id": "layout-spotlight",
+      "mode": "copy",
+      "source": "resources/_admin/js/layouts/Spotlight.vue",
+      "target": "resources/_admin/js/layouts/Spotlight.vue",
+      "notes": "Verbatim; base of ProductTour and SpotlightHints."
     }
   ]
 }

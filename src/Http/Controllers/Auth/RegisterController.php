@@ -9,15 +9,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
-use Posio\CabinetKit\Services\AccountService;
 use Posio\CabinetKit\Support\CabinetRedirects;
 
+// Registration ends with the user alone: every step after it is switched by the
+// onboarding config, and the package ships with all of them off.
 class RegisterController extends Controller
 {
-    public function __construct(protected AccountService $accountService)
-    {
-    }
-
     public function showRegister()
     {
         return Inertia::render('pages/Auth/Register');
@@ -31,7 +28,6 @@ class RegisterController extends Controller
             'name' => 'required|string|max:255',
             'email' => "required|email|unique:{$usersTable},email",
             'password' => ['required', 'confirmed', Password::defaults()],
-            'company_name' => 'required|string|max:255',
         ]);
 
         $userModel = config('cabinet-kit.user_model');
@@ -43,8 +39,6 @@ class RegisterController extends Controller
         ]);
 
         event(new Registered($user));
-
-        $this->accountService->createAccount($validated['company_name'], $user);
 
         Auth::login($user);
         $request->session()->regenerate();

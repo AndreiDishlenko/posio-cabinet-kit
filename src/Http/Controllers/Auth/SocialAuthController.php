@@ -5,19 +5,16 @@ namespace Posio\CabinetKit\Http\Controllers\Auth;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\InvalidStateException;
 use Posio\CabinetKit\Repositories\UserRepository;
-use Posio\CabinetKit\Services\AccountService;
 use Posio\CabinetKit\Support\CabinetRedirects;
 
 class SocialAuthController extends Controller
 {
     public function __construct(
         protected UserRepository $userRepo,
-        protected AccountService $accountService,
     ) {}
 
     public function googleRedirect()
@@ -74,12 +71,6 @@ class SocialAuthController extends Controller
 
     protected function signIn($user)
     {
-        // A social sign-up has no company name to ask for, unlike the form-based
-        // one, so the first account is named after its owner and renamed later.
-        if ($user->wasRecentlyCreated) {
-            $this->accountService->createAccount($this->defaultAccountName($user), $user);
-        }
-
         Auth::login($user, remember: true);
 
         request()->session()->regenerate();
@@ -87,17 +78,6 @@ class SocialAuthController extends Controller
         // Full page load rather than an Inertia visit: the provider returns the
         // browser here by plain navigation, and the session was just rotated.
         return Inertia::location(CabinetRedirects::url('after_login'));
-    }
-
-    protected function defaultAccountName($user): string
-    {
-        $name = trim((string) ($user->name ?? ''));
-
-        if ($name === '' && $user->email) {
-            $name = Str::before($user->email, '@');
-        }
-
-        return mb_substr($name !== '' ? $name : 'Account', 0, 255);
     }
 
     // A provider without credentials is a host that never opted into it: hide

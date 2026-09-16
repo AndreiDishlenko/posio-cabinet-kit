@@ -34,6 +34,9 @@ class ShareCabinetKitData
                 'cabinetKitMenu' => $menu,
                 'cabinetMenu' => $menu,
                 'user' => fn () => $this->userPayload($user),
+                // Шаги после регистрации: тур, подсказки, поздравление — layout показывает
+                // только включённые.
+                'onboarding' => fn () => config('cabinet_onboarding'),
             ]);
 
             // SideMenu highlights the item whose id matches currentPage.id.

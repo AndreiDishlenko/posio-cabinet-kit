@@ -52,6 +52,7 @@ database/
 routes/cabinet.php                mounted automatically, prefix+name from config
 config/cabinet-kit.php            user_model, menu[], roles, route prefixes
 config/cabinet-kit-redirects.php  home, after_login, after_register, after_verify, after_logout
+config/cabinet_onboarding.php     post-registration step switches (same keys as posio.cabinet), all off
 resources/js/
   layouts/                        CabinetLayout, CabinetHeader, SideMenu, AccountSwitcher, AuthLayout
   pages/Auth/                     Login, Register, ForgotPassword, ResetPassword, VerifyEmail
@@ -82,13 +83,32 @@ if you copied `.claude/context/` from this package, or the original
 
 ## Auth
 
-Bundled (since v0.2.0): login, registration (creates the `User` *and* its
-`Account` in one step — a "Company name" field on the register form calls
-`AccountService::createAccount()`), logout, password reset (Laravel's core
+Bundled (since v0.2.0): login, registration (creates the `User` only — see below), logout, password reset (Laravel's core
 `Password` broker + the host's own mail config), and email verification
 (routes exist when `cabinet-kit.auth_routes` is true; nothing actually *enforces* verification unless the
 host's `User` implements `MustVerifyEmail` and adds the `verified`
 middleware itself — that's a deliberate opt-in, not assumed).
+
+Registration ends with the user. Every step after it is switched by
+`config/cabinet_onboarding.php` — the same file name and keys as in
+posio.cabinet, merged under the same config name so ported code reads it as is,
+and shared to pages as the `onboarding` prop. The package ships with all steps off:
+
+| key | step | in the package |
+|---|---|---|
+| `account_setup` | company setup (`/cabinet/init`: company, first point of sale, currency, welcome letter) | not shipped — POS logic |
+| `product_tour` | tour over the cabinet menu | shipped (`ProductTour.vue`), gated in `CabinetLayout` |
+| `spotlight_hints` | one-off highlights | shipped (`SpotlightHints.vue`), gated in `CabinetLayout` |
+| `first_steps_checklist` | first-steps checklist dock | not shipped — POS steps |
+| `first_receipt_congrats` | congratulation on the first receipt | shipped (`FirstReceiptCongrats.vue`); needs a backend that shares `first_receipt_congrats` |
+| `team_notification` | new-user message to the service Telegram | not shipped |
+| `user_milestones` | funnel milestones for user analytics | not shipped |
+
+A host turns a shipped step on by publishing the file (`--tag=cabinet-kit-onboarding`)
+or declaring the key in its own `config/cabinet_onboarding.php`. The tour's
+built-in scenario points at posio.cabinet menu items, so a host passes its own.
+A registered user has no account until invited; the settings page and the shared
+page data already allow for that.
 
 Social sign-in (Google, Apple) rides in the same guest group via
 `SocialAuthController` + `UserRepository`. Availability is controlled by both
@@ -103,7 +123,7 @@ endpoints answer 404. Needs `laravel/socialite`, plus
 without a driver. A person arriving through a provider is matched on
 `google_id`/`apple_id` (added by the package's migration), falls back to
 linking an existing row with the same email, and otherwise gets a new user
-with a first account named after them.
+— with no account, as in form registration.
 
 The provider fills missing nested `enabled` keys after Laravel's shallow
 package-config merge. Therefore an already-installed project can set

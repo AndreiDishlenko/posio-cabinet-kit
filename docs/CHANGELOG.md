@@ -1,5 +1,30 @@
 # Changelog
 
+## Unreleased — Post-registration steps are switched by config, all off
+
+**Added**
+- `config/cabinet_onboarding.php` (merged under `cabinet_onboarding`, publish tag
+  `cabinet-kit-onboarding`): the same switches as posio.cabinet for every step
+  after registration — `account_setup`, `product_tour`, `spotlight_hints`,
+  `first_steps_checklist`, `first_receipt_congrats`, `team_notification`,
+  `user_milestones`. All `false` in the package; shared to pages as `onboarding`.
+- `ProductTour.vue`, `SpotlightHints.vue`, `FirstReceiptCongrats.vue` and the
+  hint registry copied verbatim from posio.cabinet; `_admin` `CabinetLayout`
+  mounts them again, each gated by its switch. `Spotlight.vue` re-synced.
+
+**Changed**
+- Registration and social sign-up no longer create an account. In posio.cabinet
+  the company is set up in a separate onboarding step behind `account_setup`,
+  which the package does not ship. A new user gets an account by invitation.
+
+**Fixed**
+- Registration silently stayed on the form: the server required
+  `company_name`, but the form ported from posio.cabinet has no such field, so
+  the rejection had nowhere to show. The requirement is gone together with the
+  account creation it fed.
+- `Auth/Register.vue` re-synced from posio.cabinet 2.5.42: visible labels,
+  `<form>` submit, password-length hint, no minimum length on the name.
+
 ## Unreleased - Social sign-in switch and branded auth layout
 
 **Added**

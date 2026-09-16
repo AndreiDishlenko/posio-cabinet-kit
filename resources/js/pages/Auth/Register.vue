@@ -4,35 +4,37 @@
         <div ref="form" class="card-body">
 
 
-			<div class="v-flex space-y-2">
+			<form class="v-flex space-y-2" @submit.prevent="submit">
 				<div class="label-group">
-					<!-- <label class="form-label">{{ $t('First Name')}}</label> -->
-					<input ref="name" type="text" v-model="form_data.name" class="form-control md:form-control-lg" :placeholder="$t('First Name')"/>
+					<label class="form-label" for="register-name">{{ $t('First Name')}}</label>
+					<input id="register-name" ref="name" type="text" autocomplete="name" v-model="form_data.name" class="form-control md:form-control-lg"/>
 					<p v-if="form_data_errors.name" class="form-error" >{{ form_data_errors.name }}</p>
 				</div>
 				<div class="label-group">
-					<!-- <label class="form-label">{{ $t('Your email')}}</label> -->
-					<input ref="email" type="text" v-model="form_data.email" class="form-control md:form-control-lg" :placeholder="$t('Your email')"/>
+					<label class="form-label" for="register-email">{{ $t('Your email')}}</label>
+					<input id="register-email" ref="email" type="email" autocomplete="email" v-model="form_data.email" class="form-control md:form-control-lg"/>
 					<p v-if="form_data_errors.email" class="form-error" >{{ form_data_errors.email }}</p>
 				</div>
 				<div class="label-group">
-					<label class="form-label">{{ $t('Password')}}</label>
-					<input ref="password" type="password" v-model="form_data.password" class="form-control md:form-control-lg"/>
+					<label class="form-label" for="register-password">{{ $t('Password')}}</label>
+					<input id="register-password" ref="password" type="password" autocomplete="new-password" v-model="form_data.password" class="form-control md:form-control-lg" aria-describedby="register-password-hint"/>
+					<!-- Требование к паролю видно до ошибки, а не появляется вместо неё после отправки. -->
+					<p id="register-password-hint" class="text-sm text-secondary">{{ $t('must be at least {length} characters', { length: 8 }) }}</p>
 					<p v-if="form_data_errors.password" class="form-error" >{{ form_data_errors.password }}</p>
 				</div>
 				<div class="label-group">
-					<label class="form-label">{{ $t('Confirmation')}}</label>
-					<input ref="password_confirmation" type="password" v-model="form_data.password_confirmation" class="form-control md:form-control-lg"  @keydown.enter="submit()"/>
+					<label class="form-label" for="register-password-confirmation">{{ $t('Confirmation')}}</label>
+					<input id="register-password-confirmation" ref="password_confirmation" type="password" autocomplete="new-password" v-model="form_data.password_confirmation" class="form-control md:form-control-lg"  @keydown.enter="submit()"/>
 					<p v-if="form_data_errors.password_confirmation" class="form-error" >{{ form_data_errors.password_confirmation }}</p>
 				</div>
 
 				<button
+					type="submit"
 					class="w-full button primary-button button-lg text-md !mt-4"
 					:class="$inprogress.value && 'spinner'"
-					@click.stop.prevent="submit"
 					>{{ $t('Sign up')}}
 				</button>
-			</div>
+			</form>
 
 			<!-- Register with Google / Apple -->
 			<SocialAuthButtons />
@@ -57,7 +59,8 @@
         data() {
             return {
                 validationRules: {
-                    name:                   'required|min:6',
+                    // Без нижней границы длины: реальные короткие имена (Ян, Лев) — не ошибка.
+                    name:                   'required',
                     email:                  'required|email',
                     password:               'required|password',
                     password_confirmation:  'required|confirmed:password'

@@ -2,6 +2,18 @@
 
     <Head :title="$t(page_name ? page_name : ($page.props.currentPage?.name || 'Cabinet'))"/>
 
+    <ProductTour
+        v-if="showProductTour"
+        @finished="onTourFinished"
+    />
+
+    <!-- Разовые подсветки не спорят с обучающим туром за внимание -->
+    <SpotlightHints v-if="!showProductTour && $page.props.onboarding?.spotlight_hints" />
+
+    <!-- Поздравление с первым чеком: показывается один раз, после обучения и
+         не поверх него. -->
+    <FirstReceiptCongrats v-if="!showProductTour && $page.props.first_receipt_congrats" />
+
     <div class="page-wrapper flex flex-row h-full overflow-y-hidden" :class="$inprogress.value ? 'disabled' : ''">
 		<!-- scrollbar-thin -->
 
@@ -54,12 +66,15 @@
 </template>
 
 <script>
-    import { Head } from '@inertiajs/vue3';
+    import { Head, router } from '@inertiajs/vue3';
 
     import CabinetMenu      from "./CabinetMenu.vue"
     import CabinetHeader    from "./CabinetHeader.vue"
     import CabinetBody      from "./CabinetBody.vue"
     import BottomTabBar     from "@/_admin/js/components/ui/Elements/BottomTabBar.vue"
+    import ProductTour      from "./ProductTour.vue"
+    import SpotlightHints     from "./SpotlightHints.vue"
+    import FirstReceiptCongrats from "./FirstReceiptCongrats.vue"
     // import LoadingScreen    from "./LoadingScreen.vue"
 
     import Loader           from '@/js/Elements/PreloaderBars.vue';
@@ -73,7 +88,7 @@
         // поэтому Vue не может автоматически наследовать на него атрибуты (class и т.п.).
         // Отключаем авто-наследование, чтобы не было предупреждений Extraneous non-props attributes.
         inheritAttrs: false,
-        components: { Head, CabinetMenu, CabinetHeader, CabinetBody, Loader, BottomTabBar },
+        components: { Head, CabinetMenu, CabinetHeader, CabinetBody, Loader, BottomTabBar, ProductTour, SpotlightHints, FirstReceiptCongrats },
         props: {
             page_name: {
                 type: String,
@@ -122,6 +137,11 @@
             return {
                 if_pause: false,
                 page_menu_sources: [],
+                // Тур запускаем при входе на любую страницу кабинета, пока пользователь
+                // не прошёл первоначальное обучение (users.settings."tour_done"),
+                // и только пока обучение вообще включено настройкой сервиса.
+                // Сценарий привязан к пунктам меню (глобальны на всех страницах).
+                showProductTour: !!this.$page.props.onboarding?.product_tour && !this.$page.props.user?.tour_done,
             }
         },
         methods: {
@@ -131,6 +151,23 @@
                 return this.page_menu_sources
                     .filter(source => source.$el && typeof source.$el.getClientRects === 'function' && source.$el.getClientRects().length)
                     .flatMap(source => source.page_menu || []);
+            },
+            async onTourFinished(result) {
+                this.showProductTour = false;
+                // 'skipped' и '1' оба truthy — проверка tour_done не ломается,
+                // а бэкенд по значению различает вехи tour_skipped / tour_finished
+                await this.$apiClient.post(route('cabinet.api.user.setsetting'), { key: 'tour_done', value: result?.skipped ? 'skipped' : '1' });
+
+                // Чеклист впервые появляется сразу после тура — сворачивание с прошлого
+                // раза (если было) не должно скрывать его в этот ключевой момент. Снимаем
+                // и отметку автопоказа: этот показ и есть тот единственный, после которого
+                // список ждёт в углу свёрнутым.
+                this.$settings.removeItem('checklist_collapsed');
+                this.$settings.removeItem('checklist_auto_shown');
+
+                // Список первых шагов отдаётся только прошедшим обучение — забираем
+                // его состояние сразу, чтобы он появился без перехода на другую страницу.
+                router.reload({ only: ['first_steps_checklist'] });
             },
         },
         mounted() {

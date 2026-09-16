@@ -30,6 +30,8 @@ class CabinetKitServiceProvider extends ServiceProvider
         // Слияние оставляет за хостом каждый ключ, который он объявил сам.
         $this->mergeConfigFrom(__DIR__.'/../config/seo.php', 'seo');
         $this->mergeConfigFrom(__DIR__.'/../config/general.php', 'general');
+        // Шаги после регистрации — под именем источника, чтобы перенесённый код читал их как есть.
+        $this->mergeConfigFrom(__DIR__.'/../config/cabinet_onboarding.php', 'cabinet_onboarding');
 
         $this->bridgeLegacyRedirects();
         $this->mountLogViewer();
@@ -85,6 +87,10 @@ class CabinetKitServiceProvider extends ServiceProvider
             __DIR__.'/../config/seo.php' => config_path('seo.php'),
             __DIR__.'/../config/general.php' => config_path('general.php'),
         ], 'cabinet-kit-seo-config');
+
+        $this->publishes([
+            __DIR__.'/../config/cabinet_onboarding.php' => config_path('cabinet_onboarding.php'),
+        ], 'cabinet-kit-onboarding');
 
         $this->publishes([
             __DIR__.'/../database/migrations' => database_path('migrations'),

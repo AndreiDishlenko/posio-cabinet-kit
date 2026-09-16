@@ -23,9 +23,9 @@ npm install
 npm run dev
 ```
 
-Then open `/cabinet/register` and create the first user — registration also
-creates the account (the "Company name" field), so no separate
-account-creation step is needed on a fresh install.
+Then open `/cabinet/register` to create a user. Registration creates the user
+only — no company (account) and no follow-up onboarding steps; a registered
+user joins an account when its owner invites them.
 
 Signing in as one of the seeded accounts (`sa` / `admin`, see `system_users`
 in `config/cabinet-kit.php`) instead opens the password screen and stops
@@ -135,9 +135,8 @@ Every CabinetKit page renders into the package's own Blade root view
 (`cabinet-kit::app`) with its own Vite entry — the host's main app view and
 entry are untouched.
 
-Visit `/cabinet/register` afterwards to create your first user + account —
-registration bundles account creation (a "Company name" field), so there's
-no separate account-creation step for a brand-new install.
+Visit `/cabinet/register` afterwards to create users. Registration creates the
+user only; accounts come from the seeded system users and from invitations.
 
 ## Update
 
