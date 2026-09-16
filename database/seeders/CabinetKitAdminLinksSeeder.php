@@ -85,7 +85,7 @@ class CabinetKitAdminLinksSeeder extends Seeder
             [
                 'order_id' => 8,
                 'name' => 'SEO',
-                'icon' => 'mdi:google',
+                'icon' => 'icon-park-outline:seo',
                 'link' => null,
                 'route' => 'cabinet-kit.seo',
                 'permissions' => 'sysper-site',

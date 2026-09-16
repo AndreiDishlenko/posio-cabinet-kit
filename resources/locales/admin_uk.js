@@ -270,6 +270,10 @@ export default {
     "registration-already-approved": "Цю реєстрацію вже було схвалено раніше.",
     "registration-approval-link-invalid": "Посилання для схвалення вже недійсне: користувача видалено або змінено його електронну адресу.",
     "Registration approval": "Схвалення реєстрації",
+    "Approval": "Допуск",
+    "Approve": "Підтвердити",
+    "Approve registration of {email}?": "Підтвердити реєстрацію {email}?",
+    "Registration approved": "Реєстрацію підтверджено",
     "Go to cabinet": "Перейти до кабінету",
 
     "Reset Password": "Змінити пароль",

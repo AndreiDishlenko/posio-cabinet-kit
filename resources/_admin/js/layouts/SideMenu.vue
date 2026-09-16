@@ -12,7 +12,7 @@
     -->
     <div class="gm-shell"
         :class="{
-            'is-pinned':   !isFolded || forceExpand,
+            'is-pinned':   !isFolded || tourExpand,
             'is-pullout':  isPullout,
             'is-expanded': isExpanded,
             'is-disabled': disabled,
@@ -59,9 +59,12 @@
 
                     <!-- Заголовок-дропдаун: клик сворачивает/разворачивает группу.
                          Всегда в DOM (постоянная высота) → нет вертикального прыжка;
-                         в рельсе скрыт по opacity и не кликабелен (пункты видны всегда). -->
+                         в рельсе от него остаётся одна стрелка — она и есть орган
+                         управления группой, название подсказывает всплывашка. -->
                     <button type="button" class="gm-group-label"
+                        :aria-label="$t(group.label)"
                         :aria-expanded="isGroupExpanded(groupIndex)"
+                        :title="isExpanded ? null : $t(group.label)"
                         @click="toggleGroup(groupIndex)"
                         >
                         <span class="gm-group-label-text">{{ $t(group.label) }}</span>
@@ -126,7 +129,7 @@
 
                 <!-- Настройки → выпадающее меню с табами страницы настроек.
                      Список берётся из общего settingsTabs.js → совпадает со
-                     страницей настроек автоматически. -->
+                     страницей CabinetSettings автоматически. -->
                 <Dropdown class="gm-footer-settings"
                     align="left"
                     direction="up"
@@ -152,6 +155,18 @@
                             >
                             {{ $t(tab.label) }}
                         </Link>
+
+                        <!-- Выход — не таб настроек, поэтому отделён и без предзагрузки.
+                             Метод POST: маршрут logout в этом пакете принимает только его. -->
+                        <div class="gm-footer-menu-divider"></div>
+
+                        <Link class="gm-footer-menu-item gm-footer-menu-logout"
+                            :href="route('logout')"
+                            method="post"
+                            >
+                            <Icon icon="solar:logout-outline" class="gm-footer-menu-icon"/>
+                            <span>{{ $t('Logout') }}</span>
+                        </Link>
                     </template>
                 </Dropdown>
 
@@ -165,7 +180,7 @@
 </template>
 
 <script>
-    import { Link }         from '@inertiajs/vue3';
+    import { Link, router } from '@inertiajs/vue3';
     import { Icon }         from '@iconify/vue';
 
     import Avatar           from '@/js/Elements/Avatar.vue';
@@ -198,7 +213,7 @@
                 // Свёрнуто по умолчанию (как Gemini). Восстанавливается из localStorage в created().
                 isFolded: true,
                 isPullout: false,           // мобильный выезд
-                forceExpand: false,
+                tourExpand: false,          // ProductTour временно разворачивает меню
                 // Группы развёрнуты по умолчанию — храним только те, что пользователь свернул явно.
                 collapsedGroups: [],
             }
@@ -212,7 +227,7 @@
             },
             // Показывать подписи пунктов (панель развёрнута любым способом)
             isExpanded() {
-                return !this.isFolded || this.isPullout || this.forceExpand;
+                return !this.isFolded || this.isPullout || this.tourExpand;
             },
             // Группа, в которой лежит активный пункт — она всегда развёрнута
             activeGroupIndex() {
@@ -228,8 +243,8 @@
             userAvatar() {
                 return this.$page.props.user?.avatar;
             },
-            // Табы настроек — тот же состав, что и на странице настроек
-            // (общий settingsTabs.js).
+            // Табы настроек — тот же состав, что и на странице CabinetSettings
+            // (общий settingsTabs.js). Право manage-members шарится глобально.
             settingsTabs() {
                 return buildSettingsTabs(this.$page.props.user?.can_manage_members);
             },
@@ -244,10 +259,23 @@
             activeAccountId() {
                 this.restoreCollapsedGroups();
             },
+            // Меню переживает переходы между страницами, поэтому закрепление
+            // восстанавливаем не только при монтировании, но и когда меню
+            // становится доступным (первичная настройка его выключает).
+            disabled: {
+                handler(value) {
+                    if ( !value )
+                        this.restorePinnedState();
+                },
+                immediate: true,
+            },
         },
         mounted() {
             document.addEventListener('click', this.handleClickOutside);
             window.addEventListener('resize', this.updateReservedWidth);
+            // Выехавшую поверх страницы панель убирает сам переход: меню теперь
+            // переживает смену страницы и само по себе не закрылось бы.
+            this.stopNavigateWatch = router.on('navigate', this.closeSideMenu);
             this.$emitter.on('burger_button_click', this.onBurger);
             this.$emitter.on('burger_menu_opened',  this.closeSideMenu);
             this.$emitter.on('open_side_menu',       this.openSideMenu);
@@ -256,15 +284,8 @@
             this.$emitter.on('tour_restore_groups',  this.tourRestore);
         },
         created() {
-            // Инициализируем состояние сворачивания ДО первого рендера, чтобы при
-            // перемонтировании меню (Inertia пересоздаёт layout на каждой навигации)
-            // не было «дёрганья» анимации.
-            if (!this.disabled) {
-                const saved = localStorage.getItem('sideMenuState');
-                if (saved === 'false') this.isFolded = false; // пользователь закрепил открытым
-                if (saved === 'true')  this.isFolded = true;
-            }
-
+            // Состояние сворачивания инициализируем ДО первого рендера, чтобы не
+            // было «дёрганья» анимации на первой отрисовке.
             this.restoreCollapsedGroups();
             this.dropLegacyGroupsSetting();
             this.updateReservedWidth();
@@ -272,6 +293,7 @@
         beforeUnmount() {
             document.removeEventListener('click', this.handleClickOutside);
             window.removeEventListener('resize', this.updateReservedWidth);
+            this.stopNavigateWatch?.();
             this.$emitter.off('burger_button_click', this.onBurger);
             this.$emitter.off('burger_menu_opened',  this.closeSideMenu);
             this.$emitter.off('open_side_menu',       this.openSideMenu);
@@ -328,7 +350,7 @@
             closeSideMenu() {
                 // SideMenu.closeSideMenu
                 this.isPullout = false;
-                this.forceExpand = false;
+                this.tourExpand = false;
             },
             handleClickOutside(event) {
                 // SideMenu.handleClickOutside — закрытие мобильного выезда по клику вне
@@ -341,11 +363,22 @@
                 if (this.$refs.sideMenu && !this.$refs.sideMenu.contains(event.target))
                     this.isPullout = false;
             },
-            showAllGroups() {
-                this.forceExpand = true;
+            // Закрепление панели помнится между сессиями и между страницами.
+            restorePinnedState() {
+                // SideMenu.restorePinnedState
+                const saved = localStorage.getItem('sideMenuState');
+                if (saved === 'false') this.isFolded = false; // пользователь закрепил открытым
+                if (saved === 'true')  this.isFolded = true;
+
+                this.updateReservedWidth();
             },
-            restoreGroups() {
-                this.forceExpand = false;
+            tourShowAll() {
+                // SideMenu.tourShowAll — тур разворачивает меню, чтобы подписи были видны
+                this.tourExpand = true;
+            },
+            tourRestore() {
+                // SideMenu.tourRestore
+                this.tourExpand = false;
             },
 
             // Ссылка на страницу настроек с активным табом в query. Ключ query —
@@ -357,11 +390,7 @@
 
             // ── Группы-дропдауны ───────────────────────────────────────────
             toggleGroup(groupIndex) {
-                // SideMenu.toggleGroup — сворачивание/разворачивание группы.
-                // В рельсе (панель свёрнута) пункты видны всегда — тогло не нужно.
-                if ( !this.isExpanded )
-                    return;
-
+                // SideMenu.toggleGroup — сворачивание/разворачивание группы
                 const index = this.collapsedGroups.indexOf(groupIndex);
                 if (index >= 0)
                     this.collapsedGroups.splice(index, 1);
@@ -372,8 +401,7 @@
             },
             isGroupExpanded(groupIndex) {
                 // SideMenu.isGroupExpanded
-                if ( this.forceExpand )                return true;
-                if ( !this.isExpanded )                return true;  // рельс: все пункты видны
+                if ( this.tourExpand )                 return true;  // тур раскрывает всё
                 if ( groupIndex === this.activeGroupIndex ) return true;  // активная группа
                 return !this.collapsedGroups.includes(groupIndex);
             },
@@ -606,14 +634,19 @@
 
     // Заголовок-дропдаун. Постоянная высота (текст — только opacity) → нет
     // вертикального прыжка. Выровнен по иконкам пунктов (левый край).
-    // В рельсе скрыт (opacity 0) и не кликабелен — пункты видны всегда.
+    // В рельсе от него остаётся стрелка: единственный способ развернуть группу,
+    // когда названия не видны.
     .gm-group-label {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        @include flex-gap(8px);
+        justify-content: flex-start;
+        // Зазор до стрелки даёт само название (см. ниже), а не отступ между
+        // элементами: его фолбэк для старых движков считает по разметке и сдвигал
+        // бы стрелку в рельсе, где названия нет.
         width: 100%;
-        padding: 6px 10px;
+        // Рельс: стрелка 16px + 12px слева ставит её центр на 28px — ту же
+        // вертикаль, по которой идут иконки пунктов.
+        padding: 6px 12px;
         margin: 12px 0 4px;
         font-size: 12px;
         line-height: 1.4;
@@ -626,37 +659,58 @@
         border-radius: var(--gm-item-radius);
         cursor: pointer;
         outline: none;                  // без .button — рамка фокуса не снята UA-стилями по умолчанию
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity          var(--gm-ease-dur) var(--gm-ease),
-                    background-color  var(--gm-ease-dur) var(--gm-ease);
+        transition: background-color var(--gm-ease-dur) var(--gm-ease);
     }
 
+    // Развёрнутая панель: название слева, стрелка прижата к правому краю.
     .gm-shell.is-expanded .gm-group-label {
-        opacity: 1;
-        pointer-events: auto;
+        justify-content: space-between;
+        padding-left: 10px;
+        padding-right: 10px;
     }
 
     .gm-group-label:hover {
         background-color: var(--gm-item-hover-bg);
     }
 
+    // Название убрано из потока целиком по той же причине, что и подписи пунктов:
+    // неуменьшаемый отступ не давал схлопнуться до нуля и раздувал ширину панели.
     .gm-group-label-text {
+        display: none;
+        min-width: 0;                     // иначе длинное название не сожмётся до многоточия
+        margin-right: 8px;
         white-space: nowrap;
         overflow: hidden;                 // фолбэк для движков без clip
         overflow: clip;                   // clip, а не hidden — без семантики прокрутки
         text-overflow: ellipsis;
+        opacity: 0;
+        transition: opacity var(--gm-ease-dur) var(--gm-ease);
     }
 
+    .gm-shell.is-expanded .gm-group-label-text {
+        display: block;
+        opacity: 1;
+    }
+
+    // В рельсе стрелка — самостоятельный орган управления, поэтому крупнее, чем
+    // при подписи, и по размеру ближе к иконкам пунктов.
+    // Свёрнутая группа — стрелка вправо (содержимое «спрятано в сторону»),
+    // развёрнутая — вниз, на раскрытый список.
     .gm-group-arrow {
-        width: 12px;
-        height: 12px;
+        width: 16px;
+        height: 16px;
         flex: 0 0 auto;
+        transform: rotate(-90deg);
         transition: transform var(--gm-ease-dur) var(--gm-ease);
     }
 
+    .gm-shell.is-expanded .gm-group-arrow {
+        width: 12px;
+        height: 12px;
+    }
+
     .gm-group-arrow.is-open {
-        transform: rotate(180deg);
+        transform: rotate(0deg);
     }
 
     /* Разворот/сворачивание списка группы */
@@ -716,6 +770,19 @@
 
         transition: background-color var(--gm-ease-dur) var(--gm-ease),
                     color            var(--gm-ease-dur) var(--gm-ease);
+    }
+
+    // Клавиатурный фокус в меню обязан быть виден: у собственных кнопок панели
+    // системный контур снят, а пункты — ссылки без своего оформления фокуса.
+    // Отдельным правилом на :focus-visible, чтобы кольцо не появлялось от клика
+    // мышью; на планке старых браузеров правило просто отбрасывается.
+    .gm-brand:focus-visible,
+    .gm-toggle:focus-visible,
+    .gm-group-label:focus-visible,
+    .gm-link:focus-visible,
+    .gm-footer-settings-trigger:focus-visible {
+        outline: 2px solid var(--focus-ring-color);
+        outline-offset: -2px;
     }
 
     .gm-icon {
@@ -868,6 +935,25 @@
 
     .gm-footer-menu-item:hover {
         background-color: var(--gm-item-hover-bg);
+    }
+
+    .gm-footer-menu-divider {
+        height: 1px;
+        margin: 4px 0;
+        background-color: var(--gm-item-hover-bg);
+    }
+
+    .gm-footer-menu-logout {
+        display: flex;
+        align-items: center;
+        @include flex-gap(8px);
+    }
+
+    .gm-footer-menu-icon {
+        width: 18px;
+        height: 18px;
+        flex: 0 0 auto;
+        color: inherit;
     }
 
     // Меню отключено (нет аккаунта и т.п.) — футер тоже неинтерактивен.

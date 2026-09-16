@@ -1,4 +1,4 @@
-import { createInertiaApp } from '@inertiajs/vue3';
+import { createInertiaApp, router } from '@inertiajs/vue3';
 import dayjs from 'dayjs';
 import { createApp, h, reactive } from 'vue';
 import { createVfm } from 'vue-final-modal';
@@ -56,6 +56,16 @@ export function createCabinetKitApp({
         setup({ el, App, props, plugin }) {
             applyDefaultTheme();
             hydrateI18n(props.initialPage?.props?.cabinetKitI18n);
+
+            // Переводы хоста отдаются только маршрутами кабинета: при входе в
+            // кабинет переходом со страницы авторизации приложение уже запущено
+            // без них, поэтому подхватываем их с каждой страницей, где они есть.
+            router.on('navigate', (event) => {
+                const payload = event.detail.page?.props?.cabinetKitI18n;
+
+                if (payload)
+                    hydrateI18n(payload);
+            });
 
             const app = createApp({ render: () => h(App, props) });
             const emitter = Emitter;

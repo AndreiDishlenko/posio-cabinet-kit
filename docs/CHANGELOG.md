@@ -1,5 +1,45 @@
 # Changelog
 
+## Unreleased — Side menu and header parity with the source project
+
+**Fixed**
+- `SideMenu.vue`: the ProductTour "expand all groups" call was silently a no-op —
+  the emitter bound `tour_show_all_groups`/`tour_restore_groups` to methods named
+  `tourShowAll`/`tourRestore`, which didn't exist (the actual methods were named
+  `showAllGroups`/`restoreGroups`). Renamed the methods and the `forceExpand` data
+  field (now `tourExpand`) to match.
+- `SideMenu.vue`: the pinned/collapsed state (`localStorage`) was only restored in
+  `created()`, so a menu re-enabled after being `disabled` (e.g. once the initial
+  setup step that disables it finishes) stayed collapsed instead of picking the
+  saved state back up. Extracted `restorePinnedState()` and call it from an
+  `immediate` watcher on `disabled` in addition to mount.
+- `SideMenu.vue`: the mobile pullout panel used to only close on explicit events
+  (burger click, opening the user menu); a page navigation while it was open left
+  it hanging open over the new page. Now closes on every Inertia `navigate` event.
+
+**Changed**
+- `SideMenu.vue`: rail (collapsed) mode no longer hides the group-header button —
+  it now shows just the arrow (rotated closed by default) as the sole, always
+  usable control to expand a group from the rail, with the group name in a
+  `title` tooltip and `aria-label`. Previously the header was invisible and
+  inert in rail mode, so every group's item list was always fully shown there
+  regardless of its collapsed state.
+- `SideMenu.vue` / `CabinetHeader.vue`: keyboard-accessibility pass ported from
+  the source project — real `<button>` elements (with `aria-label`) instead of
+  clickable `span`/`div` for the burger, user-menu and dev-permissions triggers;
+  the header title is now an `h1` (previously the page had no level-1 heading);
+  visible `:focus-visible` ring (new `--focus-ring-color` token in
+  `resources/scss/colors_shared.scss`) on the menu's buttons/links/group-header
+  and on the header's icon buttons.
+- `SideMenu.vue`: added a "Logout" item (with a divider above it) to the footer
+  settings dropdown, next to the settings tabs — an in-menu way to sign out
+  without opening the mobile user panel. Uses `method="post"`, matching this
+  package's `logout` route (POST-only, unlike the GET route of the source
+  project this component was mirrored from).
+- `CabinetKitAdminLinksSeeder`: SEO menu item icon changed to
+  `icon-park-outline:seo` to match the source project's current icon
+  (was `mdi:google`).
+
 ## Unreleased — Administration menu and the built-in super administrator
 
 **Removed**
@@ -42,6 +82,12 @@
   mail views `registration-approval-request` / `registration-approved` and texts
   `mail.registration_approval_request.*` / `mail.registration_approved.*`,
   `auth.pending_approval`.
+- `Approve` button in the Users page table, visible only on rows waiting for
+  approval (`approval_requested_at` set, `approved_at` empty): an in-cabinet
+  alternative to the letter's link for a `sysper-users` holder, for when the
+  letter is lost or never arrives. Route `cabinet-kit.users.approve`
+  (`UsersController::approve`), gated by the same `sysper-users` middleware as
+  the rest of the Users routes.
 
 **Changed**
 - Signing in returns to the page that sent the visitor to the login form

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
+use Posio\CabinetKit\Services\RegistrationApprovalService;
 use Spatie\Permission\Models\Role;
 
 class UsersController extends Controller
@@ -79,6 +80,31 @@ class UsersController extends Controller
         return response()->json($this->userPayload($target));
     }
 
+    // Допуск в кабинет из таблицы «Users» — та же операция, что и по ссылке из письма
+    // (RegistrationApprovalService::approve), для случая, когда письмо не дошло/потерялось.
+    // Право действовать здесь уже проверено middleware маршрута (sysper-users).
+    public function approve(Request $request, RegistrationApprovalService $approvals)
+    {
+        $userModel = config('cabinet-kit.user_model', \App\Models\User::class);
+
+        $validated = $request->validate([
+            'id' => ['required', 'integer'],
+        ]);
+
+        $target = $userModel::query()->findOrFail($validated['id']);
+
+        if ($target->approved_at !== null) {
+            abort(422, 'Registration is already approved.');
+        }
+
+        $approvals->approve($target, $request->user());
+
+        return response()->json([
+            'status'      => 'ok',
+            'approved_at' => optional($target->approved_at)->toJSON(),
+        ]);
+    }
+
     protected function users(Request $request)
     {
         $usersTable = config('cabinet-kit.users_table', 'users');
@@ -118,6 +144,10 @@ class UsersController extends Controller
 
         if (Schema::hasColumn($usersTable, 'is_finished')) {
             $query->addSelect("{$usersTable}.is_finished");
+        }
+
+        if (Schema::hasColumn($usersTable, 'approval_requested_at')) {
+            $query->addSelect("{$usersTable}.approval_requested_at", "{$usersTable}.approved_at");
         }
 
         return $query->get()->map(function ($user) {

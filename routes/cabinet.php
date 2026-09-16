@@ -111,6 +111,9 @@ Route::middleware(['web', UseCabinetKitRootView::class, ApplyCabinetKitLocale::c
                     Route::get('/users', [UsersController::class, 'index'])->name('users');
                     Route::put('/users', [UsersController::class, 'update'])->name('users.update');
                     Route::post('/users', [UsersController::class, 'update'])->name('users.update.post');
+                    // Допуск самостоятельной регистрации из кабинета — альтернатива ссылке
+                    // из письма (см. RegistrationApprovalService).
+                    Route::post('/users/approve', [UsersController::class, 'approve'])->name('users.approve');
                 });
 
                 // Операторские разделы: бренд публичной части и кабинета,
