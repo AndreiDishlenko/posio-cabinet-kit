@@ -117,6 +117,9 @@ return [
     // application.
     'force_system_password_change' => true,
     'system_team_id' => 0,
+    // Системная роль, выдаваемая новому пользователю сразу после подтверждения
+    // почты (соц-вход подтверждает её сразу). Пусто — роль не выдаётся.
+    'default_system_role' => 'System user',
     'system_users' => [
         'sa' => [
             'name' => 'sa',

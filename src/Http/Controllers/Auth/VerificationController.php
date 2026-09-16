@@ -2,6 +2,7 @@
 
 namespace Posio\CabinetKit\Http\Controllers\Auth;
 
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -23,8 +24,13 @@ class VerificationController extends Controller
 
     public function verify(EmailVerificationRequest $request)
     {
-        if (! $request->user()->hasVerifiedEmail()) {
-            $request->fulfill();
+        // Роль в АККАУНТЕ не назначается до создания/вступления в аккаунт (per-account,
+        // team-scoped). А вот СИСТЕМНУЮ роль (System user, системный team) выдаём здесь —
+        // сразу после подтверждения почты, чтобы неверифицированные пользователи ролей
+        // не имели.
+        if (! $request->user()->hasVerifiedEmail() && $request->user()->markEmailAsVerified()) {
+            $request->user()->assignDefaultSystemRole();
+            event(new Verified($request->user()));
         }
 
         return redirect(CabinetRedirects::url('after_verify'));

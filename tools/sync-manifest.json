@@ -167,7 +167,7 @@
       "mode": "manual",
       "source": "app/Repositories/UserRepository.php",
       "target": "src/Repositories/UserRepository.php",
-      "notes": "Package repository carries only the social find-or-create half. No user-event milestones, no default system role, no host locale service."
+      "notes": "Package repository carries only the social find-or-create half. No user-event milestones, no host locale service. The default system role is granted as in the source (cabinet-kit.default_system_role)."
     },
     {
       "id": "controller-social-auth",

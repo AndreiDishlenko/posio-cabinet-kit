@@ -50,6 +50,8 @@ class UserRepository
             // letter is moot from here on.
             if (! $user->hasVerifiedEmail()) {
                 $user->markEmailAsVerified();
+                // Системная роль выдаётся сразу после верификации почты.
+                $user->assignDefaultSystemRole();
             }
 
             return $user;
@@ -75,6 +77,10 @@ class UserRepository
         // silently dropped provider id would create a fresh row on every visit.
         $user = new $model;
         $user->forceFill($attributes)->save();
+
+        // Провайдер подтверждает почту сразу при создании → выдаём системную роль здесь
+        // (обычный email-флоу делает это при переходе по ссылке из письма).
+        $user->assignDefaultSystemRole();
 
         // Social sign-in never asks for a language — keep the one the visitor
         // was already browsing in.

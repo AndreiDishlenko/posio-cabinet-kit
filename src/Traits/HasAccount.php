@@ -117,6 +117,26 @@ trait HasAccount
         });
     }
 
+    // Назначить дефолтную системную роль (в системном team-контексте).
+    public function assignDefaultSystemRole() : void {
+        $role_name = config('cabinet-kit.default_system_role');
+        if ( !$role_name )
+            return;
+
+        $this->withPermissionTeam((int) config('cabinet-kit.system_team_id', 0), function () use ($role_name) {
+            try {
+                // Роли глобальные (team_id NULL) — существование не зависит от team.
+                if ( !\Spatie\Permission\Models\Role::where('name', $role_name)->exists() )
+                    return;
+
+                if ( !$this->hasRole($role_name) )
+                    $this->assignRole($role_name);
+            } catch ( \Throwable $e ) {
+                // Best-effort: default system role must never break user creation.
+            }
+        });
+    }
+
     public function systemPermissionNames(): array
     {
         if ($this->isSystem()) {
