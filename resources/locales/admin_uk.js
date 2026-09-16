@@ -236,6 +236,8 @@ export default {
     "Your account": "Ваш обліковий запис",
     "Your email": "Eлектронна пошта",
     "Password": "Пароль",
+    "Show password": "Показати пароль",
+    "Hide password": "Приховати пароль",
     "Remember me": "Запам'ятати мене.",
     "Forgot password?": "Забули пароль?",
     "Sign in": "Увійти",

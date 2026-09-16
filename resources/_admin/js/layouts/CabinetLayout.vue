@@ -27,7 +27,7 @@
 
         <div class="page-layout relative grow min-w-0 flex flex-col" >
 
-            <CabinetHeader class="min-h-0 px-3 sm:px-5" :page_name="page_name" :page_menu="page_menu"/>
+            <CabinetHeader class="min-h-0 px-3 sm:px-5" :page_name="page_name" :header_title="header_title" :page_menu="page_menu"/>
 
 			<div class="page-content-wrapper p-2 lg:p-4 flex flex-col overflow-hidden "
 				:class="['space-y-'+space_y]"
@@ -91,6 +91,12 @@
         components: { Head, CabinetMenu, CabinetHeader, CabinetBody, Loader, BottomTabBar, ProductTour, SpotlightHints, FirstReceiptCongrats },
         props: {
             page_name: {
+                type: String,
+                default: ''
+            },
+            // Название всей страницы для шапки — нужно страницам, которых нет в меню
+            // кабинета: для них сервер название не знает.
+            header_title: {
                 type: String,
                 default: ''
             },

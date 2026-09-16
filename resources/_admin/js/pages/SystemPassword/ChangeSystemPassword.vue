@@ -17,14 +17,14 @@
 			<!-- New password -->
 			<div class="label-group">
 				<label class="form-label">{{ $t('New Password') }}</label>
-				<input ref="password" type="password" v-model="form_data.password" class="form-control md:form-control-lg" placeholder="********" maxlength="20"/>
+				<PasswordInput ref="password" v-model="form_data.password" v-model:visible="password_visible" class="form-control md:form-control-lg" placeholder="********" maxlength="20"/>
 				<p v-if="form_data_errors.password" class="form-error" >{{ form_data_errors.password }}</p>
 			</div>
 
 			<!-- Password confirmation -->
 			<div class="label-group">
 				<label class="form-label">{{ $t('Password Confirmation') }}</label>
-				<input ref="password_confirmation" type="password" v-model="form_data.password_confirmation" class="form-control md:form-control-lg" placeholder="********" maxlength="20"/>
+				<PasswordInput ref="password_confirmation" v-model="form_data.password_confirmation" :reveal="false" :visible="password_visible" class="form-control md:form-control-lg" placeholder="********" maxlength="20"/>
 				<p v-if="form_data_errors.password_confirmation" class="form-error" >{{ form_data_errors.password_confirmation }}</p>
 			</div>
 
@@ -40,10 +40,11 @@
 	import _formMixins		from '@/js/_formMixins';
 
 	import ModalCard		from '@/js/Elements/ModalCard.vue';
+	import PasswordInput	from '@/js/Elements/Forms/PasswordInput.vue';
 
 	export default {
 		mixins: [_formMixins],
-		components: { ModalCard },
+		components: { ModalCard, PasswordInput },
 		props: {
 			email: {
 				type: String,
@@ -56,6 +57,7 @@
 					'password'				: 'required|password',
 					'password_confirmation'	: 'required|confirmed:password',
 				},
+				password_visible: false,
 			}
 		},
 		computed: {

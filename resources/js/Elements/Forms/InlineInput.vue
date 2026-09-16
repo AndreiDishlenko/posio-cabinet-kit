@@ -11,7 +11,19 @@
             :class="input_class"
             /> -->
 
-        <input v-if="type != 'select'" 
+        <PasswordInput v-if="type == 'password'"
+            ref="input"
+            v-model="data"
+            class="form-control md:form-control-lg"
+            :class="input_class"
+            :placeholder="placeholder"
+            :autocomplete="noautocomplete ? 'new-password' : ''"
+            :reveal="reveal"
+            :visible="visible"
+            @update:visible="(value) => $emit('update:visible', value)"
+            />
+
+        <input v-else-if="type != 'select'"
             ref="input" 
             :type="type ? type : 'text'" 
             v-model="data" 
@@ -37,9 +49,10 @@
     import Input        from './Input.vue'
     import Selectable   from './Selectable.vue'
     import Checkbox     from './Checkbox.vue'
+    import PasswordInput from './PasswordInput.vue'
 
     export default {
-        components: {Input, Selectable, Checkbox},
+        components: {Input, Selectable, Checkbox, PasswordInput},
         props: {
             type: {
                 type: String,
@@ -76,6 +89,15 @@
             placeholder: {
                 type: String,
                 default: ''
+            },
+            // Глазик и общая видимость — только для поля пароля.
+            reveal: {
+                type: Boolean,
+                default: true
+            },
+            visible: {
+                type: Boolean,
+                default: null
             }
         },
         data() {

@@ -17,14 +17,14 @@
 				</div>
 				<div class="label-group">
 					<label class="form-label" for="register-password">{{ $t('Password')}}</label>
-					<input id="register-password" ref="password" type="password" autocomplete="new-password" v-model="form_data.password" class="form-control md:form-control-lg" aria-describedby="register-password-hint"/>
+					<PasswordInput id="register-password" ref="password" autocomplete="new-password" v-model="form_data.password" v-model:visible="password_visible" class="form-control md:form-control-lg" aria-describedby="register-password-hint"/>
 					<!-- Требование к паролю видно до ошибки, а не появляется вместо неё после отправки. -->
 					<p id="register-password-hint" class="text-sm text-secondary">{{ $t('must be at least {length} characters', { length: 8 }) }}</p>
 					<p v-if="form_data_errors.password" class="form-error" >{{ form_data_errors.password }}</p>
 				</div>
 				<div class="label-group">
 					<label class="form-label" for="register-password-confirmation">{{ $t('Confirmation')}}</label>
-					<input id="register-password-confirmation" ref="password_confirmation" type="password" autocomplete="new-password" v-model="form_data.password_confirmation" class="form-control md:form-control-lg"  @keydown.enter="submit()"/>
+					<PasswordInput id="register-password-confirmation" ref="password_confirmation" autocomplete="new-password" v-model="form_data.password_confirmation" :reveal="false" :visible="password_visible" class="form-control md:form-control-lg"  @keydown.enter="submit()"/>
 					<p v-if="form_data_errors.password_confirmation" class="form-error" >{{ form_data_errors.password_confirmation }}</p>
 				</div>
 
@@ -52,12 +52,14 @@
 
     import AuthLayout          from '../../layouts/AuthLayout.vue';
     import SocialAuthButtons   from './SocialAuthButtons.vue';
+    import PasswordInput       from '@/js/Elements/Forms/PasswordInput.vue';
 
     export default {
         mixins: [sharedMixins, _formMixins],
-        components: { AuthLayout, Link, SocialAuthButtons },
+        components: { AuthLayout, Link, SocialAuthButtons, PasswordInput },
         data() {
             return {
+                password_visible: false,
                 validationRules: {
                     // Без нижней границы длины: реальные короткие имена (Ян, Лев) — не ошибка.
                     name:                   'required',

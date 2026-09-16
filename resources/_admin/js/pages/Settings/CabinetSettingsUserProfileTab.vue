@@ -61,21 +61,21 @@
 				<!-- Old password -->
 				<div class="label-group">
 					<label class="form-label">{{ $t('Old Password')}}</label>
-					<input ref="old_password" type="password" v-model="form_data.old_password" class="w-full form-control" maxlength="20"/>
+					<PasswordInput ref="old_password" v-model="form_data.old_password" class="w-full form-control" maxlength="20"/>
 					<p v-if="form_data_errors.old_password" class="form-error" >{{ form_data_errors.old_password }}</p>
 				</div>
 
 				<!-- New password -->
 				<div class="label-group">
 					<label class="form-label">{{ $t('New Password')}}</label>
-					<input ref="password" type="password" v-model="form_data.password" class="w-full form-control" placeholder="********" maxlength="20"/>
+					<PasswordInput ref="password" v-model="form_data.password" v-model:visible="password_visible" class="w-full form-control" placeholder="********" maxlength="20"/>
 					<p v-if="form_data_errors.password" class="form-error" >{{ form_data_errors.password }}</p>
 				</div>
 
 				<!-- Password confirmation -->
 				<div class="label-group !mt-2">
 					<label class="form-label">{{ $t('Password Confirmation')}}</label>
-					<input ref="password_confirmation" type="password" v-model="form_data.password_confirmation" class="w-full form-control" placeholder="********" maxlength="20"/>
+					<PasswordInput ref="password_confirmation" v-model="form_data.password_confirmation" :reveal="false" :visible="password_visible" class="w-full form-control" placeholder="********" maxlength="20"/>
 					<p v-if="form_data_errors.password_confirmation" class="form-error" >{{ form_data_errors.password_confirmation }}</p>
 				</div>
 
@@ -140,12 +140,13 @@
 	import Avatar 		from '@/js/Elements/Avatar.vue';
 	import Checkbox 	from '@/js/Elements/Forms/Checkbox.vue';
 	import Selectable	from '@/js/Elements/Forms/Selectable.vue';
+	import PasswordInput	from '@/js/Elements/Forms/PasswordInput.vue';
 
 	import { applyLocale, rememberLocale } from '@/js/localeSync.js';
 
     export default {
         mixins: [formMixins],
-		components: { Icon, Avatar, Checkbox, Selectable },
+		components: { Icon, Avatar, Checkbox, Selectable, PasswordInput },
         props: {
             disabled: {
                 type: Boolean,
@@ -160,6 +161,7 @@
                       password: 'password',
                     password_confirmation: 'confirmed:password'
                 },
+				password_visible: false,
 				selected_theme: 'dark',
 				color_themes: [
 					{ id: 'light', name: 'Light' },

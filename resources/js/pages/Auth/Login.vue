@@ -22,10 +22,9 @@
 
 				<div class="label-group">
 					<label class="form-label" for="login-password">{{ $t('Password')}}</label>
-					<input class="w-full form-control md:form-control-lg"
+					<PasswordInput class="w-full form-control md:form-control-lg"
 						id="login-password"
 						ref="password"
-						type="password"
 						autocomplete="off"
 						v-model="form_data.password"
 						maxlength="20"
@@ -67,10 +66,11 @@
 
     import AuthLayout          from '../../layouts/AuthLayout.vue';
     import SocialAuthButtons   from './SocialAuthButtons.vue';
+    import PasswordInput       from '@/js/Elements/Forms/PasswordInput.vue';
 
     export default {
         mixins: [sharedMixins, _formMixins],
-        components: { AuthLayout, Link, SocialAuthButtons },
+        components: { AuthLayout, Link, SocialAuthButtons, PasswordInput },
         props: {
             email: {
                 type: String,
@@ -118,10 +118,8 @@
             // Clear browser-autofilled password — Chrome fills DOM directly, bypassing Vue
             this.$nextTick(() => {
                 setTimeout(() => {
-                    if (this.$refs.password) {
-                        this.$refs.password.value = '';
-                        this.$refs.password.dispatchEvent(new Event('input'));
-                    }
+                    if (this.$refs.password)
+                        this.$refs.password.clear();
                 }, 200);
             });
 

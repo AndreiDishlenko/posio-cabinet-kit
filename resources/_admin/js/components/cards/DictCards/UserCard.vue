@@ -15,8 +15,8 @@
 					<InlineInput type="select" ref="role_id" label="System role" v-model="form_data.role_id" :source="roles" :error="form_data_errors.role_id" label_class="w-[140px]"/>
 				</div>
 
-				<InlineInput type="password" ref="password" label="Password" v-model="form_data.password" :error="form_data_errors.password" label_class="w-[140px]" placeholder="********" :noautocomplete="true"/>
-				<InlineInput type="password" ref="password_confirmation" label="Confirmation" v-model="form_data.password_confirmation" :error="form_data_errors.password_confirmation" label_class="w-[140px]" placeholder="********"/>
+				<InlineInput type="password" ref="password" label="Password" v-model="form_data.password" v-model:visible="password_visible" :error="form_data_errors.password" label_class="w-[140px]" placeholder="********" :noautocomplete="true"/>
+				<InlineInput type="password" ref="password_confirmation" label="Confirmation" v-model="form_data.password_confirmation" :reveal="false" :visible="password_visible" :error="form_data_errors.password_confirmation" label_class="w-[140px]" placeholder="********"/>
 			</div>
 		</div>
 	</CardTemplate>
@@ -43,6 +43,7 @@
 		},
 		data() {
 			return {
+				password_visible: false,
 				validationRules: {},
 			}
 		},

@@ -10,12 +10,12 @@
                 </div>
                 <div class="label-group">
                     <label class="form-label">{{ $t('Password')}}</label>
-                    <input ref="password" type="password" v-model="form_data.password" class="form-control md:form-control-lg"/>
+                    <PasswordInput ref="password" v-model="form_data.password" v-model:visible="password_visible" class="form-control md:form-control-lg"/>
                     <p v-if="form_data_errors.password" class="form-error" >{{ form_data_errors.password }}</p>
                 </div>
                 <div class="label-group !mt-1">
                     <label class="form-label">{{ $t('Confirmation')}}</label>
-                    <input ref="password_confirmation" type="password" v-model="form_data.password_confirmation" class="form-control md:form-control-lg" @keyup.enter="submit()"/>
+                    <PasswordInput ref="password_confirmation" v-model="form_data.password_confirmation" :reveal="false" :visible="password_visible" class="form-control md:form-control-lg" @keyup.enter="submit()"/>
                     <p v-if="form_data_errors.password_confirmation" class="form-error" >{{ form_data_errors.password_confirmation }}</p>
                 </div>
             </div>
@@ -52,10 +52,11 @@
     import _formMixins      from '@/js/_formMixins';
 
     import AuthLayout       from '../../layouts/AuthLayout.vue';
+    import PasswordInput    from '@/js/Elements/Forms/PasswordInput.vue';
 
     export default {
         mixins: [sharedMixins, _formMixins],
-        components: { Link, AuthLayout },
+        components: { Link, AuthLayout, PasswordInput },
         props: {
             email: {
                 type: String,
@@ -77,6 +78,7 @@
                     password:   'required|password',
                     password_confirmation: 'required|confirmed:password'
                 },
+                password_visible: false,
                 responseInterceptor: null
             }
         },

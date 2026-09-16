@@ -75,6 +75,8 @@ export default {
                 return [];
 
             const inputRefs = Object.entries(allRefs)
+                // Поле-компонент отдаёт своё настоящее поле, чтобы остаться в цепочке перехода по Enter/Tab.
+                .map(([key, ref]) => [key, ref && typeof ref.inputElement === 'function' ? ref.inputElement() : ref])
                 .filter(([key, el]) => {
                     return el instanceof HTMLElement &&
                         formBlock.contains(el) &&

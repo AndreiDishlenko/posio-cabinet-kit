@@ -13,15 +13,15 @@
 			<Icon icon="stash:burger-classic-duotone" class="icon icon-lg cursor-pointer text-secondary hover:text-zinc-200"/>
 		</button>
 
-		<!-- Page Title (Breadcrumbs) -->
+		<!-- Page Title -->
 		<!-- Ширину не ограничиваем константой: заголовок занимает столько, сколько
 		     нужно, и ужимается многоточием только когда не хватает места в строке.
 		     Заголовок страницы — единственный h1 документа: без него у страницы нет
 		     ни одного заголовка первого уровня. -->
-		<h1 class="page-title !ms-3  text-nowrap text-secondary min-w-0 overflow-hidden flex items-baseline gap-1.5">
-			<span v-if="breadcrumbSection" class="text-sm opacity-50 lt-sm:hidden shrink-0">{{ $t(breadcrumbSection) }}</span>
-			<span v-if="breadcrumbSection" class="text-sm opacity-30 lt-sm:hidden shrink-0">/</span>
-			<span class="page-title-leaf text-xl font-bold text-color overflow-hidden text-ellipsis">{{ $t(breadcrumbLeaf) }}</span>
+		<h1 class="page-title !ms-3  text-nowrap text-secondary min-w-0 overflow-hidden flex items-baseline">
+			<!-- Шапка называет всю страницу: название активного таба видно в самих табах
+			     и в заголовке вкладки браузера. -->
+			<span class="page-title-leaf text-xl font-bold text-color overflow-hidden text-ellipsis">{{ $t(pageTitle) }}</span>
 		</h1>
 
 		<div class="grow !ms-0"></div>
@@ -88,10 +88,13 @@
 	export default {
 		components: { Icon, ThemeSelector, Avatar, LangSelectorPill, Notifications, CabinetBurgerMenu },
 		props: {
-			// Active sub-section (e.g. the active tab name). When provided, the
-			// breadcrumb shows "Page / Subsection" on desktop and just the
-			// subsection on mobile. Standard behaviour for any tabbed page.
+			// Active sub-section (e.g. the active tab name) — last-resort fallback
+			// for pages without a menu entry and an explicit header title.
 			page_name: {
+				type: String,
+				default: ''
+			},
+			header_title: {
 				type: String,
 				default: ''
 			},
@@ -103,23 +106,8 @@
 			}
 		},
 		computed: {
-			currentSection() {
-				const menu = this.$page.props.cabinetMenu;
-				const currentId = this.$page.props.currentPage?.id;
-				if (!menu || !currentId) return null;
-				for (const group of menu) {
-					if (group.children?.some(item => item.id === currentId))
-						return group.label;
-				}
-				return null;
-			},
-			// When a sub-section (page_name) is set, the page name becomes the
-			// muted context and the sub-section is the bold leaf.
-			breadcrumbSection() {
-				return this.page_name ? (this.$page.props.currentPage?.name || null) : this.currentSection;
-			},
-			breadcrumbLeaf() {
-				return this.page_name || this.$page.props.currentPage?.name || '';
+			pageTitle() {
+				return this.header_title || this.$page.props.currentPage?.name || this.page_name || '';
 			},
 		},
 		methods: {

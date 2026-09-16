@@ -124,12 +124,13 @@ class CabinetKitServiceProvider extends ServiceProvider
                 SyncConfigCommand::class,
                 ImportSiteBrand::class,
             ]);
+        }
 
-            // Карту сайта строит сторонний генератор — без него команда просто
-            // не появляется, вместо падения на отсутствующем классе.
-            if (class_exists(\Spatie\Sitemap\Sitemap::class)) {
-                $this->commands([GenerateSitemap::class]);
-            }
+        // Карту сайта строит сторонний генератор — без него команда просто
+        // не появляется, вместо падения на отсутствующем классе. Регистрация
+        // вне консольной ветки: кнопка раздела SEO вызывает команду из веб-запроса.
+        if (class_exists(\Spatie\Sitemap\Sitemap::class)) {
+            $this->commands([GenerateSitemap::class]);
         }
     }
 

@@ -1,5 +1,5 @@
 <template>
-    <CabinetLayout :space_y="2" :page_name="current_tab_title">
+    <CabinetLayout :space_y="2" :page_name="current_tab_title" header_title="Settings">
 
         <Tabs
             v-model="active_tab"

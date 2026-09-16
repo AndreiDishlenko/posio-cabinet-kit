@@ -8,8 +8,22 @@
   bundle and restarts its process rather than leaving it on the old bundle.
   Existing launchers are never overwritten: to get the flag, delete `updcab`
   (and `updcab.bat`) in the project root and run `php artisan cabinet-kit:sync-config`.
+- `PasswordInput.vue` (`resources/js/Elements/Forms/`): password field with an eye
+  toggle inside the input; the caret keeps its position when the type flips.
+  Attributes and classes land on the `<input>` itself, so existing field styling
+  is unchanged. `reveal: false` hides the eye; `v-model:visible` links fields —
+  a confirmation field follows the main one without its own eye. Exposes
+  `focus()`, `select()`, `clear()`.
+  Used in Login, Register, ResetPassword, the profile settings tab,
+  ChangeSystemPassword and `InlineInput type="password"` (new `reveal` / `visible`
+  props, used by `UserCard`). `_formMixins` keeps such fields in the Enter/Tab
+  chain and change-validation.
 
 **Fixed**
+- SEO page, "Create sitemaps.xml": the request failed with 500 — `sitemap:generate`
+  was registered only for console runs, so the call from the web request found no
+  such command. It is now registered in every context (still only when
+  `spatie/laravel-sitemap` is installed).
 - `SideMenu.vue`: the ProductTour "expand all groups" call was silently a no-op —
   the emitter bound `tour_show_all_groups`/`tour_restore_groups` to methods named
   `tourShowAll`/`tourRestore`, which didn't exist (the actual methods were named
@@ -25,6 +39,14 @@
   it hanging open over the new page. Now closes on every Inertia `navigate` event.
 
 **Changed**
+- `CabinetHeader.vue`: the header title always shows the whole page name, on every
+  screen width; the "Group / Page" and "Page / Tab" breadcrumb (muted prefix + `/`)
+  is gone. Tabbed pages still pass the active tab via `page_name` — it now only
+  drives the browser tab `<title>`. Header priority: `header_title` → menu item name
+  (`currentPage.name`) → `page_name`.
+- `CabinetLayout.vue`: new `header_title` prop (forwarded to the header) for pages
+  that aren't in the cabinet menu, so the server can't name them.
+  `CabinetSettings.vue` passes `header_title="Settings"`.
 - `SideMenu.vue`: rail (collapsed) mode no longer hides the group-header button —
   it now shows just the arrow (rotated closed by default) as the sole, always
   usable control to expand a group from the rail, with the group name in a
