@@ -13,6 +13,9 @@
   group (`RequireRegistrationApproval`, outside `cabinet-kit.middleware`) logs
   such a session out. Approving requires being signed in with `sysper-users`;
   the user then gets a letter that they can sign in.
+- `cabinet_onboarding.registration_approval_emails` (env
+  `ONBOARDING_REGISTRATION_APPROVAL_EMAILS`, comma-separated): send the approval
+  letter to these addresses instead of every `sysper-users` holder.
 - Migration `add_registration_approval_to_users_table`: nullable
   `approval_requested_at`, `approved_at`, `approved_by` on the users table.
 - `Services\RegistrationApprovalService`, `Notifications\RegistrationApprovalRequest`,

@@ -49,4 +49,8 @@ return [
     // не открыт любому, кто зарегистрировался. Выключается переменной окружения.
     'registration_approval'  => (bool) env('ONBOARDING_REGISTRATION_APPROVAL', true),
 
+    // Кому уходит письмо со ссылкой одобрения: адреса через запятую. Пусто — всем пользователям
+    // с правом sysper-users. Одобрить по ссылке может только вошедший с этим правом.
+    'registration_approval_emails' => env('ONBOARDING_REGISTRATION_APPROVAL_EMAILS', ''),
+
 ];

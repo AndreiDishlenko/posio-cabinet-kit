@@ -219,6 +219,17 @@ ONBOARDING_REGISTRATION_APPROVAL=false
 ```
 
 (or `'registration_approval' => false` in a published `config/cabinet_onboarding.php`).
+
+By default the approval letter goes to every holder of `sysper-users`. To send it
+to specific addresses instead, list them comma-separated:
+
+```dotenv
+ONBOARDING_REGISTRATION_APPROVAL_EMAILS=owner@example.com,ops@example.com
+```
+
+An address that belongs to a cabinet user gets the letter in that user's
+language. Following the link still requires signing in with `sysper-users`, so
+point it at administrators' own addresses.
 The letters are customized like the auth emails below: texts under
 `registration_approval_request` / `registration_approved` in
 `lang/vendor/cabinet-kit/{locale}/mail.php`, templates
