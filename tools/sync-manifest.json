@@ -653,10 +653,59 @@
     },
     {
       "id": "page-registration-approval",
-      "mode": "copy",
+      "mode": "manual",
       "source": "resources/_main/js/Pages/Auth/RegistrationApproval.vue",
       "target": "resources/js/pages/Auth/RegistrationApproval.vue",
-      "notes": "Verbatim except the AuthLayout import path."
+      "notes": "Verbatim except the AuthLayout import path. Manual, not copy: -Apply would bring back the source's module alias."
+    },
+    {
+      "id": "page-auth-login",
+      "mode": "manual",
+      "source": "resources/_main/js/Pages/Auth/Login.vue",
+      "target": "resources/js/pages/Auth/Login.vue",
+      "notes": "Verbatim except the AuthLayout import path (Layouts -> layouts)."
+    },
+    {
+      "id": "page-auth-register",
+      "mode": "manual",
+      "source": "resources/_main/js/Pages/Auth/Register.vue",
+      "target": "resources/js/pages/Auth/Register.vue",
+      "notes": "Verbatim except the AuthLayout import path (Layouts -> layouts)."
+    },
+    {
+      "id": "page-auth-forgot-password",
+      "mode": "manual",
+      "source": "resources/_main/js/Pages/Auth/ForgotPassword.vue",
+      "target": "resources/js/pages/Auth/ForgotPassword.vue",
+      "notes": "Verbatim except the AuthLayout import path (Layouts -> layouts)."
+    },
+    {
+      "id": "page-auth-reset-password",
+      "mode": "manual",
+      "source": "resources/_main/js/Pages/Auth/ResetPassword.vue",
+      "target": "resources/js/pages/Auth/ResetPassword.vue",
+      "notes": "Verbatim except the AuthLayout import path (Layouts -> layouts)."
+    },
+    {
+      "id": "page-auth-verify-email",
+      "mode": "manual",
+      "source": "resources/_main/js/Pages/Auth/VerifyEmail.vue",
+      "target": "resources/js/pages/Auth/VerifyEmail.vue",
+      "notes": "AuthLayout import path; logout link sends POST because the package registers logout as a POST route (the source uses GET)."
+    },
+    {
+      "id": "page-auth-social-buttons",
+      "mode": "copy",
+      "source": "resources/_main/js/Pages/Auth/SocialAuthButtons.vue",
+      "target": "resources/js/pages/Auth/SocialAuthButtons.vue",
+      "notes": "Verbatim copy. Hidden unless the shared social_auth.google.enabled flag is on."
+    },
+    {
+      "id": "layout-auth",
+      "mode": "manual",
+      "source": "resources/_main/js/Layouts/AuthLayout.vue",
+      "target": "resources/js/layouts/AuthLayout.vue",
+      "notes": "Logo is not wrapped in a link to the home route (the host's public home is not guaranteed; the package's own home is the cabinet), fallback logo is the package brand asset instead of the Posio path."
     },
     {
       "id": "layout-product-tour",

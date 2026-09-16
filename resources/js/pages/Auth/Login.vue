@@ -12,35 +12,36 @@
 			</div>
 
 			<!-- Continue with email -->
-			<div class="v-flex space-y-2">
-				
+			<form class="v-flex space-y-2" @submit.prevent="submit">
+
 				<div class="label-group">
-					<!-- <label class="form-label">{{ $t('Continue with Email')}}</label> -->
-					<input ref="email" type="email" autocomplete="email" v-model="form_data.email" class="form-control md:form-control-lg" @change.stop.prevent="nextField('email', 'password')"/>
+					<label class="form-label" for="login-email">{{ $t('Your email')}}</label>
+					<input id="login-email" ref="email" type="email" autocomplete="email" v-model="form_data.email" class="form-control md:form-control-lg" @change.stop.prevent="nextField('email', 'password')"/>
 					<p v-if="form_data_errors.email" class="form-error" >{{ $t(form_data_errors.email) }}</p>
 				</div>
 
 				<div class="label-group">
-					<input class="w-full form-control md:form-control-lg"  
+					<label class="form-label" for="login-password">{{ $t('Password')}}</label>
+					<input class="w-full form-control md:form-control-lg"
+						id="login-password"
 						ref="password"
 						type="password"
 						autocomplete="off"
 						v-model="form_data.password"
 						maxlength="20"
-						@keydown.enter="submit()"
 						:placeholder="'********'"
 						/>
 					<p v-if="form_data_errors.password" class="form-error" >{{ $t(form_data_errors.password) }}</p>
 				</div>
 
 				<button
+					type="submit"
 					class="w-full button primary-button button-lg text-md"
 					:class="$inprogress.value && 'spinner'"
-					@click.stop.prevent="submit"
 					>{{ $t('Continue')}}
 				</button>
 
-			</div>
+			</form>
 
 			<!-- Forgot / Register links -->
             <div class="card-footer-text sm:px-4 text-secondary">

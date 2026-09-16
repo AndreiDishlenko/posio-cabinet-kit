@@ -202,7 +202,6 @@ return [
                 // and an Inertia visit would render it inside the modal frame
                 // instead of navigating there. Path mirrors `log_viewer` above.
                 ['id' => 'logs', 'label' => 'Logs', 'icon' => 'ix:log', 'link' => '/admin/log-viewer', 'permission' => 'sysper-log-view'],
-                ['id' => 'settings', 'label' => 'Settings', 'icon' => 'proicons:settings', 'route' => 'cabinet-kit.settings', 'permission' => null],
             ],
         ],
     ],

@@ -32,8 +32,10 @@ class CabinetKitRoles
         'sysper-platform-analytics',
     ];
 
-    // Управление ролями остаётся только у суперадминистратора, даже системному администратору не делегируется.
-    public const UNDELEGABLE_PERMISSIONS = ['sysper-roles'];
+    // Управление ролями и лог приложения остаются только у суперадминистратора, даже системному администратору не делегируются.
+    public const UNDELEGABLE_PERMISSIONS = ['sysper-roles', 'sysper-log-view'];
+
+    public const SUPER_ADMIN_ROLE = 'SAdmin';
 
     public const ACCOUNT_PERMISSIONS = ['manage-members', 'manage-account'];
 
@@ -86,6 +88,7 @@ class CabinetKitRoles
             }
 
             static::classify();
+            static::pinSystemUserRole();
         } finally {
             $registrar->setPermissionsTeamId($previousTeamId);
             $registrar->forgetCachedPermissions();
@@ -180,6 +183,23 @@ class CabinetKitRoles
         if (Schema::hasColumn(static::table('permissions'), 'is_system')) {
             Permission::query()->whereIn('name', self::SYSTEM_PERMISSIONS)->update(['is_system' => 1]);
             Permission::query()->whereIn('name', self::ACCOUNT_PERMISSIONS)->update(['is_system' => 0]);
+        }
+    }
+
+    // Встроенный системный пользователь всегда суперадминистратор, какую бы системную роль ему ни выставили.
+    protected static function pinSystemUserRole(): void
+    {
+        $email = config('cabinet-kit.system_users.sa.email');
+        $userModel = config('cabinet-kit.user_model', \App\Models\User::class);
+
+        if (! $email || ! class_exists($userModel) || ! method_exists($userModel, 'setSystemRole')) {
+            return;
+        }
+
+        $user = $userModel::query()->where('email', $email)->first();
+
+        if ($user && ! $user->hasSystemRole(self::SUPER_ADMIN_ROLE)) {
+            $user->setSystemRole(self::SUPER_ADMIN_ROLE);
         }
     }
 

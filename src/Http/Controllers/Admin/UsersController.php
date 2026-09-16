@@ -63,6 +63,11 @@ class UsersController extends Controller
                 abort(403);
             }
 
+            // Встроенный системный пользователь всегда остаётся суперадминистратором.
+            if ($target->isSystem()) {
+                abort(422, 'Root account role changes denied.');
+            }
+
             $role = Role::query()->where('is_system', 1)->findOrFail($validated['role_id']);
             if ($role->name === 'SAdmin') {
                 abort(422, 'The super administrator role cannot be assigned.');
@@ -99,6 +104,8 @@ class UsersController extends Controller
                     ->where("{$roleTable}.model_type", '=', $modelType);
             })
             ->leftJoin('roles', 'roles.id', '=', "{$roleTable}.role_id")
+            // Встроенный суперадминистратор в управлении пользователями не участвует.
+            ->where("{$usersTable}.email", '!=', config('cabinet-kit.system_users.sa.email', 'sa@gmail.com'))
             ->orderByDesc("{$usersTable}.created_at");
 
         if (Schema::hasColumn($usersTable, 'phone')) {

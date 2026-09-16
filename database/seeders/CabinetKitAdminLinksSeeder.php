@@ -60,16 +60,6 @@ class CabinetKitAdminLinksSeeder extends Seeder
                 'is_header' => false,
                 'is_published' => true,
             ],
-            [
-                'order_id' => 5,
-                'name' => 'Settings',
-                'icon' => 'proicons:settings',
-                'link' => null,
-                'route' => 'cabinet-kit.settings',
-                'permissions' => null,
-                'is_header' => false,
-                'is_published' => true,
-            ],
             // Операторские разделы: бренд публичной части, бренд кабинета и
             // постраничная SEO-мета — все три за одним системным правом.
             [

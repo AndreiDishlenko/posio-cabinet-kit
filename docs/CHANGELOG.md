@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased — Administration menu and the built-in super administrator
+
+**Removed**
+- The `Settings` item (route `cabinet-kit.settings`) of the Administration menu
+  group: it is not in posio.cabinet's menu and duplicated the user block of the
+  side menu, which still opens the settings page. Migration
+  `remove_settings_menu_item` deletes the row from `admin_links`; the item is
+  also gone from the `cabinet-kit.menu` fallback and the installer seeder.
+
+**Changed**
+- `sysper-log-view` is no longer delegated to `System administrator` — the log
+  viewer and the Logs item stay with `SAdmin`. Migration
+  `revoke_log_view_from_system_administrator` revokes it on existing hosts, and
+  creating the permission from the matrix grants it to `SAdmin` only.
+- The roles sync after every `migrate` puts the built-in system user
+  (`cabinet-kit.system_users.sa`) back on the `SAdmin` system role. The Users
+  page no longer lists that user and refuses to change its role.
+
 ## Unreleased — New registrations wait for an administrator's approval
 
 **Added**

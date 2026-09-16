@@ -67,9 +67,6 @@ class PermissionsController extends Controller
         ]);
 
         Role::query()->where('name', 'SAdmin')->first()?->givePermissionTo($permission);
-        if ($permission->name === 'sysper-log-view') {
-            Role::query()->where('name', 'System administrator')->first()?->givePermissionTo($permission);
-        }
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 

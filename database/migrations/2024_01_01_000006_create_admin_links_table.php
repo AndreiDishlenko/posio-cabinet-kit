@@ -102,18 +102,6 @@ return new class extends Migration
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
-            [
-                'order_id' => 5,
-                'name' => 'Settings',
-                'icon' => 'proicons:settings',
-                'link' => null,
-                'route' => 'cabinet-kit.settings',
-                'permissions' => null,
-                'is_header' => false,
-                'is_published' => true,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
         ];
     }
 };

@@ -90,7 +90,10 @@ release up to date without running any seeder.
   `sysper-pages`, `sysper-users`, `sysper-roles`, `sysper-accounts`,
   `sysper-usercontent`, `sysper-log-view`, `sysper-platform-analytics`.
   `SAdmin` holds every permission, `System administrator` every system one
-  except `sysper-roles`, `System user` none.
+  except `sysper-roles` and `sysper-log-view`, `System user` none. The built-in
+  system user (`cabinet-kit.system_users.sa`) is put back on `SAdmin` by the
+  same sync, cannot have its role changed from the Users page and is not listed
+  there.
 - **Account level** — only what the package itself assigns and checks: the
   roles named in `cabinet-kit.roles` (owner, default member, assignable) and
   the `manage-members` / `manage-account` permissions, granted to
@@ -227,7 +230,7 @@ config during `register()`, before its provider reads it, because only
 
 Access is the `sysper-log-view` system permission, checked through
 `LogViewer::auth()` — the same permission that gates the menu item, granted
-to `SAdmin` and to `System administrator` by the roles sync. A host that
+to `SAdmin` only; `System administrator` does not get it. A host that
 registers its own callback or a `viewLogViewer` gate keeps it.
 
 Because it is a plain page, the menu item carries `link`, not `route`:
