@@ -621,7 +621,42 @@
       "mode": "manual",
       "source": "config/cabinet_onboarding.php",
       "target": "config/cabinet_onboarding.php",
-      "notes": "Same file name and keys as the source, merged under the same config name so ported code reads it as is. Package values are all false; comments explain which steps the package does not ship (account setup, first-steps checklist, team notification, milestones)."
+      "notes": "Same file name and keys as the source, merged under the same config name so ported code reads it as is. Package values are all false except registration_approval, which the package turns on (the source keeps it off); comments explain which steps the package does not ship (account setup, first-steps checklist, team notification, milestones)."
+    },
+    {
+      "id": "registration-approval-service",
+      "mode": "manual",
+      "source": "app/Services/RegistrationApprovalService.php",
+      "target": "src/Services/RegistrationApprovalService.php",
+      "notes": "Logs through the framework logger instead of the host app log, reads the user model from cabinet-kit.user_model, the system team from cabinet-kit.system_team_id, and counts SAdmin role holders and the configured sa email as approvers (the source uses general.sa_user)."
+    },
+    {
+      "id": "registration-approval-middleware",
+      "mode": "manual",
+      "source": "app/Http/Middleware/RegistrationApproved.php",
+      "target": "src/Http/Middleware/RequireRegistrationApproval.php",
+      "notes": "Renamed under the package's Require* convention; JSON answer omits the host-specific redirect field. Mounted on the cabinet group right after NotVerified."
+    },
+    {
+      "id": "registration-approval-controller",
+      "mode": "manual",
+      "source": "app/Http/Controllers/AuthenticateController.php",
+      "target": "src/Http/Controllers/Auth/RegistrationApprovalController.php",
+      "notes": "approveRegistration/approvalOutcome of the source controller, split out like the rest of its auth methods; home_url comes from CabinetRedirects."
+    },
+    {
+      "id": "registration-approval-notifications",
+      "mode": "manual",
+      "source": "app/Notifications/RegistrationApprovalRequest.php",
+      "target": "src/Notifications/RegistrationApprovalRequest.php",
+      "notes": "Source renders Posio's x-mail-layout views with lang/*/emails.php; the package builds markdown mail from cabinet-kit::mail views and lang/*/mail.php like AuthMail. Same for RegistrationApproved."
+    },
+    {
+      "id": "page-registration-approval",
+      "mode": "copy",
+      "source": "resources/_main/js/Pages/Auth/RegistrationApproval.vue",
+      "target": "resources/js/pages/Auth/RegistrationApproval.vue",
+      "notes": "Verbatim except the AuthLayout import path."
     },
     {
       "id": "layout-product-tour",

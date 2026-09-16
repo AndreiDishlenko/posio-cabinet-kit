@@ -208,6 +208,24 @@ The helper reads `lang/{app()->getLocale()}.json` and falls back to
 `config('app.fallback_locale')`. Extra JSON directories can be configured in
 `config/cabinet-kit.php` under `translations.json_paths`.
 
+## Registration approval
+
+On by default: each self-registered user waits until an administrator with the
+system permission `sysper-users` follows the link from the approval letter. To
+let registrations straight in, set in the host `.env`:
+
+```dotenv
+ONBOARDING_REGISTRATION_APPROVAL=false
+```
+
+(or `'registration_approval' => false` in a published `config/cabinet_onboarding.php`).
+The letters are customized like the auth emails below: texts under
+`registration_approval_request` / `registration_approved` in
+`lang/vendor/cabinet-kit/{locale}/mail.php`, templates
+`resources/views/vendor/cabinet-kit/mail/{registration-approval-request,registration-approved}.blade.php`.
+The approval letter view also receives `$registeredUser`; `$user` there is the
+administrator it is addressed to.
+
 ## Auth emails: texts and templates
 
 The email confirmation and password reset letters are Laravel's stock

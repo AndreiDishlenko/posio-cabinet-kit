@@ -9,6 +9,7 @@ use Inertia\Inertia;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\InvalidStateException;
 use Posio\CabinetKit\Repositories\UserRepository;
+use Posio\CabinetKit\Services\RegistrationApprovalService;
 use Posio\CabinetKit\Support\CabinetRedirects;
 
 class SocialAuthController extends Controller
@@ -69,8 +70,21 @@ class SocialAuthController extends Controller
         return $this->signIn($user);
     }
 
+    // A first social sign-in is a registration: in approval mode the newcomer
+    // waits for an administrator, and since the provider already vouched for
+    // the address there is nothing a session could be used for until then.
     protected function signIn($user)
     {
+        $approvals = app(RegistrationApprovalService::class);
+
+        if ($user->wasRecentlyCreated) {
+            $approvals->requestApproval($user);
+        }
+
+        if ($approvals->isPending($user)) {
+            return redirect()->route('login')->with('status', 'registration-pending-approval');
+        }
+
         Auth::login($user, remember: true);
 
         request()->session()->regenerate();

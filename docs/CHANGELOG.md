@@ -1,5 +1,36 @@
 # Changelog
 
+## Unreleased — New registrations wait for an administrator's approval
+
+**Added**
+- Registration approval mode, **on by default**: `cabinet_onboarding.registration_approval`
+  (env `ONBOARDING_REGISTRATION_APPROVAL`, set it to `false` to turn it off).
+  A self-registered user — form or first social sign-in — is marked
+  `approval_requested_at`, and every user holding the system permission
+  `sysper-users` (SAdmin included) gets a letter with a signed approval link.
+  Until someone follows it, the user can confirm their email, but signing in
+  answers "registration not approved by an administrator" and the cabinet route
+  group (`RequireRegistrationApproval`, outside `cabinet-kit.middleware`) logs
+  such a session out. Approving requires being signed in with `sysper-users`;
+  the user then gets a letter that they can sign in.
+- Migration `add_registration_approval_to_users_table`: nullable
+  `approval_requested_at`, `approved_at`, `approved_by` on the users table.
+- `Services\RegistrationApprovalService`, `Notifications\RegistrationApprovalRequest`,
+  `Notifications\RegistrationApproved`, route `registration.approve`
+  (`{prefix}/registration/approve/{id}/{hash}`), page `pages/Auth/RegistrationApproval`,
+  mail views `registration-approval-request` / `registration-approved` and texts
+  `mail.registration_approval_request.*` / `mail.registration_approved.*`,
+  `auth.pending_approval`.
+
+**Changed**
+- Signing in returns to the page that sent the visitor to the login form
+  (`redirect()->intended`) before falling back to `after_login` — the approval
+  link from the letter survives the sign-in.
+- `AuthMail::siteName()` is public: the approval letters reuse it.
+
+Existing, invited and built-in users are never marked and keep signing in after
+the update. Turning the mode off lets everyone still waiting in.
+
 ## Unreleased — Roles and permissions are synced on every migrate
 
 **Fixed**

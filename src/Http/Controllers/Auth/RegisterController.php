@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
+use Posio\CabinetKit\Services\RegistrationApprovalService;
 
 // Registration ends with the user alone plus the mandatory email confirmation;
 // every other step after it is switched by the onboarding config, all off here.
@@ -20,7 +21,7 @@ class RegisterController extends Controller
         return Inertia::render('pages/Auth/Register');
     }
 
-    public function register(Request $request)
+    public function register(Request $request, RegistrationApprovalService $approvals)
     {
         $usersTable = config('cabinet-kit.users_table', 'users');
 
@@ -45,6 +46,9 @@ class RegisterController extends Controller
             $user->sendEmailVerificationNotification();
         }
 
+        $approvals->requestApproval($user);
+
+        // Сессия нужна экрану подтверждения почты; кабинет до одобрения регистрации закрыт отдельно.
         Auth::login($user);
         $request->session()->regenerate();
 

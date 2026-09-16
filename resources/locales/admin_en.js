@@ -10,6 +10,10 @@ export default {
     "email-verified": "Your email address has been confirmed. Please sign in.",
     "email-already-verified": "This email address has already been confirmed. Please sign in.",
     "social-auth-failed": "Sign-in was not completed. Please try again — click the sign-in button once and do not reload the page you return to.",
+    "registration-pending-approval": "Your registration has not been approved by an administrator yet. We will email you as soon as it is.",
+    "registration-approved": "Registration approved. The user can now sign in to the cabinet — we have emailed them about it.",
+    "registration-already-approved": "This registration has already been approved.",
+    "registration-approval-link-invalid": "This approval link is no longer valid: the user was deleted or their email address has changed.",
 
     "Please wait {number} s. before retrying.": "Please wait {number} s. before retrying.",
 

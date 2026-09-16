@@ -74,7 +74,7 @@ class AuthMail
     }
 
     // Письмо не должно теряться из-за недоступной базы настроек сайта.
-    protected static function siteName(): string
+    public static function siteName(): string
     {
         try {
             return app(SiteSettingsService::class)->siteName();

@@ -17,5 +17,6 @@ return [
     'password' => 'The provided password is incorrect.',
     'throttle' => 'Too many login attempts. Please try again in :seconds seconds.',
     'unavailable' => 'Sign-in is temporarily unavailable. Please try again in a few minutes.',
+    'pending_approval' => 'Your registration has not been approved by an administrator yet. We will email you as soon as it is.',
 
 ];

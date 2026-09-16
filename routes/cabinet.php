@@ -14,6 +14,7 @@ use Posio\CabinetKit\Http\Controllers\SiteSettingsController;
 use Posio\CabinetKit\Http\Controllers\Auth\LoginController;
 use Posio\CabinetKit\Http\Controllers\Auth\PasswordResetController;
 use Posio\CabinetKit\Http\Controllers\Auth\RegisterController;
+use Posio\CabinetKit\Http\Controllers\Auth\RegistrationApprovalController;
 use Posio\CabinetKit\Http\Controllers\Auth\SocialAuthController;
 use Posio\CabinetKit\Http\Controllers\Auth\VerificationController;
 use Posio\CabinetKit\Http\Controllers\ProfileController;
@@ -22,6 +23,7 @@ use Posio\CabinetKit\Http\Controllers\SystemPasswordController;
 use Posio\CabinetKit\Http\Middleware\ApplyCabinetKitLocale;
 use Posio\CabinetKit\Http\Middleware\CanSystemPermission;
 use Posio\CabinetKit\Http\Middleware\NotVerified;
+use Posio\CabinetKit\Http\Middleware\RequireRegistrationApproval;
 use Posio\CabinetKit\Http\Middleware\RequireSystemPasswordChange;
 use Posio\CabinetKit\Http\Middleware\SetPermissionTeam;
 use Posio\CabinetKit\Http\Middleware\ShareCabinetKitData;
@@ -80,14 +82,20 @@ Route::middleware(['web', UseCabinetKitRootView::class, ApplyCabinetKitLocale::c
                 Route::post('email/verification-notification', [VerificationController::class, 'send'])
                     ->middleware('throttle:6,1')
                     ->name('verification.send');
+
+                // Ссылка одобрения регистрации из письма администратору: подпись удостоверяет
+                // ссылку, вход и системное право — того, кто одобряет (право проверяет контроллер).
+                Route::get('registration/approve/{id}/{hash}', [RegistrationApprovalController::class, 'approve'])
+                    ->middleware('signed')
+                    ->name('registration.approve');
             });
         }
 
-        // Подтверждение почты не в списке настраиваемых middleware: хост не должен
-        // иметь возможность открыть кабинет неподтверждённому пользователю.
+        // Подтверждение почты и одобрение регистрации не в списке настраиваемых middleware:
+        // хост не должен иметь возможность открыть кабинет неподтверждённому или неодобренному пользователю.
         Route::middleware(array_merge(
                 config('cabinet-kit.middleware', ['web', 'auth']),
-                [NotVerified::class, SetPermissionTeam::class, ShareCabinetKitData::class, RequireSystemPasswordChange::class],
+                [NotVerified::class, RequireRegistrationApproval::class, SetPermissionTeam::class, ShareCabinetKitData::class, RequireSystemPasswordChange::class],
             ))
             ->name(config('cabinet-kit.route_name_prefix', 'cabinet-kit.'))
             ->group(function () {

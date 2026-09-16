@@ -27,4 +27,19 @@ return [
         'ignore'  => 'If you did not request a password reset, just ignore this email — your password will stay unchanged.',
     ],
 
+    'registration_approval_request' => [
+        'subject' => 'New registration awaits approval: :email · :site',
+        'heading' => 'A new registration awaits approval',
+        'intro'   => ':name (:email) has signed up for :site. They cannot sign in to the cabinet until you approve the registration.',
+        'action'  => 'Approve registration',
+        'note'    => 'To approve, sign in with an account that is allowed to manage users.',
+    ],
+
+    'registration_approved' => [
+        'subject' => 'Your registration has been approved · :site',
+        'heading' => 'Your registration has been approved',
+        'intro'   => 'An administrator of :site has approved your registration. You can now sign in to the cabinet.',
+        'action'  => 'Sign in to the cabinet',
+    ],
+
 ];
