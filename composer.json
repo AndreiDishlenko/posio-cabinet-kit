@@ -8,13 +8,13 @@
         "illuminate/support": "^11.0|^12.0",
         "inertiajs/inertia-laravel": "^1.0|^2.0|^3.0",
         "opcodesio/log-viewer": "^3.22",
-        "spatie/laravel-permission": "^6.0"
+        "spatie/laravel-permission": "^6.0",
+        "spatie/laravel-sitemap": "^7.3|^8.0"
     },
     "suggest": {
         "tightenco/ziggy": "Required in practice: CabinetKit Vue pages resolve every URL through route(), and the bundled root view prints @routes.",
         "laravel/socialite": "Required for the bundled Google/Apple sign-in routes (config cabinet-kit.social_auth).",
-        "socialiteproviders/apple": "Required for Apple sign-in on top of laravel/socialite.",
-        "spatie/laravel-sitemap": "Required by the bundled sitemap:generate command (SEO section). Without it the command is not registered."
+        "socialiteproviders/apple": "Required for Apple sign-in on top of laravel/socialite."
     },
     "autoload": {
         "psr-4": {

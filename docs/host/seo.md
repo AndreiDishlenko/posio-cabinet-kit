@@ -122,9 +122,8 @@ sitelinks. A route that is not registered is skipped silently.
 php artisan sitemap:generate      # writes public/sitemap.xml
 ```
 
-Also available from the SEO page ("Create sitemaps.xml" button). Requires
-`composer require spatie/laravel-sitemap`; without it the command is not
-registered. Treat `public/sitemap.xml` as a build artifact: regenerate it on
+Also available from the SEO page ("Create sitemaps.xml" button). The generator,
+`spatie/laravel-sitemap`, is installed with the package. Treat `public/sitemap.xml` as a build artifact: regenerate it on
 deploy rather than trusting the committed copy.
 
 ## Site-wide values: `config/seo.php`

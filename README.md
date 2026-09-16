@@ -109,8 +109,6 @@ Not a finished product — a **shell** you extend per project. See
   default `users` migration already has both)
 - `php artisan storage:link` — the brand images an operator uploads in the
   site/cabinet settings sections are served from `storage/app/public/site/`
-- Optional: `spatie/laravel-sitemap`, needed only by `sitemap:generate` of the
-  SEO section
 
 ## Install (in a consumer project)
 

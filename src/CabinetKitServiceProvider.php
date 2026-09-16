@@ -126,12 +126,8 @@ class CabinetKitServiceProvider extends ServiceProvider
             ]);
         }
 
-        // Карту сайта строит сторонний генератор — без него команда просто
-        // не появляется, вместо падения на отсутствующем классе. Регистрация
-        // вне консольной ветки: кнопка раздела SEO вызывает команду из веб-запроса.
-        if (class_exists(\Spatie\Sitemap\Sitemap::class)) {
-            $this->commands([GenerateSitemap::class]);
-        }
+        // Вне консольной ветки: кнопка раздела SEO вызывает команду из веб-запроса.
+        $this->commands([GenerateSitemap::class]);
     }
 
     /**

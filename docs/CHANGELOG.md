@@ -22,8 +22,7 @@
 **Fixed**
 - SEO page, "Create sitemaps.xml": the request failed with 500 — `sitemap:generate`
   was registered only for console runs, so the call from the web request found no
-  such command. It is now registered in every context (still only when
-  `spatie/laravel-sitemap` is installed).
+  such command. It is now registered in every context.
 - `SideMenu.vue`: the ProductTour "expand all groups" call was silently a no-op —
   the emitter bound `tour_show_all_groups`/`tour_restore_groups` to methods named
   `tourShowAll`/`tourRestore`, which didn't exist (the actual methods were named
@@ -39,6 +38,9 @@
   it hanging open over the new page. Now closes on every Inertia `navigate` event.
 
 **Changed**
+- `spatie/laravel-sitemap` (`^7.3|^8.0`) moved from `suggest` to `require`:
+  `sitemap:generate` and the SEO page button work without a separate install.
+  Hosts on an older sitemap version must upgrade it.
 - `CabinetHeader.vue`: the header title always shows the whole page name, on every
   screen width; the "Group / Page" and "Page / Tab" breadcrumb (muted prefix + `/`)
   is gone. Tabbed pages still pass the active tab via `page_name` — it now only
