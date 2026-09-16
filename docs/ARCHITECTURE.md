@@ -45,10 +45,11 @@ src/
   Repositories/AccountRepository.php
   Services/                       AccountService (role writes + account creation), MenuService (menu filtering)
   Support/CabinetRedirects.php    auth flow landing pages, with a fallback for targets that resolve to nothing
+  Support/CabinetKitRoles.php     reference roles/permissions, synced after every php artisan migrate (see "Roles and permissions")
   Console/Commands/               InstallCommand, DoctorCommand, SyncConfigCommand
 database/
   migrations/                     accounts, user_has_accounts, users.settings
-  seeders/CabinetKitRolesSeeder.php  Account owner / Manager / Administrator / User + manage-account permission
+  seeders/CabinetKitRolesSeeder.php  thin wrapper over Support/CabinetKitRoles, kept for hosts that call it by name
 routes/cabinet.php                mounted automatically, prefix+name from config
 config/cabinet-kit.php            user_model, menu[], roles, route prefixes
 config/cabinet-kit-redirects.php  home, after_login, after_verify, after_logout
@@ -76,6 +77,36 @@ separate concerns: a role is a Spatie Permission assignment scoped by
 `$user->currentAccount()` before any `can:`/`Gate` check runs — this must
 stay early in the route group (see `routes/cabinet.php`).
 
+### Roles and permissions
+
+The reference set lives in `src/Support/CabinetKitRoles.php` and is applied
+after every `php artisan migrate` (the package listens to `MigrationsEnded` and
+`NoPendingMigrations`), so `./updcab` brings a host installed on an older
+release up to date without running any seeder.
+
+- **System level** — mirrored one-to-one from posio.cabinet (its
+  `DatabaseSeeder` and permission migrations): roles `SAdmin`,
+  `System administrator`, `System user`; permissions `sysper-site`,
+  `sysper-pages`, `sysper-users`, `sysper-roles`, `sysper-accounts`,
+  `sysper-usercontent`, `sysper-log-view`, `sysper-platform-analytics`.
+  `SAdmin` holds every permission, `System administrator` every system one
+  except `sysper-roles`, `System user` none.
+- **Account level** — only what the package itself assigns and checks: the
+  roles named in `cabinet-kit.roles` (owner, default member, assignable) and
+  the `manage-members` / `manage-account` permissions, granted to
+  `Account owner` and `Manager` as in posio.cabinet. POS permissions of
+  posio.cabinet are not part of the package.
+
+The sync only adds. A missing role or permission is created, `is_system` is
+set for the reference rows (it decides which matrix shows them), and a role
+receives a reference permission only when either of the two is created — so a
+checkbox the operator cleared in the roles matrix stays cleared across updates.
+Nothing is deleted: extra roles and permissions a host added are left alone.
+`cabinet-kit:doctor` reports missing or misclassified reference rows.
+
+When posio.cabinet changes its system roles or permissions, port the change
+into `CabinetKitRoles` (manifest entry `roles-reference`).
+
 Full write-up of the pattern (edge cases: revoked roles, owner protection,
 root/superadmin bypass removal): see `docs/knowledge/account-multi-roles.md`
 if you copied `.claude/context/` from this package, or the original
@@ -92,6 +123,13 @@ lands on `verification.notice`, and `NotVerified` — ported from posio.cabinet
 and kept outside the configurable `cabinet-kit.middleware` list — sends an
 unconfirmed user back there from every cabinet route. Social sign-up and
 invited users arrive already confirmed.
+
+The confirmation and reset letters stay Laravel's stock notifications, but
+their mail is built by `Notifications\AuthMail` from the package views
+(`cabinet-kit::mail.*`) and texts (`lang/*/mail.php`) in the language that
+`ApplyCabinetKitLocale` picks for the request. The middleware wraps the whole
+route prefix, so guest requests (registration, forgotten password) get it too.
+Host overrides: EXTENDING → "Auth emails: texts and templates".
 
 Registration ends with the user. Every step after it is switched by
 `config/cabinet_onboarding.php` — the same file name and keys as in
@@ -178,7 +216,7 @@ config during `register()`, before its provider reads it, because only
 
 Access is the `sysper-log-view` system permission, checked through
 `LogViewer::auth()` — the same permission that gates the menu item, granted
-to `SAdmin` and to `System administrator` by the roles seeder. A host that
+to `SAdmin` and to `System administrator` by the roles sync. A host that
 registers its own callback or a `viewLogViewer` gate keeps it.
 
 Because it is a plain page, the menu item carries `link`, not `route`:

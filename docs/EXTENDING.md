@@ -208,13 +208,60 @@ The helper reads `lang/{app()->getLocale()}.json` and falls back to
 `config('app.fallback_locale')`. Extra JSON directories can be configured in
 `config/cabinet-kit.php` under `translations.json_paths`.
 
+## Auth emails: texts and templates
+
+The email confirmation and password reset letters are Laravel's stock
+`VerifyEmail` / `ResetPassword` notifications, built by the package
+(`toMailUsing`) from its own markdown views and `cabinet-kit::mail` texts. They
+go out in the visitor's language: every cabinet route, guest auth routes
+included, applies the user's `locale` setting, then the session, then the
+`locale` cookie. The site name comes from Site settings.
+
+Everything is customized from the host; nothing in `vendor/` is edited:
+
+- **Texts** — create `lang/vendor/cabinet-kit/{locale}/mail.php` and list only
+  the keys to change; the rest stay from the package:
+
+  ```php
+  // lang/vendor/cabinet-kit/uk/mail.php
+  return [
+      'verify_email' => [
+          'intro' => 'Раді бачити вас у :site! Підтвердіть пошту, щоб почати.',
+      ],
+  ];
+  ```
+
+  A new language is the same file under its own locale (plus the locale in
+  `cabinet-kit.translations.locales`).
+- **Templates** — a file at
+  `resources/views/vendor/cabinet-kit/mail/{layout,verify-email,reset-password}.blade.php`
+  replaces the package one automatically. To use a view with another name, set
+  `cabinet-kit.auth_mail.views.verify_email` / `.reset_password`. Views receive
+  `$user`, `$siteName`, `$siteUrl`, `$actionUrl`, `$actionText`, and
+  `$expireMinutes` for the reset letter.
+- **Starting point** — `php artisan vendor:publish --tag=cabinet-kit-mail`
+  copies both texts and templates into those host paths.
+- **Whole letter** — call `VerifyEmail::toMailUsing()` /
+  `ResetPassword::toMailUsing()` in the host `AppServiceProvider` (it boots
+  after the package and wins), override `sendEmailVerificationNotification()` /
+  `sendPasswordResetNotification()` on the `User` model, or set
+  `cabinet-kit.auth_mail.enabled` to `false` to get Laravel's stock letters back.
+
+The package also ships posio.cabinet's `lang/` files as a fallback layer: its
+JSON strings load globally and its groups as `cabinet-kit::auth`,
+`cabinet-kit::passwords` and so on. Password reset statuses fall back to
+`cabinet-kit::passwords.*` when the host has no `passwords` translation in the
+current language. Host `lang/{locale}.json` keys always win.
+
 ## Adding a new permission / role
 
-1. Add the permission/role in your own seeder (don't edit
-   `CabinetKitRolesSeeder` — it's vendor code and will be overwritten on
-   update). A host seeder like `database/seeders/AppRolesSeeder.php` that
-   runs after `CabinetKitRolesSeeder` and calls
-   `Role::firstOrCreate(...)->givePermissionTo(...)` is the standard pattern.
+1. Add the permission/role in your own migration or seeder (don't edit
+   `src/Support/CabinetKitRoles.php` — it's vendor code and will be
+   overwritten on update) with `Role::firstOrCreate(...)->givePermissionTo(...)`.
+   The package's own roles and permissions are created on every
+   `php artisan migrate`, and the sync never deletes or revokes anything, so
+   host additions survive updates. An account role only needs to be named in
+   `cabinet-kit.roles` to be created.
 2. Add the permission name to `config('cabinet-kit.roles.assignable_roles')`
    if it should be selectable in the Users tab role switcher (once you build
    one — the shipped `UsersTab.vue` only lists/removes members; role

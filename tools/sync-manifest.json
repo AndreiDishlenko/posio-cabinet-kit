@@ -149,6 +149,13 @@
       "notes": "Port only generic membership/role behavior. No onboarding/demo/product data."
     },
     {
+      "id": "roles-reference",
+      "mode": "manual",
+      "source": "database/seeders/DatabaseSeeder.php",
+      "target": "src/Support/CabinetKitRoles.php",
+      "notes": "System roles/permissions and their grants mirror posio.cabinet one-to-one (also watch its permission migrations). Account level: only roles named in cabinet-kit.roles and manage-members/manage-account; POS permissions stay out."
+    },
+    {
       "id": "repository-account",
       "mode": "manual",
       "source": "app/Repositories/AccountRepository.php",
@@ -650,6 +657,107 @@
       "source": "resources/_admin/js/layouts/Spotlight.vue",
       "target": "resources/_admin/js/layouts/Spotlight.vue",
       "notes": "Verbatim; base of ProductTour and SpotlightHints."
+    },
+    {
+      "id": "lang-en-json",
+      "mode": "copy",
+      "source": "lang/en.json",
+      "target": "lang/en.json",
+      "notes": "Localization file copied whole, without edits. Loaded as a fallback layer: PHP groups as cabinet-kit::*, the JSON file globally; the host own files win."
+    },
+    {
+      "id": "lang-uk-json",
+      "mode": "copy",
+      "source": "lang/uk.json",
+      "target": "lang/uk.json",
+      "notes": "Localization file copied whole, without edits. Loaded as a fallback layer: PHP groups as cabinet-kit::*, the JSON file globally; the host own files win."
+    },
+    {
+      "id": "lang-en-auth-php",
+      "mode": "copy",
+      "source": "lang/en/auth.php",
+      "target": "lang/en/auth.php",
+      "notes": "Localization file copied whole, without edits. Loaded as a fallback layer: PHP groups as cabinet-kit::*, the JSON file globally; the host own files win."
+    },
+    {
+      "id": "lang-en-emails-php",
+      "mode": "copy",
+      "source": "lang/en/emails.php",
+      "target": "lang/en/emails.php",
+      "notes": "Localization file copied whole, without edits. Loaded as a fallback layer: PHP groups as cabinet-kit::*, the JSON file globally; the host own files win."
+    },
+    {
+      "id": "lang-en-pagination-php",
+      "mode": "copy",
+      "source": "lang/en/pagination.php",
+      "target": "lang/en/pagination.php",
+      "notes": "Localization file copied whole, without edits. Loaded as a fallback layer: PHP groups as cabinet-kit::*, the JSON file globally; the host own files win."
+    },
+    {
+      "id": "lang-en-passwords-php",
+      "mode": "copy",
+      "source": "lang/en/passwords.php",
+      "target": "lang/en/passwords.php",
+      "notes": "Localization file copied whole, without edits. Loaded as a fallback layer: PHP groups as cabinet-kit::*, the JSON file globally; the host own files win."
+    },
+    {
+      "id": "lang-en-validation-php",
+      "mode": "copy",
+      "source": "lang/en/validation.php",
+      "target": "lang/en/validation.php",
+      "notes": "Localization file copied whole, without edits. Loaded as a fallback layer: PHP groups as cabinet-kit::*, the JSON file globally; the host own files win."
+    },
+    {
+      "id": "lang-uk-auth-php",
+      "mode": "copy",
+      "source": "lang/uk/auth.php",
+      "target": "lang/uk/auth.php",
+      "notes": "Localization file copied whole, without edits. Loaded as a fallback layer: PHP groups as cabinet-kit::*, the JSON file globally; the host own files win."
+    },
+    {
+      "id": "lang-uk-emails-php",
+      "mode": "copy",
+      "source": "lang/uk/emails.php",
+      "target": "lang/uk/emails.php",
+      "notes": "Localization file copied whole, without edits. Loaded as a fallback layer: PHP groups as cabinet-kit::*, the JSON file globally; the host own files win."
+    },
+    {
+      "id": "lang-uk-passwords-php",
+      "mode": "copy",
+      "source": "lang/uk/passwords.php",
+      "target": "lang/uk/passwords.php",
+      "notes": "Localization file copied whole, without edits. Loaded as a fallback layer: PHP groups as cabinet-kit::*, the JSON file globally; the host own files win."
+    },
+    {
+      "id": "lang-uk-validation-php",
+      "mode": "copy",
+      "source": "lang/uk/validation.php",
+      "target": "lang/uk/validation.php",
+      "notes": "Localization file copied whole, without edits. Loaded as a fallback layer: PHP groups as cabinet-kit::*, the JSON file globally; the host own files win."
+    },
+    {
+      "id": "package-auth-mail",
+      "mode": "package_only",
+      "target": "src/Notifications/AuthMail.php",
+      "notes": "Builds the stock VerifyEmail/ResetPassword letters from the package views and lang/*/mail.php. posio.cabinet sends its own Posio-branded notifications instead."
+    },
+    {
+      "id": "package-auth-mail-views",
+      "mode": "package_only",
+      "target": "resources/views/mail",
+      "notes": "Generic markdown letters (layout, verify-email, reset-password); host overrides under resources/views/vendor/cabinet-kit/mail."
+    },
+    {
+      "id": "package-auth-mail-lang",
+      "mode": "package_only",
+      "target": "lang/uk/mail.php",
+      "notes": "Texts of the package letters (also lang/en/mail.php); host overrides single keys in lang/vendor/cabinet-kit/{locale}/mail.php."
+    },
+    {
+      "id": "package-locale-middleware",
+      "mode": "package_only",
+      "target": "src/Http/Middleware/ApplyCabinetKitLocale.php",
+      "notes": "Applies the visitor language on every cabinet route, guest auth routes included, so auth letters go out in that language."
     }
   ]
 }

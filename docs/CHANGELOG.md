@@ -1,5 +1,52 @@
 # Changelog
 
+## Unreleased — Roles and permissions are synced on every migrate
+
+**Fixed**
+- A host installed on an early release kept the roles seeder of that release:
+  no `sysper-*` permissions, `is_system` left at the column defaults, and the
+  system roles, account roles and user role pickers in the cabinet showed
+  empty. The seeder only ever ran inside `cabinet-kit:install`, so no update
+  could repair it.
+
+**Changed**
+- Roles and permissions are reconciled after every `php artisan migrate`
+  (including `./updcab`), with no seeder to run. System roles and permissions
+  mirror posio.cabinet one-to-one; account level is reduced to the roles named
+  in `cabinet-kit.roles` plus `manage-members` / `manage-account`. The POS
+  permissions posio.cabinet uses (`manage-cashiers`, `manage-orders`,
+  `manage-docs`, `manage-integrations`, `view-reports`, `view-owner-reports`)
+  are no longer created. Nothing existing is deleted or revoked, and a
+  permission the operator removed from a role is not granted back.
+- `CabinetKitRolesSeeder` is a thin wrapper over the same sync.
+- `cabinet-kit:install` no longer asks about roles; its seeding prompt covers
+  the menu, system users and the home page SEO record.
+
+**Added**
+- `cabinet-kit:doctor` check: reference roles and permissions exist and carry
+  the right level.
+
+## Unreleased — Auth emails are translated and customizable from the host
+
+**Fixed**
+- The email confirmation and password reset letters arrived in English: the
+  package sent Laravel's stock letters, had no translations of its own, and
+  guest auth routes never applied the visitor's language. `ApplyCabinetKitLocale`
+  now runs on every cabinet route (it replaces the locale step inside
+  `ShareCabinetKitData`), and the letters are built from the package templates.
+- Password reset statuses ("We have emailed your password reset link.") fall
+  back to the package translation when the host has none for the language.
+
+**Added**
+- `lang/` copied whole from posio.cabinet: JSON loaded globally, groups as
+  `cabinet-kit::*`; the host's own files win.
+- `lang/{uk,en}/mail.php`, `resources/views/mail/{layout,verify-email,reset-password}.blade.php`
+  and `Notifications\AuthMail`, wired through `VerifyEmail/ResetPassword::toMailUsing`
+  unless a callback is already set.
+- `cabinet-kit.auth_mail` (`enabled`, `views`) and the publish tag
+  `cabinet-kit-mail`. Host overrides: `lang/vendor/cabinet-kit/{locale}/mail.php`
+  (per key) and `resources/views/vendor/cabinet-kit/mail/*` — see EXTENDING.
+
 ## Unreleased — Email confirmation is mandatory after form registration
 
 **Fixed**

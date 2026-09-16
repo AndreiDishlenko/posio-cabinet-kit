@@ -2,6 +2,8 @@
 
 namespace Posio\CabinetKit;
 
+use Illuminate\Database\Events\MigrationsEnded;
+use Illuminate\Database\Events\NoPendingMigrations;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -17,6 +19,8 @@ use Posio\CabinetKit\Console\Commands\SyncConfigCommand;
 use Posio\CabinetKit\Services\SeoService;
 use Posio\CabinetKit\Services\SiteSettingsService;
 use Posio\CabinetKit\Http\Middleware\RequireSystemPasswordChange;
+use Posio\CabinetKit\Notifications\AuthMail;
+use Posio\CabinetKit\Support\CabinetKitRoles;
 use Posio\CabinetKit\Support\CabinetRedirects;
 
 class CabinetKitServiceProvider extends ServiceProvider
@@ -61,12 +65,18 @@ class CabinetKitServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadRoutesFrom(__DIR__.'/../routes/cabinet.php');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'cabinet-kit');
+        // Переводы пакета — запасной слой: одноимённые файлы и ключи хоста
+        // (lang/vendor/cabinet-kit/… и lang/{локаль}.json) читаются поверх.
+        $this->loadTranslationsFrom(__DIR__.'/../lang', 'cabinet-kit');
+        $this->loadJsonTranslationsFrom(__DIR__.'/../lang');
 
         $this->registerInertiaPagePaths();
+        AuthMail::register();
         $this->registerSocialAuth();
         $this->registerLogViewerAuth();
         $this->registerSiteSettings();
         $this->registerSeoSharing();
+        $this->registerRolesSync();
 
         // Aliased so a host can hold its own route groups behind the same gate —
         // the package can only speak for its own routes.
@@ -91,6 +101,13 @@ class CabinetKitServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../config/cabinet_onboarding.php' => config_path('cabinet_onboarding.php'),
         ], 'cabinet-kit-onboarding');
+
+        // Публикация нужна только ради правки: без неё письма берут тексты и шаблоны из пакета.
+        $this->publishes([
+            __DIR__.'/../lang/uk/mail.php' => lang_path('vendor/cabinet-kit/uk/mail.php'),
+            __DIR__.'/../lang/en/mail.php' => lang_path('vendor/cabinet-kit/en/mail.php'),
+            __DIR__.'/../resources/views/mail' => resource_path('views/vendor/cabinet-kit/mail'),
+        ], 'cabinet-kit-mail');
 
         $this->publishes([
             __DIR__.'/../database/migrations' => database_path('migrations'),
@@ -150,6 +167,27 @@ class CabinetKitServiceProvider extends ServiceProvider
                 [],
             ));
         }
+    }
+
+    /**
+     * Сидеры запускаются только установщиком, а роли и права менялись и после
+     * первой установки — хост, поставленный раньше, остался бы с пустыми
+     * матрицами ролей. Накат миграций завершает любое обновление пакета, поэтому
+     * сверка висит на нём, в том числе когда новых миграций нет.
+     */
+    protected function registerRolesSync(): void
+    {
+        if (! $this->app->runningInConsole()) {
+            return;
+        }
+
+        Event::listen([MigrationsEnded::class, NoPendingMigrations::class], function ($event) {
+            if ($event->method !== 'up' || ($event->options['pretend'] ?? false)) {
+                return;
+            }
+
+            CabinetKitRoles::sync();
+        });
     }
 
     /**

@@ -19,6 +19,7 @@ use Posio\CabinetKit\Http\Controllers\Auth\VerificationController;
 use Posio\CabinetKit\Http\Controllers\ProfileController;
 use Posio\CabinetKit\Http\Controllers\SettingsController;
 use Posio\CabinetKit\Http\Controllers\SystemPasswordController;
+use Posio\CabinetKit\Http\Middleware\ApplyCabinetKitLocale;
 use Posio\CabinetKit\Http\Middleware\CanSystemPermission;
 use Posio\CabinetKit\Http\Middleware\NotVerified;
 use Posio\CabinetKit\Http\Middleware\RequireSystemPasswordChange;
@@ -34,7 +35,7 @@ Route::get('cabinet-assets/{path}', [PackageAssetController::class, 'cabinet'])
 Route::get('brand-assets/{path}', [PackageAssetController::class, 'brand'])
     ->where('path', '.*')->name('cabinet-kit.brand-assets');
 
-Route::middleware(['web', UseCabinetKitRootView::class])
+Route::middleware(['web', UseCabinetKitRootView::class, ApplyCabinetKitLocale::class])
     ->prefix(config('cabinet-kit.route_prefix', 'cabinet'))
     ->group(function () {
         Route::post('setlocale', [LocaleController::class, 'update'])->name('app.setlocale');

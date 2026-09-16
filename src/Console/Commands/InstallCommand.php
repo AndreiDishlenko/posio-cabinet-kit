@@ -62,7 +62,7 @@ class InstallCommand extends Command
         $this->call('migrate');
 
         $this->purgeExistingUsers();
-        $this->seedRolesAndPermissions();
+        $this->seedCabinetData();
 
         if (! $this->option('no-doctor')) {
             $this->call('cabinet-kit:doctor');
@@ -601,14 +601,12 @@ MD);
         }
     }
 
-    protected function seedRolesAndPermissions(): void
+    protected function seedCabinetData(): void
     {
-        if (! $this->confirm('Seed base roles and manage-account permission?', true)) {
+        // Роли и права уже заведены накатом миграций выше.
+        if (! $this->confirm('Seed the cabinet menu, the system users and the home page SEO record?', true)) {
             return;
         }
-
-        (new \Posio\CabinetKit\Database\Seeders\CabinetKitRolesSeeder())->run();
-        $this->info('Roles and permissions seeded.');
 
         (new \Posio\CabinetKit\Database\Seeders\CabinetKitAdminLinksSeeder())->run();
         $this->info('Admin links seeded.');

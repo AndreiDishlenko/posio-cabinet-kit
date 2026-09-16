@@ -88,6 +88,25 @@ return [
         ],
     ],
 
+    // Email confirmation and password reset letters, built from the package's
+    // templates in the visitor's language instead of Laravel's stock English
+    // ones. Customize from the host, nothing in vendor:
+    // - texts: lang/vendor/cabinet-kit/{locale}/mail.php — only the keys you
+    //   list there are replaced;
+    // - templates: resources/views/vendor/cabinet-kit/mail/{verify-email,
+    //   reset-password,layout}.blade.php are picked up automatically, or point
+    //   `views` at any view of your own.
+    // `php artisan vendor:publish --tag=cabinet-kit-mail` copies both as a start.
+    // Set `enabled` to false to keep Laravel's letters or your own
+    // VerifyEmail/ResetPassword::toMailUsing callbacks (those always win).
+    'auth_mail' => [
+        'enabled' => true,
+        'views' => [
+            'verify_email' => 'cabinet-kit::mail.verify-email',
+            'reset_password' => 'cabinet-kit::mail.reset-password',
+        ],
+    ],
+
     // Built-in users created during installation. Existing users are kept as-is:
     // passwords are only written when the user row is first created.
     //
@@ -116,7 +135,8 @@ return [
     ],
 
     // Per-account roles (Spatie Permission teams, team_id = account_id).
-    // Keep in sync with database/seeders/CabinetKitRolesSeeder.php.
+    // Every role named here is created on php artisan migrate, together with
+    // the system roles, if it does not exist yet.
     'roles' => [
         'owner_role' => 'Account owner',
         'default_member_role' => 'Administrator',

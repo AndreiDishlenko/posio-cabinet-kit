@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
+use Posio\CabinetKit\Support\CabinetKitRoles;
 use Posio\CabinetKit\Support\CabinetRedirects;
 use Posio\CabinetKit\Support\FrontendDependencies;
 use Posio\CabinetKit\Support\HostComposerJson;
@@ -43,6 +44,7 @@ class DoctorCommand extends Command
         $this->check((bool) config('permission.teams'), "Spatie Permission 'teams' is true", "Set 'teams' => true in config/permission.php before migrating.");
         $this->check($this->permissionConfigLooksReady(), 'Spatie Permission table config matches CabinetKit', 'Set model_has_roles=user_has_roles, model_has_permissions=user_has_permissions and model_morph_key=user_id.');
         $this->check($this->permissionTablesLookReady(), 'Permission role tables exist and include team_id when present', $this->permissionTablesHint());
+        $this->check(CabinetKitRoles::drift() === [], 'System roles and permissions match the package reference', $this->rolesDriftHint());
         $this->check(Schema::hasTable('accounts') && Schema::hasTable('user_has_accounts'), 'CabinetKit account tables exist', 'Run php artisan migrate.');
         $this->check(Schema::hasTable('admin_links'), 'CabinetKit admin_links table exists', 'Run php artisan migrate.');
         $this->check($this->routeNamesDoNotCollide(), 'Route names can be cached', "Set 'auth_routes' => false or remove duplicate auth route names.");
@@ -81,6 +83,12 @@ class DoctorCommand extends Command
         }
 
         return \Posio\CabinetKit\Models\SeoMeta::query()->withTrashed()->exists();
+    }
+
+    // Недостающая роль не падает с ошибкой — матрица ролей в кабинете просто пустая.
+    protected function rolesDriftHint(): string
+    {
+        return implode('; ', CabinetKitRoles::drift()).'. Run php artisan migrate — it brings roles and permissions up to the reference.';
     }
 
     protected function check(bool $ok, string $label, string $hint): void

@@ -5,6 +5,7 @@ namespace Posio\CabinetKit\Http\Controllers\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password as PasswordRule;
@@ -25,7 +26,7 @@ class PasswordResetController extends Controller
 
         $status = Password::sendResetLink($request->only('email'));
 
-        return back()->with('status', __($status));
+        return back()->with('status', $this->statusMessage($status));
     }
 
     public function reset(Request $request, string $token)
@@ -56,10 +57,16 @@ class PasswordResetController extends Controller
 
         if ($status !== Password::PASSWORD_RESET) {
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'email' => __($status),
+                'email' => $this->statusMessage($status),
             ]);
         }
 
-        return redirect()->route('login')->with('status', __($status));
+        return redirect()->route('login')->with('status', $this->statusMessage($status));
+    }
+
+    // Хост без собственных сообщений сброса пароля на текущем языке получает перевод пакета.
+    protected function statusMessage(string $status): string
+    {
+        return Lang::hasForLocale($status) ? __($status) : __('cabinet-kit::'.$status);
     }
 }

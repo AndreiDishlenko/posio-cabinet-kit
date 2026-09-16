@@ -20,7 +20,6 @@ class ShareCabinetKitData
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-        $this->applyLocale($request);
 
         Inertia::share('cabinetKitI18n', fn () => $this->i18nPayload());
         Inertia::share('serverlocale', fn () => app()->getLocale());
@@ -63,22 +62,6 @@ class ShareCabinetKitData
             ),
             'locales' => $this->locales(),
         ];
-    }
-
-    protected function applyLocale(Request $request): void
-    {
-        $user = $request->user();
-        $locale = ($user && method_exists($user, 'getSetting') ? $user->getSetting('locale') : null)
-            ?: $request->session()->get('locale')
-            ?: $request->cookie('locale');
-        $locales = collect(config('cabinet-kit.translations.locales', []))
-            ->keys()
-            ->map(fn ($code) => (string) $code)
-            ->all();
-
-        if ($locale && in_array($locale, $locales, true)) {
-            app()->setLocale($locale);
-        }
     }
 
     protected function loadJsonTranslations(?string $locale): array
