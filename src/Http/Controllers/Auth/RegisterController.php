@@ -3,16 +3,16 @@
 namespace Posio\CabinetKit\Http\Controllers\Auth;
 
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
-use Posio\CabinetKit\Support\CabinetRedirects;
 
-// Registration ends with the user alone: every step after it is switched by the
-// onboarding config, and the package ships with all of them off.
+// Registration ends with the user alone plus the mandatory email confirmation;
+// every other step after it is switched by the onboarding config, all off here.
 class RegisterController extends Controller
 {
     public function showRegister()
@@ -40,9 +40,15 @@ class RegisterController extends Controller
 
         event(new Registered($user));
 
+        // Фреймворк шлёт письмо сам только модели с контрактом подтверждения; у хоста его может не быть.
+        if (! $user instanceof MustVerifyEmail) {
+            $user->sendEmailVerificationNotification();
+        }
+
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect(CabinetRedirects::url('after_register'));
+        // Почта, введённая руками, ничем не подтверждена — подтверждение обязательно и настройкой не отключается.
+        return redirect()->route('verification.notice');
     }
 }

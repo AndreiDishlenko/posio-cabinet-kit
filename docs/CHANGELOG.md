@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased — Email confirmation is mandatory after form registration
+
+**Fixed**
+- A form-based sign-up went straight into the cabinet without confirming the
+  email: confirmation depended on `after_register` and on the host `User`
+  implementing `MustVerifyEmail`. Registration now always sends the
+  confirmation email and lands on `verification.notice`; the cabinet route group
+  runs `NotVerified` (ported from posio.cabinet) regardless of
+  `cabinet-kit.middleware`.
+
+**Removed**
+- `after_register` in `config/cabinet-kit-redirects.php` — nothing to configure
+  any more; a leftover value in a published host config is ignored.
+
 ## Unreleased — Post-registration steps are switched by config, all off
 
 **Added**

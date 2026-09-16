@@ -30,13 +30,12 @@ take the whole page down. `cabinet-kit:doctor` lists what got hidden.
 ## Where the auth flow lands
 
 `config/cabinet-kit-redirects.php` holds one route name per step: `home`
-(cabinet root), `after_login`, `after_register`, `after_verify`,
-`after_logout`. A value starting with `/` or `http` is used as a plain address
-instead of a route name.
+(cabinet root), `after_login`, `after_verify`, `after_logout`. A value
+starting with `/` or `http` is used as a plain address instead of a route name.
 
 Point `home` and `after_login` at your own route to open the cabinet on your
-own page. Point `after_register` at `verification.notice` to require email
-confirmation before the cabinet opens.
+own page. Registration has no landing key: a form-based sign-up always goes to
+`verification.notice`, and the cabinet stays closed until the email is confirmed.
 
 A value naming a route the application doesn't register is ignored in favour of
 the package default, so a page you later remove can't lock anyone out of

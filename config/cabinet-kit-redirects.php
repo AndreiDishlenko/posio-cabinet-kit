@@ -17,10 +17,6 @@ return [
     // Where a successful sign-in lands — password login and social sign-in alike.
     'after_login' => 'cabinet-kit.users',
 
-    // Where registration lands. Point this at 'verification.notice' to force
-    // email confirmation before the cabinet opens.
-    'after_register' => 'cabinet-kit.users',
-
     // Where email confirmation lands.
     'after_verify' => 'cabinet-kit.users',
 

@@ -22,7 +22,6 @@ class CabinetRedirects
     public const LEGACY_KEYS = [
         'home' => 'home_route',
         'after_login' => 'login_redirect_route',
-        'after_register' => 'login_redirect_route',
         'after_verify' => 'login_redirect_route',
     ];
 

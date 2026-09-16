@@ -20,6 +20,7 @@ use Posio\CabinetKit\Http\Controllers\ProfileController;
 use Posio\CabinetKit\Http\Controllers\SettingsController;
 use Posio\CabinetKit\Http\Controllers\SystemPasswordController;
 use Posio\CabinetKit\Http\Middleware\CanSystemPermission;
+use Posio\CabinetKit\Http\Middleware\NotVerified;
 use Posio\CabinetKit\Http\Middleware\RequireSystemPasswordChange;
 use Posio\CabinetKit\Http\Middleware\SetPermissionTeam;
 use Posio\CabinetKit\Http\Middleware\ShareCabinetKitData;
@@ -81,9 +82,11 @@ Route::middleware(['web', UseCabinetKitRootView::class])
             });
         }
 
+        // Подтверждение почты не в списке настраиваемых middleware: хост не должен
+        // иметь возможность открыть кабинет неподтверждённому пользователю.
         Route::middleware(array_merge(
                 config('cabinet-kit.middleware', ['web', 'auth']),
-                [SetPermissionTeam::class, ShareCabinetKitData::class, RequireSystemPasswordChange::class],
+                [NotVerified::class, SetPermissionTeam::class, ShareCabinetKitData::class, RequireSystemPasswordChange::class],
             ))
             ->name(config('cabinet-kit.route_name_prefix', 'cabinet-kit.'))
             ->group(function () {

@@ -177,6 +177,13 @@
       "notes": "Keep Spatie team context behavior generic."
     },
     {
+      "id": "middleware-not-verified",
+      "mode": "manual",
+      "source": "app/Http/Middleware/NotVerified.php",
+      "target": "src/Http/Middleware/NotVerified.php",
+      "notes": "Verbatim apart from the namespace. Mounted in routes/cabinet.php outside the configurable cabinet-kit.middleware list, so a host cannot open the cabinet to an unconfirmed user."
+    },
+    {
       "id": "routes-cabinet",
       "mode": "manual",
       "source": "routes/cabinet_routes.php",

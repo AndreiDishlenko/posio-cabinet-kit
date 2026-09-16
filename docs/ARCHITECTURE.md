@@ -51,7 +51,7 @@ database/
   seeders/CabinetKitRolesSeeder.php  Account owner / Manager / Administrator / User + manage-account permission
 routes/cabinet.php                mounted automatically, prefix+name from config
 config/cabinet-kit.php            user_model, menu[], roles, route prefixes
-config/cabinet-kit-redirects.php  home, after_login, after_register, after_verify, after_logout
+config/cabinet-kit-redirects.php  home, after_login, after_verify, after_logout
 config/cabinet_onboarding.php     post-registration step switches (same keys as posio.cabinet), all off
 resources/js/
   layouts/                        CabinetLayout, CabinetHeader, SideMenu, AccountSwitcher, AuthLayout
@@ -85,9 +85,13 @@ if you copied `.claude/context/` from this package, or the original
 
 Bundled (since v0.2.0): login, registration (creates the `User` only — see below), logout, password reset (Laravel's core
 `Password` broker + the host's own mail config), and email verification
-(routes exist when `cabinet-kit.auth_routes` is true; nothing actually *enforces* verification unless the
-host's `User` implements `MustVerifyEmail` and adds the `verified`
-middleware itself — that's a deliberate opt-in, not assumed).
+(routes exist when `cabinet-kit.auth_routes` is true). Verification is
+mandatory for a form-based sign-up and has no switch: registration sends the
+confirmation email (itself, when the host `User` lacks `MustVerifyEmail`) and
+lands on `verification.notice`, and `NotVerified` — ported from posio.cabinet
+and kept outside the configurable `cabinet-kit.middleware` list — sends an
+unconfirmed user back there from every cabinet route. Social sign-up and
+invited users arrive already confirmed.
 
 Registration ends with the user. Every step after it is switched by
 `config/cabinet_onboarding.php` — the same file name and keys as in
