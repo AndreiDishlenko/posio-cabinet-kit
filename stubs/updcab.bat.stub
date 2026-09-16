@@ -2,8 +2,19 @@
 rem Full CabinetKit update procedure (README "Update"), in the order the steps
 rem depend on each other. Stops at the first failing step so a broken update is
 rem not hidden by the steps after it.
+rem
+rem     updcab.bat --ssr   the site renders on the server: npm run buildssr
 setlocal
 cd /d "%~dp0"
+
+rem A plain build leaves the server-rendering process on the old bundle; the
+rem host's own script rebuilds both bundles and restarts that process.
+set "BUILD_SCRIPT=build"
+if /i "%~1"=="--ssr" set "BUILD_SCRIPT=buildssr"
+if not "%~1"=="" if /i not "%~1"=="--ssr" (
+	echo unknown option: %~1
+	exit /b 1
+)
 
 echo == 1/6 composer update posio/cabinet-kit
 call composer update posio/cabinet-kit
@@ -23,10 +34,10 @@ echo == 4/6 php artisan optimize:clear
 call php artisan optimize:clear
 if errorlevel 1 goto :failed
 
-echo == 5/6 npm install ^&^& npm run build
+echo == 5/6 npm install ^&^& npm run %BUILD_SCRIPT%
 call npm install
 if errorlevel 1 goto :failed
-call npm run build
+call npm run %BUILD_SCRIPT%
 if errorlevel 1 goto :failed
 
 echo == 6/6 php artisan cabinet-kit:doctor

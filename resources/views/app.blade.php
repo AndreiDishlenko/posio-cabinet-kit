@@ -16,6 +16,17 @@
 		<link rel="icon" href="{{ $site_favicon }}">
 	@endisset
 
+	{{-- Превью ссылки в мессенджерах: их боты не выполняют скрипты, поэтому теги
+	     нужны в исходной разметке — иначе в превью попадает значок вкладки. --}}
+	<meta name="description" content="{{ __('User cabinet') }}">
+	<meta property="og:type" content="website">
+	<meta property="og:site_name" content="{{ $site_name ?? config('app.name', 'Cabinet') }}">
+	<meta property="og:title" content="{{ $site_name ?? config('app.name', 'Cabinet') }}">
+	<meta property="og:description" content="{{ __('User cabinet') }}">
+	@if ( !empty($site_share_image) )
+		<meta property="og:image" content="{{ $site_share_image }}">
+	@endif
+
 	{{-- Safari до 14.1 не умеет отступ между элементами во flex: объявление молча
 	     отбрасывается и вёрстка слипается. Признак ставится замером, а не
 	     @supports — тот отвечает «да» из-за поддержки того же свойства в grid.

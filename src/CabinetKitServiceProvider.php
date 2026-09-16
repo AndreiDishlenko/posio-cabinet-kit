@@ -157,6 +157,7 @@ class CabinetKitServiceProvider extends ServiceProvider
                     // работать запасные пути её собственного шаблона.
                     'site_favicon' => $scope ? $this->safely(fn () => $settings->imageUrl($scope.'_favicon')) : null,
                     'site_theme' => $scope ? $this->safely(fn () => $settings->theme($scope.'_theme'), 'dark') : null,
+                    'site_share_image' => $scope ? $this->safely(fn () => $settings->shareImageUrl($scope)) : null,
                 ]);
             });
         }

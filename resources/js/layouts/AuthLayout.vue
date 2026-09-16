@@ -66,9 +66,10 @@
             },
         },
         computed: {
+            // Вход и регистрация — порог кабинета, поэтому знак тот же, что в развёрнутом боковом меню.
             brand() {
-                return this.$page.props.site && this.$page.props.site.main
-                    ? this.$page.props.site.main
+                return this.$page.props.site && this.$page.props.site.cabinet
+                    ? this.$page.props.site.cabinet
                     : {};
             },
             brand_logo() {

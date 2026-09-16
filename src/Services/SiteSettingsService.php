@@ -177,6 +177,17 @@ class SiteSettingsService {
         return $this->get('site_name', config('seo.brand_name', config('app.name', 'Cabinet')));
     }
 
+    // Картинка превью ссылки в мессенджерах — развёрнутый логотип части в её стартовой
+    // теме. Векторный файл мессенджеры не показывают: тогда превью без картинки.
+    public function shareImageUrl(string $scope) : ?string {
+        $url = $this->imageUrl($scope . '_logo_' . $this->theme($scope . '_theme'));
+
+        if ( !$url || strtolower(pathinfo(parse_url($url, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION)) === 'svg' )
+            return null;
+
+        return url($url);
+    }
+
     // Идентичность для Vue-слоя: шапка публичной части и боковое меню кабинета
     // берут начертания отсюда, а не из зашитых в разметку путей.
     public function frontPayload() : array {

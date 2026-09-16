@@ -156,6 +156,14 @@ workstation:
 - `./updcab --no-build` skips `npm install && npm run build` for a deploy
   whose assets are built elsewhere; without the flag a missing `npm` stops the
   update instead of silently leaving stale assets;
+- `./updcab --ssr` (also `updcab.bat --ssr`) runs `npm run buildssr` instead
+  of `npm run build`, for a site rendered on the server. A plain build leaves
+  the SSR process (pm2 and the like) serving the old bundle, and its markup
+  stops matching the new client assets. The host defines `buildssr` in
+  `package.json` — it builds both bundles and restarts the process, whose name
+  and supervisor only the host knows, e.g.
+  `pm2 stop app-ssr ; vite build && vite build --ssr && (pm2 start app-ssr || pm2 start bootstrap/ssr/ssr.js --name app-ssr)`.
+  It cannot be combined with `--no-build`;
 - the PHP is checked before anything runs. Shared hosting serves the site on the
   version its panel selected while the shell of the same account still starts an
   old default, and on that one step 1 fails with a wall of `your php version

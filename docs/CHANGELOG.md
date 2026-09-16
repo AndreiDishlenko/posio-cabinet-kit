@@ -2,6 +2,13 @@
 
 ## Unreleased — Side menu and header parity with the source project
 
+**Added**
+- `updcab` / `updcab.bat`: `--ssr` runs the host's `npm run buildssr` instead of
+  `npm run build`, so an update of a server-rendered site rebuilds the SSR
+  bundle and restarts its process rather than leaving it on the old bundle.
+  Existing launchers are never overwritten: to get the flag, delete `updcab`
+  (and `updcab.bat`) in the project root and run `php artisan cabinet-kit:sync-config`.
+
 **Fixed**
 - `SideMenu.vue`: the ProductTour "expand all groups" call was silently a no-op —
   the emitter bound `tour_show_all_groups`/`tour_restore_groups` to methods named
