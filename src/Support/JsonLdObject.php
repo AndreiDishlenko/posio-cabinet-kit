@@ -63,11 +63,50 @@ class JsonLdObject {
                 "description"   => $this->localized('seo.org_description'),
                 "inLanguage"    => app()->getLocale(),
                 "publisher"     => [ "@id" => url('/#organization') ],
+                ...$this->creatorProperty(),
+                ...$this->platformProperty(),
             ],
         );
 
         return $this;
     }
+
+	// Платформа, на которой построен сайт (WebSite.isBasedOn). Ссылается на узел продукта
+	// на сайте платформы; без адреса узла не выводится.
+	protected function platformProperty(): array {
+		$id = config('seo.site_platform.id');
+
+		if ( empty($id) )
+			return [];
+
+		return [
+			'isBasedOn' => array_filter([
+				'@type' => 'SoftwareApplication',
+				'@id'   => $id,
+				'name'  => config('seo.site_platform.name'),
+				'url'   => config('seo.site_platform.url'),
+			]),
+		];
+	}
+
+	// Разработчик сайта (WebSite.creator). Ссылается на узел организации на его
+	// собственном сайте, чтобы поисковик связал обе сущности; без имени и адреса не выводится.
+	protected function creatorProperty(): array {
+		$name = config('seo.site_creator.name');
+		$url  = config('seo.site_creator.url');
+
+		if ( empty($name) || empty($url) )
+			return [];
+
+		return [
+			'creator' => [
+				'@type' => 'Organization',
+				'@id'   => config('seo.site_creator.id') ?: rtrim($url, '/') . '/#organization',
+				'name'  => $name,
+				'url'   => $url,
+			],
+		];
+	}
 
 	public function addCurrentPage() {
 		$current_route_name   = Route::currentRouteName();

@@ -3,6 +3,14 @@
 ## Unreleased — Side menu and header parity with the source project
 
 **Added**
+- `config/seo.php` → `site_creator` (`name`, `url`, `id`): the site developer in
+  JSON-LD as `WebSite.creator`, linked by `@id` to the organization node on the
+  developer's own site. Empty by default — nothing is emitted. Hosts with an
+  already published `config/seo.php` add the key by hand.
+- `config/seo.php` → `site_platform` (`id`, `name`, `url`): the platform the
+  site is built on in JSON-LD as `WebSite.isBasedOn`, linked by `@id` to the
+  product node on the platform's site. Empty by default — nothing is emitted.
+  Hosts with an already published `config/seo.php` add the key by hand.
 - `updcab` / `updcab.bat`: `--ssr` runs the host's `npm run buildssr` instead of
   `npm run build`, so an update of a server-rendered site rebuilds the SSR
   bundle and restarts its process rather than leaving it on the old bundle.

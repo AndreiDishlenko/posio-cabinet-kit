@@ -141,6 +141,14 @@ edit from the cabinet:
 - `software.enabled` + `software_description` + `software_features` — the
   `SoftwareApplication` node. Leave `enabled => false` on a site that is not a
   product; then the node never appears, not even on the home page.
+- `site_creator` (`name`, `url`, optional `id`) — the developer of the site,
+  emitted as `WebSite.creator`. `id` defaults to `<url>/#organization`, the
+  organization node on the developer's own site, so search engines join the two
+  entities. Leave `name` or `url` empty and nothing is emitted.
+- `site_platform` (`id`, optional `name`, `url`) — the platform the site is
+  built on, emitted as `WebSite.isBasedOn`. `id` is the `SoftwareApplication`
+  node on the platform's own site (for POSIO: `https://posio.com.ua/#software`).
+  Leave `id` empty and nothing is emitted.
 - `sitenav_routes` — see above.
 
 `config/general.php` holds `locales` (drives hreflang, sitemap and the locale
