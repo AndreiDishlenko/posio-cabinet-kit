@@ -32,7 +32,7 @@ class SeoService {
             ...Collect($this->seo_data)->except(['id', 'locale', 'route_name', 'created_at', 'updated_at']),
             'enableindex'   => !empty($cp_seo_data['index']) ?? false,
 			'site_name'		=> app(SiteSettingsService::class)->siteName(),
-			'canonical'		=> url()->current(),
+			'canonical'		=> $this->onSiteHost(url()->current()),
 			'meta_data'		=> $this->currentPageMetaData(),
 			'alternate'		=> $this->alternatePageData(),
 			'breadcrumbs'	=> app(BreadcrumbService::class)->get(),
@@ -86,7 +86,7 @@ class SeoService {
 		$base_route_name = $this->baseRouteName();
 
 		$result = [
-    		'x-default' => str_replace('/' . app()->getLocale(), '', url()->current()),
+    		'x-default' => $this->onSiteHost(str_replace('/' . app()->getLocale(), '', url()->current())),
 		];
 
 		// Передаём параметры текущего маршрута (например token у password.reset),
@@ -95,7 +95,7 @@ class SeoService {
 
 		if ( !empty($base_route_name) )
 			collect( config('general.locales') )->each(function($locale) use (&$result, $base_route_name, $route_params) {
-				$result[$locale] = loc_route($base_route_name, $locale, $route_params);
+				$result[$locale] = $this->onSiteHost(loc_route($base_route_name, $locale, $route_params));
 			});
 
 		return $result;
@@ -121,6 +121,18 @@ class SeoService {
         });
 
         return $route_seo_data;
+	}
+
+	// Канонический адрес всегда на основном домене сайта и без параметров запроса:
+	// страница, открытая через алиас хоста (www) или с метками и мусором в адресе,
+	// иначе объявит канонической саму себя, и поисковик заведёт на неё дубль.
+	protected function onSiteHost(string $url): string {
+		$site_root = rtrim((string) config('app.url'), '/');
+
+		if ( empty($site_root) )
+			return strtok($url, '?');
+
+		return $site_root . (parse_url($url, PHP_URL_PATH) ?? '');
 	}
 
 	protected function toAbsoluteUrl(string $path): string {

@@ -20,7 +20,7 @@
         <meta property="og:title"       :content="ogTitle" />
         <meta property="og:description" :content="ogDescription" />
         <meta property="og:type"        :content="type" />
-        <meta property="og:url"         :content="url" />
+        <meta property="og:url"         :content="canonicalUrl" />
         <meta property="og:site_name"   :content="siteName" />
         <meta property="og:locale"      :content="ogLocale" />
 
@@ -39,7 +39,7 @@
         <meta name="twitter:description" :content="twitterDescription" />
         <meta v-if="twitterImage" name="twitter:image" :content="twitterImage" />
 
-        <link rel="canonical" :href="canonical || url" />
+        <link rel="canonical" :href="canonicalUrl" />
 
 		<link v-for="(key, value) in ($page.props.seo?.alternate || {})" rel="alternate" :hreflang="value"	:href="key">
 
@@ -102,6 +102,11 @@
             },
             keywords() {
                 return this.$page.props.seo?.meta_data?.keywords ? this.$page.props.seo.meta_data.keywords : ''
+            },
+            // Адрес из браузера при серверном рендере пуст, поэтому основной источник —
+            // канонический адрес, посчитанный сервером; явный проп layout важнее.
+            canonicalUrl() {
+                return this.canonical || this.$page.props.seo?.canonical || this.url;
             },
             siteName() {
                 return this.$page.props.seo?.site_name || 'POSIO';
