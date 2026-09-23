@@ -4,7 +4,7 @@ rem depend on each other. Stops at the first failing step so a broken update is
 rem not hidden by the steps after it.
 rem
 rem     updcab.bat --ssr   the site renders on the server: npm run buildssr
-setlocal
+setlocal EnableDelayedExpansion
 cd /d "%~dp0"
 
 rem A plain build leaves the server-rendering process on the old bundle; the
@@ -16,9 +16,27 @@ if not "%~1"=="" if /i not "%~1"=="--ssr" (
 	exit /b 1
 )
 
-echo == 1/6 composer update posio/*
-call composer update "posio/*"
+rem A package linked into vendor (junction or symlink) is a developer's working
+rem copy of its repository: composer would swap the link for a downloaded copy,
+rem and edits to the package would silently stop reaching this site.
+set "LINKED="
+set "UPDATE_TARGETS="
+for /d %%D in (vendor\posio\*) do (
+	dir /AL /B vendor\posio 2>nul | findstr /X /I /C:"%%~nxD" >nul
+	if errorlevel 1 (set "UPDATE_TARGETS=!UPDATE_TARGETS! posio/%%~nxD") else (set "LINKED=!LINKED! posio/%%~nxD")
+)
+if defined LINKED echo Not updated, linked to a working copy:%LINKED%
+rem Nothing linked: the wildcard also installs a module required since the last run.
+if not defined LINKED set "UPDATE_TARGETS= posio/*"
+if not defined UPDATE_TARGETS goto :composer_skipped
+
+echo == 1/6 composer update%UPDATE_TARGETS%
+call composer update%UPDATE_TARGETS%
 if errorlevel 1 goto :failed
+goto :composer_done
+:composer_skipped
+echo == 1/6 composer update: skipped, every posio package is linked
+:composer_done
 
 rem No-op when the composer post-update hook already ran it. Also refreshes the
 rem integration docs in docs/cabinet-kit/ that assistants read.

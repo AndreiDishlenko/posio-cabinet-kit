@@ -2,7 +2,16 @@
 
 	<div :class="accordion_class" class="accordion-wrapper">
 
-		<div v-bind="button_attrs" @click="toggleItem()" :class="[button_class, cells_mode ? 'acc-header-cells' : 'flex items-center pe-2']" :style="button_styles" class="acc-header cursor-pointer" >
+		<!-- Роль кнопки и клавиатура — только вне режима клеток: там шапка — строка
+		     таблицы со своими интерактивными клетками. -->
+		<div :role="cells_mode ? null : 'button'"
+			:tabindex="cells_mode || !can_opens ? null : 0"
+			:aria-expanded="state ? 'true' : 'false'"
+			v-bind="button_attrs"
+			@click="toggleItem()"
+			@keydown.enter.self="cells_mode || toggleItem()"
+			@keydown.space.self.prevent="cells_mode || toggleItem()"
+			:class="[button_class, cells_mode ? 'acc-header-cells' : 'flex items-center pe-2']" :style="button_styles" class="acc-header cursor-pointer" >
 			<template v-if="cells_mode">
 				<!-- Стрілка стоїть перед клітинками, хоч і виведена з потоку: інакше вона
 				     стає останнім елементом шапки і крайня клітинка групи не отримує
@@ -103,14 +112,13 @@
 				default: false
 			}
 		},
+		// Начальное состояние — сразу из пропсов, а не после монтирования: иначе
+		// серверная разметка приходит свёрнутой и раскрывается уже на клиенте.
 		data() {
             return {
-                state: false,
+                state: this.can_opens && this.is_opened,
             }
         },
-		mounted() {
-			this.state = this.can_opens && this.is_opened ? true : false
-		},
 		methods: {
 			toggleItem() {
 				// console.log('toggleGroup', index);

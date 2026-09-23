@@ -196,6 +196,13 @@ the trip (a file committed from Windows carries none): `chmod +x updcab` there,
 or `git update-index --chmod=+x updcab` in the repository so it arrives set on
 the next deploy. `sh updcab` works regardless.
 
+A `posio/*` package whose folder in `vendor/` is a junction or symlink — a
+developer's working copy of the package repository linked in for live editing —
+is left out of step 1: Composer would replace the link with a downloaded copy,
+and edits to the package would silently stop reaching the site. The launcher
+names such packages and updates the rest by name; with every package linked,
+step 1 is skipped. The build in step 5 then uses the working copy as it is.
+
 Full procedure, in order:
 
 ```bash

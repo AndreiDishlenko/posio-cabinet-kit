@@ -23,8 +23,9 @@ class SeoService {
 
 	// Мета страницы, которую не завести записью раздела SEO: у всех товаров один
 	// маршрут, а заголовок, описание и картинка у каждого свои. Ключи — как у
-	// записи раздела (meta_title, meta_description, og_image, index…); действует
-	// на текущий запрос и выигрывает у записи.
+	// записи раздела (meta_title, meta_description, og_image, index…) и только
+	// для страниц без записи: og_type, og_image_width/height, follow (ссылки
+	// закрытой страницы открыты). Действует на текущий запрос и выигрывает у записи.
 	public function override(array $meta): static {
 		$this->overrides = array_replace($this->overrides, $meta);
 
@@ -45,11 +46,17 @@ class SeoService {
 		// OG image: per-page override or global fallback from config
 		$default_og_image = config('general.default_og_image', '');
 		$og_image = !empty($cp_seo_data['og_image']) ? $cp_seo_data['og_image'] : $default_og_image;
+		[$og_image_width, $og_image_height] = $this->ogImageSize($og_image, $cp_seo_data, $default_og_image);
 		$og_image = $this->toAbsoluteUrl($og_image);
+
+		$enable_index = !empty($cp_seo_data['index']);
 
 		$result = [
             ...Collect($this->seo_data)->except(['id', 'locale', 'route_name', 'created_at', 'updated_at']),
-            'enableindex'   => !empty($cp_seo_data['index']) ?? false,
+            'enableindex'   => $enable_index,
+			// Закрытая от индекса страница может отдавать ссылочный вес дальше
+			// (сравнение, фильтры) — это решает переопределение контроллера.
+			'robots'		=> $enable_index ? 'index, follow' : 'noindex, ' . (!empty($cp_seo_data['follow']) ? 'follow' : 'nofollow'),
 			'site_name'		=> app(SiteSettingsService::class)->siteName(),
 			'canonical'		=> $this->onSiteHost(url()->current()),
 			'meta_data'		=> $this->currentPageMetaData(),
@@ -58,8 +65,10 @@ class SeoService {
             'jsonld'        => $this->withExtraJsonLd(app(JsonLdObject::class)->make($cp_seo_data)->get()),
 			// Open Graph
 			'og_image'        => $og_image,
-			'og_image_width'  => config('general.default_og_image_width', 1200),
-			'og_image_height' => config('general.default_og_image_height', 628),
+			'og_image_width'  => $og_image_width,
+			'og_image_height' => $og_image_height,
+			// Пусто — тип задаёт layout (по умолчанию website).
+			'og_type'         => $cp_seo_data['og_type'] ?? '',
 			'og_title'       => $cp_seo_data['og_title'] ?? '',
 			'og_description' => $cp_seo_data['og_description'] ?? '',
 			// Twitter Card
@@ -167,6 +176,41 @@ class SeoService {
 			return strtok($url, '?');
 
 		return $site_root . (parse_url($url, PHP_URL_PATH) ?? '');
+	}
+
+	// Размер в теге должен совпадать с файлом: соцсети по нему строят превью ещё
+	// до загрузки картинки. Явный размер из переопределения, затем замер файла
+	// сайта; конфиговый размер верен только для картинки по умолчанию. Размер
+	// неизвестен — теги размера не выводятся вовсе, лучше чем неверные.
+	protected function ogImageSize(string $image, array $seo_data, string $default_image): array {
+		if ( empty($image) )
+			return [null, null];
+
+		if ( !empty($seo_data['og_image_width']) && !empty($seo_data['og_image_height']) )
+			return [(int) $seo_data['og_image_width'], (int) $seo_data['og_image_height']];
+
+		$size = $this->localImageSize($image);
+		if ( $size )
+			return $size;
+
+		if ( $image === $default_image )
+			return [config('general.default_og_image_width', 1200), config('general.default_og_image_height', 628)];
+
+		return [null, null];
+	}
+
+	protected function localImageSize(string $url): ?array {
+		$host = parse_url($url, PHP_URL_HOST);
+		if ( $host && $host !== parse_url((string) config('app.url'), PHP_URL_HOST) && $host !== request()->getHost() )
+			return null;
+
+		$path = public_path(ltrim(rawurldecode((string) parse_url($url, PHP_URL_PATH)), '/'));
+		if ( !is_file($path) )
+			return null;
+
+		$size = @getimagesize($path);
+
+		return $size ? [$size[0], $size[1]] : null;
 	}
 
 	protected function toAbsoluteUrl(string $path): string {

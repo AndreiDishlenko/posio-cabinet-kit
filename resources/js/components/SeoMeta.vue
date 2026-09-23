@@ -9,25 +9,22 @@
         <meta v-if="description"    name="description"	:content="description" />
         <!-- <meta v-if="keywords"       name="keywords"     :content="keywords" /> -->
 
-		<template v-if="!$page.props.seo?.enableindex" >
-			<meta name="robots" content="noindex, nofollow" />
-		</template>
-		<template v-else>
-			<meta name="robots" content="index, follow" />
-		</template>
+		<meta name="robots" :content="robots" />
 
         <!-- Open Graph -->
         <meta property="og:title"       :content="ogTitle" />
         <meta property="og:description" :content="ogDescription" />
-        <meta property="og:type"        :content="type" />
+        <meta property="og:type"        :content="ogType" />
         <meta property="og:url"         :content="canonicalUrl" />
         <meta property="og:site_name"   :content="siteName" />
         <meta property="og:locale"      :content="ogLocale" />
 
         <template v-if="ogImage">
             <meta property="og:image"        :content="ogImage" />
-            <meta property="og:image:width"  :content="$page.props.seo?.og_image_width  || 1200" />
-            <meta property="og:image:height" :content="$page.props.seo?.og_image_height || 628" />
+            <template v-if="$page.props.seo?.og_image_width && $page.props.seo?.og_image_height">
+                <meta property="og:image:width"  :content="$page.props.seo.og_image_width" />
+                <meta property="og:image:height" :content="$page.props.seo.og_image_height" />
+            </template>
         </template>
 
         <meta v-for="loc in ogLocaleAlternate" :key="loc"
@@ -107,6 +104,16 @@
             // канонический адрес, посчитанный сервером; явный проп layout важнее.
             canonicalUrl() {
                 return this.canonical || this.$page.props.seo?.canonical || this.url;
+            },
+            robots() {
+                if (this.$page.props.seo?.robots)
+                    return this.$page.props.seo.robots;
+
+                return this.$page.props.seo?.enableindex ? 'index, follow' : 'noindex, nofollow';
+            },
+            // Тип от сервера (товар, статья) важнее пропа layout.
+            ogType() {
+                return this.$page.props.seo?.og_type || this.type;
             },
             siteName() {
                 return this.$page.props.seo?.site_name || 'POSIO';

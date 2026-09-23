@@ -17,7 +17,23 @@
   close handler may return `false` to stay open on "back"; closing an overlay
   also closes the ones opened on top of it.
 
+**SEO**
+- `og:image:width` / `og:image:height` are the real size of the image: taken
+  from `SeoService::override()` (`og_image_width`, `og_image_height`), else
+  measured from the file when it is on the site, else the configured size — but
+  only for the default image. An unknown size prints no size tags (it used to
+  claim 1200×628 for any image).
+- `SeoService::override()` accepts `og_type` (e.g. `product`; empty — the
+  `SeoMeta` prop decides, `website` by default) and `follow`: a `noindex` page
+  gets `noindex, follow` instead of `noindex, nofollow`. The ready value is in
+  the `seo.robots` prop.
+
 **Changed**
+- `updcab` / `updcab.bat` leave out of `composer update` every `posio/*`
+  package linked into `vendor/` (junction or symlink to a working copy of its
+  repository) and name them, so a package under live development keeps its
+  link. Existing launchers are never overwritten: to get this, delete them and
+  run `php artisan cabinet-kit:sync-config`.
 - Table tools panel search (`panelitems` of type `search`) uses the rounded
   search field.
 - A table inside a card sits on the card's surface: header and row lines use
@@ -26,6 +42,10 @@
   class.
 
 **Fixed**
+- `AccordionItem2` opens in its initial state from the first render, so
+  server-rendered pages no longer arrive collapsed. Outside `cells_mode` the
+  header is a keyboard-operable button (`role`, `tabindex`, Enter/Space) with
+  `aria-expanded`.
 - Tall content in a card with a set height no longer squeezes the card header
   and footer (`flex-shrink: 0`).
 - Closing a modal card no longer rebuilds the page and reloads its list: the

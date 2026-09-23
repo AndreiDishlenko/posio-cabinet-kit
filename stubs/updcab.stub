@@ -265,9 +265,34 @@ if [ "$app_env" = "production" ]; then
 	recache=1
 fi
 
+# A package linked into vendor/ (symlink or junction) is a developer's working
+# copy of its repository: composer would swap the link for a downloaded copy,
+# and edits to the package would silently stop reaching this site.
+linked=""
+update_targets=""
+for dir in vendor/posio/*/; do
+	dir=${dir%/}
+	[ -d "$dir" ] || continue
+
+	if [ -L "$dir" ]; then
+		linked="$linked posio/${dir##*/}"
+	else
+		update_targets="$update_targets posio/${dir##*/}"
+	fi
+done
+
+# Nothing linked: the wildcard also installs a module required since the last run.
+if [ -z "$linked" ]; then
+	update_targets=" posio/*"
+fi
+
+# From here on posio/* is an argument for composer, not a path to expand.
+set -f
+
 steps=6
 [ "$recache" -eq 1 ] && steps=$((steps + 1))
 [ "$skip_build" -eq 1 ] && steps=$((steps - 1))
+[ -z "$update_targets" ] && steps=$((steps - 1))
 step=0
 
 fail() {
@@ -282,8 +307,18 @@ announce() {
 	echo "== $step/$steps $*"
 }
 
-announce "composer update posio/*"
-composer_cmd update "posio/*" --no-interaction || fail
+if [ -n "$linked" ]; then
+	echo ""
+	echo "Not updated, linked to a working copy:$linked"
+fi
+
+if [ -z "$update_targets" ]; then
+	echo ""
+	echo "== skipped: composer update (every posio/* package is linked)"
+else
+	announce "composer update$update_targets"
+	composer_cmd update $update_targets --no-interaction || fail
+fi
 
 # No-op when the composer post-update hook already ran it. Also refreshes the
 # integration docs in docs/cabinet-kit/ that assistants read.
