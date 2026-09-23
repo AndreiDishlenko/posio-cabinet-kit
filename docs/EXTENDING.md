@@ -211,17 +211,28 @@ The helper reads `lang/{app()->getLocale()}.json` and falls back to
 `config('app.fallback_locale')`. Extra JSON directories can be configured in
 `config/cabinet-kit.php` under `translations.json_paths`.
 
-## Registration approval
+## Registration modes
 
-On by default: each self-registered user waits until an administrator with the
-system permission `sysper-users` follows the link from the approval letter. To
-let registrations straight in, set in the host `.env`:
+Self-registration (the sign-up form and a first Google/Apple sign-in of an
+unknown person) has three modes, set in the host `.env`:
 
 ```dotenv
-ONBOARDING_REGISTRATION_APPROVAL=false
+CABINET_REGISTRATION=closed    # default: no sign-up, administrators create users
+CABINET_REGISTRATION=approval  # sign-up, then wait for an administrator's approval
+CABINET_REGISTRATION=open      # sign-up straight into the cabinet
 ```
 
-(or `'registration_approval' => false` in a published `config/cabinet_onboarding.php`).
+(or `'registration'` in a published `config/cabinet-kit.php`). An unknown value
+counts as `closed`. When closed, the sign-in page shows only e-mail and password:
+no "Sign up" link (shared Inertia prop `registration_open`) and no social buttons.
+The registration form, Google/Apple sign-in (for existing users too — a first
+provider sign-in creates an account) and the approval link answer 404
+(`RequireRegistrationNotClosed`); the route names stay registered.
+
+### Registration approval
+
+In `approval` mode each self-registered user waits until an administrator with
+the system permission `sysper-users` follows the link from the approval letter.
 
 By default the approval letter goes to every holder of `sysper-users`. To send it
 to specific addresses instead, list them comma-separated:

@@ -24,6 +24,7 @@ use Posio\CabinetKit\Http\Controllers\SettingsController;
 use Posio\CabinetKit\Http\Controllers\SystemPasswordController;
 use Posio\CabinetKit\Http\Middleware\ApplyCabinetKitLocale;
 use Posio\CabinetKit\Http\Middleware\CanSystemPermission;
+use Posio\CabinetKit\Http\Middleware\RequireRegistrationNotClosed;
 use Posio\CabinetKit\Http\Middleware\UseCabinetKitRootView;
 
 // Ни один маршрут пакета не объявляется замыканием: хост обязан сохранить
@@ -48,8 +49,10 @@ Route::middleware(['web', UseCabinetKitRootView::class, ApplyCabinetKitLocale::c
                 Route::get('login', [LoginController::class, 'showLogin'])->name('login');
                 Route::post('login', [LoginController::class, 'login']);
 
-                Route::get('register', [RegisterController::class, 'showRegister'])->name('register');
-                Route::post('register', [RegisterController::class, 'register']);
+                Route::middleware(RequireRegistrationNotClosed::class)->group(function () {
+                    Route::get('register', [RegisterController::class, 'showRegister'])->name('register');
+                    Route::post('register', [RegisterController::class, 'register']);
+                });
 
                 Route::get('forgot-password', [PasswordResetController::class, 'request'])->name('password.request');
                 Route::post('forgot-password', [PasswordResetController::class, 'email'])->name('password.email');
@@ -59,14 +62,18 @@ Route::middleware(['web', UseCabinetKitRootView::class, ApplyCabinetKitLocale::c
                 // Social sign-in stays registered even without credentials (the
                 // controller answers 404 then), so the sign-in page can resolve
                 // these names unconditionally.
-                Route::get('auth/google', [SocialAuthController::class, 'googleRedirect'])->name('auth.google');
-                Route::get('auth/google/callback', [SocialAuthController::class, 'googleCallback'])->name('auth.google.callback');
+                // Первый вход через провайдера заводит учётку, поэтому при закрытой
+                // регистрации провайдеры закрыты целиком, в том числе для заведённых.
+                Route::middleware(RequireRegistrationNotClosed::class)->group(function () {
+                    Route::get('auth/google', [SocialAuthController::class, 'googleRedirect'])->name('auth.google');
+                    Route::get('auth/google/callback', [SocialAuthController::class, 'googleCallback'])->name('auth.google.callback');
 
-                Route::get('auth/apple', [SocialAuthController::class, 'appleRedirect'])->name('auth.apple');
-                // Apple posts its return from its own origin, so no session token rides along.
-                Route::post('auth/apple/callback', [SocialAuthController::class, 'appleCallback'])
-                    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class])
-                    ->name('auth.apple.callback');
+                    Route::get('auth/apple', [SocialAuthController::class, 'appleRedirect'])->name('auth.apple');
+                    // Apple posts its return from its own origin, so no session token rides along.
+                    Route::post('auth/apple/callback', [SocialAuthController::class, 'appleCallback'])
+                        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class])
+                        ->name('auth.apple.callback');
+                });
             });
 
             Route::middleware('auth')->group(function () {
@@ -83,7 +90,7 @@ Route::middleware(['web', UseCabinetKitRootView::class, ApplyCabinetKitLocale::c
                 // Ссылка одобрения регистрации из письма администратору: подпись удостоверяет
                 // ссылку, вход и системное право — того, кто одобряет (право проверяет контроллер).
                 Route::get('registration/approve/{id}/{hash}', [RegistrationApprovalController::class, 'approve'])
-                    ->middleware('signed')
+                    ->middleware(['signed', RequireRegistrationNotClosed::class])
                     ->name('registration.approve');
             });
         }

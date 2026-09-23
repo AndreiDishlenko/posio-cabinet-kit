@@ -323,9 +323,13 @@ class CabinetKitServiceProvider extends ServiceProvider
             });
         }
 
+        // Страницы входа прячут ссылку на регистрацию, когда она закрыта.
+        Inertia::share('registration_open', fn () => \Posio\CabinetKit\Support\RegistrationMode::allowsSignUp());
+
         Inertia::share('social_auth', fn () => [
             'google' => [
-                'enabled' => (bool) config('cabinet-kit.social_auth.google.enabled', true)
+                'enabled' => \Posio\CabinetKit\Support\RegistrationMode::allowsSignUp()
+                    && (bool) config('cabinet-kit.social_auth.google.enabled', true)
                     && filled(config('services.google.client_id'))
                     && class_exists(\Laravel\Socialite\Facades\Socialite::class),
             ],

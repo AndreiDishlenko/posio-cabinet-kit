@@ -3,6 +3,13 @@
 ## Unreleased — Page tools in the header, rounded search field
 
 **Added**
+- Registration modes: `cabinet-kit.registration` / `CABINET_REGISTRATION` =
+  `closed` (default) | `approval` | `open`. Closed: the sign-in page has no
+  "Sign up" link (shared prop `registration_open`) and no social buttons; the
+  registration form, Google/Apple sign-in and the approval link answer 404
+  (`RequireRegistrationNotClosed`). E-mail + password sign-in is unaffected. **Breaking:** `ONBOARDING_REGISTRATION_APPROVAL`
+  / `cabinet_onboarding.registration_approval` is gone — a host that wants approval
+  sets `CABINET_REGISTRATION=approval`, one that wants open sign-up sets `open`.
 - `CabinetLayout` slot `header_tools`: a page puts its own controls (e.g. a
   list view switch) into the cabinet header, right of the title. Pages that
   don't fill it render the header as before.

@@ -35,6 +35,14 @@ return [
     // Set to false when the host application already owns these route names.
     'auth_routes' => true,
 
+    // Самостоятельная регистрация (форма регистрации и первый вход через Google/Apple):
+    //   closed   — закрыта: кабинет — админка обслуживания сайта, пользователей заводит
+    //              администратор; вход уже заведённых не затрагивается;
+    //   approval — открыта, но в кабинет новичок попадает после одобрения администратором
+    //              с правом sysper-users (адресаты письма — cabinet_onboarding);
+    //   open     — открыта без одобрения.
+    'registration' => env('CABINET_REGISTRATION', 'closed'),
+
     // Social sign-in through Laravel Socialite (requires laravel/socialite, plus
     // socialiteproviders/apple for Apple). Set a provider's `enabled` flag to
     // false to hide its form controls and make its endpoints answer 404. The

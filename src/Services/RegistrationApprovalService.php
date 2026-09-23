@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Posio\CabinetKit\Notifications\RegistrationApprovalRequest;
 use Posio\CabinetKit\Notifications\RegistrationApproved;
+use Posio\CabinetKit\Support\RegistrationMode;
 
 // Одобрение самостоятельной регистрации администратором платформы: пока его нет,
 // пользователь может подтвердить почту, но в кабинет не входит.
@@ -19,7 +20,7 @@ class RegistrationApprovalService
 
     public function enabled(): bool
     {
-        return (bool) config('cabinet_onboarding.registration_approval', false);
+        return RegistrationMode::requiresApproval();
     }
 
     // Выключение режима снимает ожидание со всех, кто не успел дождаться одобрения.

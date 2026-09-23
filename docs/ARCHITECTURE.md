@@ -134,8 +134,8 @@ their mail is built by `Notifications\AuthMail` from the package views
 route prefix, so guest requests (registration, forgotten password) get it too.
 Host overrides: EXTENDING → "Auth emails: texts and templates".
 
-Registration approval (`cabinet_onboarding.registration_approval`, on in the
-package) sits on top of that. `RegistrationApprovalService` marks a
+Registration approval (`cabinet-kit.registration = approval`; the package
+default is `closed` — see `Support\RegistrationMode`) sits on top of that. `RegistrationApprovalService` marks a
 self-registered user as awaiting approval and mails a signed
 `registration.approve` link to every holder of `sysper-users`. A waiting user
 keeps the session registration opens, so the confirmation screen and its resend
