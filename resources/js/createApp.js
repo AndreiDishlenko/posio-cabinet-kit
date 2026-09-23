@@ -13,6 +13,7 @@ import { DictionariesClass } from './posio/system/DictionariesClass.js';
 import { Emitter } from './posio/system/Emitter.js';
 import { Popup } from './posio/system/Popup.js';
 import { Toast } from './posio/system/ToastMessages.js';
+import { takeOverBackButton } from './overlayHistory.js';
 import { resolveCabinetKitPage } from './resolvePage.js';
 // Страницы установленных модулей собирает плагин сборки пакета.
 import cabinetKitModulePages from 'virtual:cabinet-kit-modules';
@@ -44,6 +45,11 @@ export function createCabinetKitApp({
     dictionariesRoute = ['cabinet-kit.api.dictionaries', 'cabinet.api.dictionaries'],
     dictionariesStorage = 'dict_cabinet',
 } = {}) {
+    // Раньше маршрутизатора: закрытие карточки забирает свою запись из истории, и
+    // это событие не должно доходить до него — иначе каждое закрытие карточки
+    // пересобирает страницу с нуля и заново загружает список.
+    takeOverBackButton();
+
     return createInertiaApp({
         title,
         progress: progress ?? { color: '#4B5563' },

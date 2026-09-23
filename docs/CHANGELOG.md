@@ -28,6 +28,10 @@
 **Fixed**
 - Tall content in a card with a set height no longer squeezes the card header
   and footer (`flex-shrink: 0`).
+- Closing a modal card no longer rebuilds the page and reloads its list: the
+  cabinet app now takes over the "back" handling (`takeOverBackButton`) before
+  Inertia starts, so the history step a card removes on close doesn't reach the
+  router.
 
 ## 0.4.0 (unreleased) — Module API
 
