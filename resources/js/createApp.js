@@ -59,7 +59,8 @@ export function createCabinetKitApp({
             overrides,
             {
                 ...cabinetKitModulePages,
-                ...import.meta.glob('../_admin/js/pages/**/*.vue', { eager: true }),
+                // Табы настроек — не страницы: их лениво грузит сама страница настроек.
+                ...import.meta.glob(['../_admin/js/pages/**/*.vue', '!../_admin/js/pages/Settings/CabinetSettings*Tab.vue'], { eager: true }),
                 ...import.meta.glob('./pages/**/*.vue', { eager: true }),
             },
         ),

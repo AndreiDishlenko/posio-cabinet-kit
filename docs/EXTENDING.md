@@ -46,8 +46,11 @@ signing in. `cabinet-kit:doctor` reports those.
 The settings page (`resources/_admin/js/pages/CabinetSettings.vue`) builds its
 tab strip in JS, not from config: `pages/Settings/settingsTabs.js` holds the
 full catalogue (`{ id, label, label_mobile?, file, account_wide? }`) and keeps
-only the tabs whose `file` actually exists next to it — the page globs
-`./Settings/CabinetSettings*Tab.vue`. `account_wide: true` hides the tab from
+only the tabs whose `file` actually exists next to it — it globs
+`./CabinetSettings*Tab.vue` lazily, and the page loads each tab through
+`settingsTabLoader(file)` from the same glob, so every tab is its own chunk.
+Do not import a tab file statically anywhere else: that merges it back into the
+main bundle (Vite warns about it). `account_wide: true` hides the tab from
 anyone without `manage-members`. The same helper feeds the settings dropdown
 in `SideMenu.vue`, so a tab added there shows up in both places.
 

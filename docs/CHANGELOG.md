@@ -17,6 +17,15 @@
   close handler may return `false` to stay open on "back"; closing an overlay
   also closes the ones opened on top of it.
 
+**Build**
+- Settings tabs load lazily: `settingsTabs.js` exports `settingsTabLoader(file)`,
+  `CabinetSettings.vue` wraps it in `defineAsyncComponent`, and the cabinet's
+  page glob in `createApp.js` no longer imports `Settings/CabinetSettings*Tab.vue`.
+  This removes the Vite warning "is dynamically imported … but also statically
+  imported" for `CabinetSettingsUserProfileTab.vue`.
+- The Vite plugin looks for the dev certificate only for `vite serve`:
+  `npm run build` on a server no longer prints "Certificate … was not found".
+
 **SEO**
 - `og:image:width` / `og:image:height` are the real size of the image: taken
   from `SeoService::override()` (`og_image_width`, `og_image_height`), else

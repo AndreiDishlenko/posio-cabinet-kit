@@ -23,14 +23,14 @@
     import CabinetLayout    from '@/_admin/js/layouts/CabinetLayout.vue';
     import Tabs             from '@/js/Elements/Tabs.vue';
 
-    import { buildSettingsTabs } from './Settings/settingsTabs.js';
+    import { defineAsyncComponent } from 'vue';
+    import { buildSettingsTabs, settingsTabLoader } from './Settings/settingsTabs.js';
 
     // Компоненты табов подхватываются по факту наличия файла, а не жёстким
     // импортом: страницу можно перенести в другой проект с любым подмножеством
-    // табов — сборка не упадёт на несуществующем пути.
+    // табов — сборка не упадёт на несуществующем пути. Грузятся лениво: код таба
+    // приходит, только когда его открыли.
     const tab_components = {};
-    for (const [path, module] of Object.entries(import.meta.glob('./Settings/CabinetSettings*Tab.vue', { eager: true })))
-        tab_components[path.replace('./Settings/', '')] = module.default;
 
     export default {
         mixins: [sharedMixins],
@@ -158,8 +158,13 @@
         },
 
         methods: {
+            // Одна обёртка на файл: новая при каждом рендере пересоздавала бы таб.
             tabComponent(file) {
-                return tab_components[file];
+                const loader = settingsTabLoader(file);
+                if (!loader)
+                    return null;
+
+                return tab_components[file] ??= defineAsyncComponent(loader);
             },
         }
     }

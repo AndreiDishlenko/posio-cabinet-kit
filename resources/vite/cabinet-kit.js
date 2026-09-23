@@ -28,7 +28,7 @@ export default function cabinetKit(options = {}) {
         load(id) {
             return id === RESOLVED_MODULES_ID ? modulePagesSource(modules, root) : null;
         },
-        config(userConfig) {
+        config(userConfig, { command }) {
             userConfig.resolve ??= {};
             userConfig.resolve.alias = [
                 ...aliases,
@@ -46,7 +46,8 @@ export default function cabinetKit(options = {}) {
                 server: { fs: { allow: withRealPaths([root, packageDir, ...modules.map((module) => module.dir)]) } },
             };
 
-            const https = resolveHttps(options.https, root);
+            // Сертификат нужен только dev-серверу: сборка на сервере его не ищет и не предупреждает.
+            const https = command === 'serve' ? resolveHttps(options.https, root) : null;
             if (https) {
                 config.server.https = https;
                 config.server.hmr = { protocol: 'wss', ...(options.hmr ?? {}) };
