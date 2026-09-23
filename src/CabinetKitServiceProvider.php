@@ -20,6 +20,7 @@ use Posio\CabinetKit\Services\SeoService;
 use Posio\CabinetKit\Services\SiteSettingsService;
 use Posio\CabinetKit\Http\Middleware\RequireSystemPasswordChange;
 use Posio\CabinetKit\Notifications\AuthMail;
+use Posio\CabinetKit\Support\CabinetKitModules;
 use Posio\CabinetKit\Support\CabinetKitRoles;
 use Posio\CabinetKit\Support\CabinetRedirects;
 
@@ -39,6 +40,10 @@ class CabinetKitServiceProvider extends ServiceProvider
 
         $this->bridgeLegacyRedirects();
         $this->mountLogViewer();
+
+        $this->app->singleton(CabinetKit::class);
+        // Переопределения меты от контроллера живут ровно один запрос.
+        $this->app->scoped(SeoService::class);
     }
 
     /**
@@ -339,12 +344,16 @@ class CabinetKitServiceProvider extends ServiceProvider
      * live under resources/js, the cabinet's own (settings, users, permissions,
      * the system-password screen) under resources/_admin/js. A root left out
      * here renders fine in the browser and 500s server-side.
+     *
+     * Installed modules add their own roots, in the same order the client
+     * resolver checks them: after the overrides, before the package.
      */
     protected function registerInertiaPagePaths(): void
     {
         $resources = dirname(__DIR__).DIRECTORY_SEPARATOR.'resources'.DIRECTORY_SEPARATOR;
         $pageRoots = [
             resource_path(config('cabinet-kit.overrides_path', '_admin/overrides')),
+            ...CabinetKitModules::adminRoots(),
             $resources.'js',
             $resources.'_admin'.DIRECTORY_SEPARATOR.'js',
         ];

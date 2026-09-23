@@ -3,6 +3,7 @@
 namespace Posio\CabinetKit\Support;
 
 use Illuminate\Support\Facades\Schema;
+use Posio\CabinetKit\CabinetKit;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -127,7 +128,7 @@ class CabinetKitRoles
 
         foreach (static::permissionNames() as $name) {
             $permission = $permissions->get($name);
-            $isSystem = in_array($name, self::SYSTEM_PERMISSIONS, true);
+            $isSystem = in_array($name, static::systemPermissionNames(), true);
 
             if (! $permission) {
                 $problems[] = "permission {$name} is missing";
@@ -146,7 +147,7 @@ class CabinetKitRoles
     {
         $grants = [
             'SAdmin' => static::permissionNames(),
-            'System administrator' => array_values(array_diff(self::SYSTEM_PERMISSIONS, self::UNDELEGABLE_PERMISSIONS)),
+            'System administrator' => array_values(array_diff(static::systemPermissionNames(), self::UNDELEGABLE_PERMISSIONS)),
             'System user' => [],
         ];
 
@@ -169,7 +170,16 @@ class CabinetKitRoles
 
     protected static function permissionNames(): array
     {
-        return [...self::SYSTEM_PERMISSIONS, ...self::ACCOUNT_PERMISSIONS];
+        return [...static::systemPermissionNames(), ...self::ACCOUNT_PERMISSIONS];
+    }
+
+    // Системные права модулей — наравне с правами пакета: та же сверка, тот же уровень.
+    protected static function systemPermissionNames(): array
+    {
+        return array_values(array_unique([
+            ...self::SYSTEM_PERMISSIONS,
+            ...app(CabinetKit::class)->registeredSystemPermissions(),
+        ]));
     }
 
     // Уровень решает, в какой из двух матриц ролей запись видна; оператор его не меняет.
@@ -181,7 +191,7 @@ class CabinetKitRoles
         }
 
         if (Schema::hasColumn(static::table('permissions'), 'is_system')) {
-            Permission::query()->whereIn('name', self::SYSTEM_PERMISSIONS)->update(['is_system' => 1]);
+            Permission::query()->whereIn('name', static::systemPermissionNames())->update(['is_system' => 1]);
             Permission::query()->whereIn('name', self::ACCOUNT_PERMISSIONS)->update(['is_system' => 0]);
         }
     }

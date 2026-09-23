@@ -41,6 +41,42 @@ class HostUpdateLaunchers
         return $created;
     }
 
+    /**
+     * Лаунчер из версий до модулей обновляет только сам пакет, и установленный
+     * модуль с ним так и остаётся на старом релизе. Файл хоста не заменяется
+     * целиком — меняется ровно шаг обновления, остальные правки хоста живут.
+     *
+     * @return string[] имена изменённых файлов
+     */
+    public static function updateAllPosioPackages(): array
+    {
+        $patched = [];
+
+        foreach (array_keys(self::LAUNCHERS) as $name) {
+            $path = base_path($name);
+
+            if (! File::exists($path)) {
+                continue;
+            }
+
+            $contents = File::get($path);
+            // Сначала строки-подписи шагов (без кавычек — они сами в кавычках),
+            // затем сам вызов: там маска в кавычках, иначе её раскроет оболочка.
+            $updated = preg_replace(
+                ['#^(\s*(?:echo|announce)\b[^\r\n]*composer update )posio/cabinet-kit\b#m', '#((?:call composer|composer_cmd) update )posio/cabinet-kit\b#'],
+                ['$1posio/*', '$1"posio/*"'],
+                $contents,
+            );
+
+            if ($updated !== null && $updated !== $contents) {
+                File::put($path, $updated);
+                $patched[] = $name;
+            }
+        }
+
+        return $patched;
+    }
+
     protected static function write(string $name, string $stub): bool
     {
         $path = base_path($name);

@@ -60,7 +60,7 @@ managed outside the application.
 ### Updating
 
 ```bash
-composer update posio/cabinet-kit
+composer update "posio/*"             # the kit and every installed module
 php artisan migrate                   # new versions may ship migrations
 php artisan cabinet-kit:doctor        # verifies frontend/backend wiring
 npm install && npm run build
@@ -199,8 +199,9 @@ the next deploy. `sh updcab` works regardless.
 Full procedure, in order:
 
 ```bash
-# 1. pull the new package version
-composer update posio/cabinet-kit
+# 1. pull the new package version, together with the installed modules
+#    (catalog-kit and the like) — they are released against the kit
+composer update "posio/*"
 
 # 2. only if the post-update hook is missing (see below) — re-apply host wiring
 php artisan cabinet-kit:sync-config
@@ -222,6 +223,10 @@ php artisan cabinet-kit:doctor
 On production, re-cache after step 4 as usual (`php artisan config:cache
 route:cache view:cache`) — the caches must be rebuilt because package routes
 and views changed, not because the update needs anything special.
+
+Launchers scaffolded before 0.4 update the kit alone; `sync-config` switches
+their step 1 to `posio/*` in place and leaves the rest of the file as you
+had it.
 
 `cabinet-kit:install` registers `sync-config` in your `composer.json`
 `post-update-cmd`, so from then on `composer update` runs it for you (step 2
@@ -252,6 +257,10 @@ afterwards). Breaking changes — renamed config
 keys, removed props on released Vue components, changed route names — arrive
 as a major bump, so crossing one is a deliberate edit of the constraint
 followed by `composer update`, plus a read of `docs/CHANGELOG.md`.
+
+Before 1.0 a minor release is such a line too: `^0.3` never reaches `0.4.*`.
+Moving to 0.4 (the release that can host modules) is a one-time edit of the
+constraint to `^0.4` — or the installer of the first module does it for you.
 
 To see what is available before updating:
 

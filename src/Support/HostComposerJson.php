@@ -63,6 +63,36 @@ class HostComposerJson
         return $constraint === null || self::widenedConstraint($constraint) === null;
     }
 
+    /**
+     * Поднимает ограничение пакета до `^major.minor`, если оно ниже: до 1.0
+     * новая minor — несовместимая линия, и `^0.3` никогда не пустит 0.4, от
+     * которой зависит устанавливаемый модуль. Ограничение не в форме `^x.y`
+     * (точная версия, ветка) — осознанный выбор хоста и не трогается.
+     *
+     * @return string|null прежнее ограничение, если файл изменён
+     */
+    public static function raiseCaretConstraint(string $package, string $minimum): ?string
+    {
+        $path = self::path();
+        $json = self::read();
+        $current = is_string($json['require'][$package] ?? null) ? trim($json['require'][$package]) : null;
+
+        if ($path === null || $current === null
+            || ! preg_match('/^\^(\d+)\.(\d+)/', $current, $has)
+            || ! preg_match('/^\^(\d+)\.(\d+)/', $minimum, $needs)) {
+            return null;
+        }
+
+        if ([(int) $has[1], (int) $has[2]] >= [(int) $needs[1], (int) $needs[2]]) {
+            return null;
+        }
+
+        $json['require'][$package] = $minimum;
+        File::put($path, self::encode($json));
+
+        return $current;
+    }
+
     public static function runsSyncConfigAfterUpdate(array $json): bool
     {
         foreach ((array) data_get($json, 'scripts.post-update-cmd', []) as $hook) {

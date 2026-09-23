@@ -3,6 +3,7 @@
 namespace Posio\CabinetKit\Console\Commands;
 
 use Illuminate\Console\Command;
+use Posio\CabinetKit\CabinetKit;
 use Posio\CabinetKit\Services\SeoService;
 use Spatie\Sitemap\Sitemap;
 use Spatie\Sitemap\Tags\Url;
@@ -51,6 +52,10 @@ class GenerateSitemap extends Command
 			if ( !empty($seo_item['locale']) && in_array($seo_item['locale'], $locales) )
 				$sitemap = $this->addForOneOfLocales($sitemap, $seo_item->toArray(), $routes_seo);
         }
+
+		// Страницы модулей (товары, категории) — по одной на запись, записей раздела SEO у них нет.
+		foreach (app(CabinetKit::class)->sitemapProviders() as $provider)
+			$provider($sitemap, $locales);
 
         $sitemap_path = public_path('sitemap.xml');
         $sitemap->writeToFile($sitemap_path);

@@ -1,7 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Posio\CabinetKit\CabinetKit;
 use Posio\CabinetKit\Http\Controllers\Admin\PermissionsController;
+use Posio\CabinetKit\Http\Controllers\Api\DictionariesApiController;
 use Posio\CabinetKit\Http\Controllers\Admin\UsersController;
 use Posio\CabinetKit\Http\Controllers\AccountController;
 use Posio\CabinetKit\Http\Controllers\Api\SeoApiController;
@@ -22,11 +24,6 @@ use Posio\CabinetKit\Http\Controllers\SettingsController;
 use Posio\CabinetKit\Http\Controllers\SystemPasswordController;
 use Posio\CabinetKit\Http\Middleware\ApplyCabinetKitLocale;
 use Posio\CabinetKit\Http\Middleware\CanSystemPermission;
-use Posio\CabinetKit\Http\Middleware\NotVerified;
-use Posio\CabinetKit\Http\Middleware\RequireRegistrationApproval;
-use Posio\CabinetKit\Http\Middleware\RequireSystemPasswordChange;
-use Posio\CabinetKit\Http\Middleware\SetPermissionTeam;
-use Posio\CabinetKit\Http\Middleware\ShareCabinetKitData;
 use Posio\CabinetKit\Http\Middleware\UseCabinetKitRootView;
 
 // Ни один маршрут пакета не объявляется замыканием: хост обязан сохранить
@@ -91,16 +88,16 @@ Route::middleware(['web', UseCabinetKitRootView::class, ApplyCabinetKitLocale::c
             });
         }
 
-        // Подтверждение почты и одобрение регистрации не в списке настраиваемых middleware:
-        // хост не должен иметь возможность открыть кабинет неподтверждённому или неодобренному пользователю.
-        Route::middleware(array_merge(
-                config('cabinet-kit.middleware', ['web', 'auth']),
-                [NotVerified::class, RequireRegistrationApproval::class, SetPermissionTeam::class, ShareCabinetKitData::class, RequireSystemPasswordChange::class],
-            ))
+        // Тот же стек получают маршруты модулей и хоста через CabinetKit::cabinetRoutes().
+        Route::middleware(app(CabinetKit::class)->cabinetMiddleware())
             ->name(config('cabinet-kit.route_name_prefix', 'cabinet-kit.'))
             ->group(function () {
                 Route::get('/', HomeController::class)->name('home');
                 Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
+
+                // Справочники модулей и хоста одним ответом; адрес не совпадает с тем,
+                // под которым хосты заводили свой эндпоинт, — тот продолжает работать.
+                Route::get('/api/kit-dictionaries', [DictionariesApiController::class, 'index'])->name('api.dictionaries');
 
                 // The one pair of routes the gate above lets a seeded account
                 // through to, so it can replace the password it was installed with.

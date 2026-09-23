@@ -4,6 +4,7 @@ namespace Posio\CabinetKit\Services;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
+use Posio\CabinetKit\CabinetKit;
 use Posio\CabinetKit\Models\AdminLink;
 
 class MenuService
@@ -15,7 +16,7 @@ class MenuService
             return $this->withResolvableRoutes($this->menuFromDatabase($user));
         }
 
-        $groups = config('cabinet-kit.menu', []);
+        $groups = [...config('cabinet-kit.menu', []), ...app(CabinetKit::class)->menuGroups()];
         $visibleGroups = [];
         foreach ($groups as $group) {
             $children = array_values(array_filter(

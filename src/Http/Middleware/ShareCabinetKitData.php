@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\File;
 use Inertia\Inertia;
+use Posio\CabinetKit\CabinetKit;
 use Posio\CabinetKit\Services\MenuService;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -89,9 +90,13 @@ class ShareCabinetKitData
         return $messages;
     }
 
+    // Папки модулей идут первыми: одноимённый ключ хоста читается позже и выигрывает.
     protected function translationPaths(): array
     {
-        return collect(config('cabinet-kit.translations.json_paths', [lang_path()]))
+        return collect([
+                ...app(CabinetKit::class)->translationPaths(),
+                ...(array) config('cabinet-kit.translations.json_paths', [lang_path()]),
+            ])
             ->filter()
             ->map(fn ($path) => (string) $path)
             ->unique()

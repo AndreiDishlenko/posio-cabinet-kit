@@ -16,8 +16,8 @@ if not "%~1"=="" if /i not "%~1"=="--ssr" (
 	exit /b 1
 )
 
-echo == 1/6 composer update posio/cabinet-kit
-call composer update posio/cabinet-kit
+echo == 1/6 composer update posio/*
+call composer update "posio/*"
 if errorlevel 1 goto :failed
 
 rem No-op when the composer post-update hook already ran it. Also refreshes the

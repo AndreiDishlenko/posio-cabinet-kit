@@ -2,6 +2,11 @@ import fs from 'fs';
 import path from 'path';
 
 const PACKAGE_DIR = 'vendor/posio/cabinet-kit';
+const INSTALLED_JSON = 'vendor/composer/installed.json';
+
+// Страницы кабинета установленных модулей; вход кабинета импортирует его сам.
+const MODULES_ID = 'virtual:cabinet-kit-modules';
+const RESOLVED_MODULES_ID = `\u0000${MODULES_ID}`;
 
 // Чем достраивается путь без расширения, прежде чем считать файл отсутствующим.
 const RESOLVED_SUFFIXES = ['', '.vue', '.ts', '.js', '.mjs', '.json', '/index.vue', '/index.ts', '/index.js'];
@@ -9,10 +14,20 @@ const RESOLVED_SUFFIXES = ['', '.vue', '.ts', '.js', '.mjs', '.json', '/index.vu
 export default function cabinetKit(options = {}) {
     const root = options.root ?? process.cwd();
     const packageDir = path.resolve(root, PACKAGE_DIR);
-    const aliases = createAliases(packageDir, root);
+    const modules = discoverModules(root);
+    const aliases = [
+        ...modules.map((module) => packageAlias(module.alias, module.dir, 'resources')),
+        ...createAliases(packageDir, root),
+    ];
 
     return {
         name: 'cabinet-kit',
+        resolveId(id) {
+            return id === MODULES_ID ? RESOLVED_MODULES_ID : null;
+        },
+        load(id) {
+            return id === RESOLVED_MODULES_ID ? modulePagesSource(modules, root) : null;
+        },
         config(userConfig) {
             userConfig.resolve ??= {};
             userConfig.resolve.alias = [
@@ -28,7 +43,7 @@ export default function cabinetKit(options = {}) {
                         },
                     },
                 },
-                server: { fs: { allow: [root, packageDir] } },
+                server: { fs: { allow: withRealPaths([root, packageDir, ...modules.map((module) => module.dir)]) } },
             };
 
             const https = resolveHttps(options.https, root);
@@ -40,6 +55,66 @@ export default function cabinetKit(options = {}) {
             return config;
         },
     };
+}
+
+// Модули — composer-пакеты с `extra.cabinet-kit`; тот же список читает сервер,
+// поэтому страница модуля есть либо и там и там, либо нигде.
+function discoverModules(root) {
+    const installed = path.resolve(root, INSTALLED_JSON);
+    let json;
+
+    try {
+        json = JSON.parse(fs.readFileSync(installed, 'utf8'));
+    } catch {
+        return [];
+    }
+
+    const packages = Array.isArray(json) ? json : (json.packages ?? []);
+
+    return packages
+        .filter((pkg) => pkg?.name && pkg.extra?.['cabinet-kit']?.module)
+        .map((pkg) => {
+            const extra = pkg.extra['cabinet-kit'];
+
+            return {
+                module: extra.module,
+                dir: path.resolve(path.dirname(installed), pkg['install-path'] ?? `../${pkg.name}`),
+                admin: extra.admin ?? null,
+                alias: extra.alias ?? `@${pkg.name.split('/').pop()}`,
+            };
+        });
+}
+
+// Имя страницы Inertia (`pages/catalog/Products`) ищется по окончанию пути,
+// поэтому ключи глоба годятся как есть: страницы модуля лежат в `pages/<модуль>/`.
+function modulePagesSource(modules, root) {
+    const globs = modules
+        .filter((module) => module.admin)
+        .map((module) => {
+            const pages = toPosix(path.relative(root, path.join(module.dir, module.admin, 'pages')));
+
+            return `    ...import.meta.glob(${JSON.stringify(`/${pages}/**/*.vue`)}, { eager: true }),`;
+        });
+
+    return ['export default {', ...globs, '};', ''].join('\n');
+}
+
+// Пакет в разработке подменяется junction'ом, и файлы приходят уже по
+// настоящему пути — вне корня проекта. Dev-сервер должен пускать и туда.
+function withRealPaths(dirs) {
+    const result = new Set();
+
+    for (const dir of dirs) {
+        result.add(dir);
+
+        try {
+            result.add(fs.realpathSync.native(dir));
+        } catch {
+            // Папки нет — пакет не установлен, пускать некуда.
+        }
+    }
+
+    return [...result];
 }
 
 function createAliases(packageDir, root) {
@@ -120,7 +195,7 @@ function sharedAlias(find, packageDir, sharedPath, root) {
                 { base: hostBase, id: path.join(hostBase, relative) },
             ];
 
-            if (! isInside(importer, packageDir)) sides.reverse();
+            if (! isInsideAny(importer, withRealPaths([packageDir]))) sides.reverse();
 
             const target = (sides.find(storesFile) ?? sides[0]).id;
 
@@ -128,6 +203,10 @@ function sharedAlias(find, packageDir, sharedPath, root) {
                 .then((resolved) => resolved ?? { id: target });
         },
     };
+}
+
+function isInsideAny(filePath, directories) {
+    return directories.some((directory) => isInside(filePath, directory));
 }
 
 function isInside(filePath, directory) {

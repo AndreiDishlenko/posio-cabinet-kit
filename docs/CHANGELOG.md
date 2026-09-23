@@ -1,5 +1,47 @@
 # Changelog
 
+## 0.4.0 (unreleased) — Module API
+
+Minor bump: hosts on `^0.3` change the constraint to `^0.4` (or let the first
+module's installer do it). Nothing a 0.3 host wrote needs changing.
+
+**Added**
+- Cabinet modules: composer packages declaring `extra.cabinet-kit`
+  (`module`, `admin`, `alias`, `npm`) are discovered from
+  `vendor/composer/installed.json` by the provider and by the Vite plugin.
+  Their pages (`pages/<module>/…`) resolve between host overrides and kit pages
+  without touching the host entry (`virtual:cabinet-kit-modules`), and join
+  Inertia's server-side page paths. See EXTENDING → "Writing a module".
+- `Posio\CabinetKit\CabinetKit` + facade: `cabinetRoutes()` / `apiRoutes()`
+  (cabinet prefix and full authenticated stack, no copied middleware lists),
+  `cabinetMiddleware()`, `systemPermissions()`, `dictionaries()`,
+  `translations()`, `sitemap()`, `menu()`, `doctor()`, `syncConfig()`.
+- `Support\ModuleMenu::install()/uninstall()` — a module's menu group in
+  `admin_links` from its migrations, appended after existing items, idempotent.
+- `cabinet-kit.api.dictionaries` (`{prefix}/api/kit-dictionaries`): the kit's
+  own dictionaries endpoint, merging module providers with a host's existing
+  `cabinet.api.dictionaries` answer (host wins on equal names, `X-only` honoured).
+  The cabinet picks it first, so a host endpoint keeps working unchanged.
+- `SeoService::override([...])` and `addJsonLd([...])` — per-request meta and
+  extra JSON-LD nodes for pages one SEO record cannot describe (a product
+  page). `SeoService` is now bound per request (`scoped`).
+- `sitemap:generate` calls registered sitemap providers after the SEO records.
+- `cabinet-kit:doctor` checks each module: pages under `pages/<module>/`,
+  Tailwind content glob, npm packages, plus the module's own checks.
+- `cabinet-kit:sync-config` adds each module's Tailwind glob and npm packages
+  and runs the module's sync steps.
+- `HostComposerJson::raiseCaretConstraint()` for module installers.
+
+**Changed**
+- `updcab` / `updcab.bat` update every `posio/*` package, so installed modules
+  move together with the kit. `sync-config` switches existing launchers' update
+  step in place; the rest of a host-edited launcher is kept.
+- System permissions registered by modules are part of the roles sync and of
+  `doctor`'s drift check.
+- The Vite plugin allows the real path of a junctioned package (`fs.allow`) and
+  recognises files reached through it as the package's own when resolving the
+  shared `@/js` / `@/_admin` prefixes.
+
 ## Unreleased — Side menu and header parity with the source project
 
 **Added**
@@ -28,6 +70,13 @@
   chain and change-validation.
 
 **Fixed**
+- `SeoMeta.vue`: `canonical` and `og:url` were empty in server-rendered HTML when
+  the host layout did not pass the `canonical` prop (the fallback was the
+  browser address, which does not exist during SSR). The component now falls
+  back to `seo.canonical` from the shared props; an explicit prop still wins.
+- `SeoService`: `canonical` and `hreflang` alternates are built on `APP_URL`
+  and drop the query string, so a page opened via a host alias (`www`) or with
+  tracking parameters no longer declares itself canonical.
 - SEO page, "Create sitemaps.xml": the request failed with 500 — `sitemap:generate`
   was registered only for console runs, so the call from the web request found no
   such command. It is now registered in every context.

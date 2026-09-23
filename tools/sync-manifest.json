@@ -842,6 +842,36 @@
       "mode": "package_only",
       "target": "src/Http/Middleware/ApplyCabinetKitLocale.php",
       "notes": "Applies the visitor language on every cabinet route, guest auth routes included, so auth letters go out in that language."
+    },
+    {
+      "id": "package-module-registry",
+      "mode": "package_only",
+      "target": "src/CabinetKit.php",
+      "notes": "Module API registry (routes under the cabinet stack, system permissions, dictionaries, translations, sitemap providers, menu, doctor/sync-config hooks). No upstream counterpart: posio.cabinet has no modules."
+    },
+    {
+      "id": "package-module-facade",
+      "mode": "package_only",
+      "target": "src/Facades/CabinetKit.php",
+      "notes": "Facade over the module API registry."
+    },
+    {
+      "id": "package-module-discovery",
+      "mode": "package_only",
+      "target": "src/Support/CabinetKitModules.php",
+      "notes": "Discovers modules from vendor/composer/installed.json (extra.cabinet-kit); mirrored by discoverModules() in the Vite plugin."
+    },
+    {
+      "id": "package-module-menu",
+      "mode": "package_only",
+      "target": "src/Support/ModuleMenu.php",
+      "notes": "admin_links helper for module migrations."
+    },
+    {
+      "id": "package-dictionaries-endpoint",
+      "mode": "package_only",
+      "target": "src/Http/Controllers/Api/DictionariesApiController.php",
+      "notes": "Kit-owned dictionaries endpoint merging module providers with a host's legacy cabinet.api.dictionaries."
     }
   ]
 }

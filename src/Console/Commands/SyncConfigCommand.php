@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
+use Posio\CabinetKit\CabinetKit;
 use Posio\CabinetKit\Support\CabinetRedirects;
 use Posio\CabinetKit\Support\FrontendDependencies;
 use Posio\CabinetKit\Support\HostComposerJson;
@@ -39,6 +40,7 @@ class SyncConfigCommand extends Command
         $this->syncTailwindContent();
         $this->syncHostDocs();
         $this->syncUpdateLaunchers();
+        $this->syncModules();
 
         if (! File::exists(config_path('cabinet-kit.php'))) {
             $this->warn('config/cabinet-kit.php is not published yet — run cabinet-kit:install first.');
@@ -98,6 +100,66 @@ class SyncConfigCommand extends Command
         foreach ($created as $name) {
             $this->info("Created {$name} — runs the whole CabinetKit update.");
         }
+
+        try {
+            $widened = HostUpdateLaunchers::updateAllPosioPackages();
+        } catch (\Throwable $e) {
+            $this->warn('Update launchers were not switched to posio/*: '.$e->getMessage());
+            return;
+        }
+
+        foreach ($widened as $name) {
+            $this->info("Patched {$name}: it now updates every posio/* package, modules included.");
+        }
+    }
+
+    /**
+     * Модуль приносит те же требования к обвязке хоста, что и сам пакет:
+     * его шаблоны должен сканировать Tailwind, его npm-зависимости должны
+     * стоять в проекте. Остальное модуль доделывает своим шагом.
+     */
+    protected function syncModules(): void
+    {
+        $kit = app(CabinetKit::class);
+        $steps = $kit->syncConfigSteps();
+
+        foreach ($kit->modules() as $name => $module) {
+            $this->syncModuleTailwindContent($module);
+            $this->addPackageJsonDependencies($module['npm'], "module {$name}");
+        }
+
+        foreach ($steps as $name => $moduleSteps) {
+            foreach ($moduleSteps as $step) {
+                try {
+                    $step($this);
+                } catch (\Throwable $e) {
+                    $this->warn("Module {$name} sync step failed: ".$e->getMessage());
+                }
+            }
+        }
+    }
+
+    protected function syncModuleTailwindContent(array $module): void
+    {
+        $path = HostTailwindConfig::path();
+        if (! $path) {
+            return;
+        }
+
+        $contents = File::get($path);
+        if (HostTailwindConfig::contentCovers($contents, $module['tailwind_glob'])) {
+            return;
+        }
+
+        $updated = HostTailwindConfig::withContentGlob($contents, $module['tailwind_glob']);
+        if ($updated === null) {
+            $this->warn("Could not patch the tailwind.config content array — add '{$module['tailwind_glob']}' to it manually, or module {$module['module']} templates stay unstyled.");
+            return;
+        }
+
+        $this->backupAndPut($path, $updated);
+        $this->info("Patched ".basename($path)." with the content glob of module {$module['module']}.");
+        $this->warn('Rebuild your assets: npm run dev/build.');
     }
 
     /**
@@ -285,22 +347,31 @@ class SyncConfigCommand extends Command
 
     protected function syncPackageJsonDependencies(): void
     {
+        $this->addPackageJsonDependencies(FrontendDependencies::PACKAGES, 'CabinetKit');
+    }
+
+    protected function addPackageJsonDependencies(array $packages, string $owner): void
+    {
+        if ($packages === []) {
+            return;
+        }
+
         $path = base_path('package.json');
         if (! File::exists($path)) {
-            $this->warn('package.json was not found — install CabinetKit npm dependencies manually: '.implode(' ', array_keys(FrontendDependencies::PACKAGES)).'.');
+            $this->warn("package.json was not found — install {$owner} npm dependencies manually: ".implode(' ', array_keys($packages)).'.');
             return;
         }
 
         $json = json_decode(File::get($path), true);
         if (! is_array($json)) {
-            $this->warn('package.json could not be parsed — install CabinetKit npm dependencies manually: '.implode(' ', array_keys(FrontendDependencies::PACKAGES)).'.');
+            $this->warn("package.json could not be parsed — install {$owner} npm dependencies manually: ".implode(' ', array_keys($packages)).'.');
             return;
         }
 
         $json['dependencies'] ??= [];
         $added = [];
 
-        foreach (FrontendDependencies::PACKAGES as $package => $version) {
+        foreach ($packages as $package => $version) {
             if (isset($json['dependencies'][$package]) || isset($json['devDependencies'][$package])) {
                 continue;
             }
@@ -316,7 +387,7 @@ class SyncConfigCommand extends Command
         ksort($json['dependencies']);
 
         $this->backupAndPut($path, json_encode($json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES).PHP_EOL);
-        $this->info('Patched package.json with CabinetKit npm dependencies: '.implode(', ', $added).'.');
+        $this->info("Patched package.json with {$owner} npm dependencies: ".implode(', ', $added).'.');
         $this->warn('Run npm install before npm run dev/build.');
     }
 

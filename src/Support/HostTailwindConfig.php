@@ -69,6 +69,25 @@ class HostTailwindConfig
             return $updated;
         }
 
+        return self::withContentGlob($contents, self::CONTENT_GLOB);
+    }
+
+    public static function contentCovers(string $contents, string $glob): bool
+    {
+        return str_contains($contents, $glob);
+    }
+
+    /**
+     * The host config with one more glob at the head of `content` — the same
+     * gap as the package's own templates, for a module's. Null when no
+     * `content` array could be found.
+     */
+    public static function withContentGlob(string $contents, string $glob): ?string
+    {
+        if (self::contentCovers($contents, $glob)) {
+            return $contents;
+        }
+
         $patterns = [
             '#(?<![\w$])(content\s*:\s*\[)#',
             '#(?<![\w$])(content\s*:\s*\{[^\[\]]*files\s*:\s*\[)#s',
@@ -77,7 +96,7 @@ class HostTailwindConfig
         foreach ($patterns as $pattern) {
             $updated = preg_replace_callback(
                 $pattern,
-                fn (array $matches): string => $matches[1]."\n        '".self::CONTENT_GLOB."',",
+                fn (array $matches): string => $matches[1]."\n        '".$glob."',",
                 $contents,
                 1,
                 $count,

@@ -378,6 +378,142 @@ Do **not** write to `site_settings` or `seo_meta` from application code: the
 first is cached as a whole set and its writes drop that cache, the second is
 edited through the section built for it.
 
+## Writing a module (catalog, news, requests…)
+
+A module is a separate composer package that adds a section to the cabinet —
+its own tables, pages, menu group and permissions — without the host copying
+anything. The host installs it with `composer require`; the kit finds it by
+itself. Since 0.4.
+
+### 1. Declare it in the module's `composer.json`
+
+```json
+"extra": {
+    "laravel": { "providers": ["Posio\\CatalogKit\\CatalogKitServiceProvider"] },
+    "cabinet-kit": {
+        "module": "catalog",
+        "admin": "resources/admin",
+        "alias": "@catalog-kit",
+        "npm": { "swiper": "^11.0.0" }
+    }
+}
+```
+
+| key | meaning |
+|---|---|
+| `module` | short name; also the folder its cabinet pages live in |
+| `admin` | folder holding `pages/<module>/*.vue` — the cabinet pages |
+| `alias` | import prefix for the module's `resources/` (default `@` + package basename) |
+| `npm` | npm packages its sources import; `sync-config` adds them to the host |
+
+The kit reads `vendor/composer/installed.json` on both sides — the Laravel
+provider and the Vite plugin — so a page exists on the server and in the bundle
+together, or nowhere. From that declaration alone:
+
+- **Pages.** `Inertia::render('pages/catalog/Products')` resolves: host
+  override (`resources/_admin/overrides/pages/catalog/Products.vue`) → module →
+  kit. The kit's Vite plugin feeds module pages into the cabinet entry through
+  `virtual:cabinet-kit-modules`; the host entry is not edited. Server-side,
+  the `admin` folder joins `inertia.pages.paths`. Pages outside
+  `pages/<module>/` collide with the kit's and the host's names —
+  `cabinet-kit:doctor` fails on them.
+- **Imports.** `@catalog-kit/...` points at the module's `resources/`. The
+  shared prefixes `@/js`, `@/_admin`, `@cabinet-kit` work as in the host.
+- **Tailwind and npm.** `sync-config` adds
+  `./vendor/<package>/resources/**/*.{vue,js,ts}` to the host `content` and the
+  `npm` packages to `package.json`; `doctor` checks both.
+
+### 2. Plug in from the module's service provider
+
+```php
+use Posio\CabinetKit\Facades\CabinetKit;
+use Posio\CabinetKit\Http\Middleware\CanSystemPermission;
+
+public function boot(): void
+{
+    $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+
+    CabinetKit::systemPermissions(['sysper-catalog']);
+    CabinetKit::translations(__DIR__.'/../lang');
+
+    // Prefix, root view and the whole authenticated cabinet stack
+    // (verified email, approval, team, shared data, seeded-password gate).
+    CabinetKit::cabinetRoutes(function () {
+        Route::middleware(CanSystemPermission::class.':sysper-catalog')
+            ->name('catalog.')
+            ->group(function () {
+                Route::get('catalog/products', [ProductsPageController::class, 'index'])->name('products');
+            });
+    });
+
+    // Same stack under {prefix}/api, without the page shell — for JSON.
+    CabinetKit::apiRoutes(function () { /* ... */ });
+
+    CabinetKit::dictionaries('catalog', fn () => ['catalog_categories' => /* ... */]);
+    CabinetKit::sitemap(fn (\Spatie\Sitemap\Sitemap $sitemap, array $locales) => /* $sitemap->add(...) */ null);
+    CabinetKit::doctor('catalog', fn () => [[$ok, 'What was checked', 'What to do']]);
+    CabinetKit::syncConfig('catalog', fn (\Illuminate\Console\Command $command) => /* ... */ null);
+}
+```
+
+| call | what the kit does with it |
+|---|---|
+| `cabinetRoutes` / `apiRoutes` | registers the group under the cabinet prefix and stack; skipped when routes are cached (they are in the cache already). Never copy the middleware list — `CabinetKit::cabinetMiddleware()` returns it when a host needs it |
+| `systemPermissions` | creates them in the same post-`migrate` sync as the kit's own, marks them system, and grants them to `SAdmin` and `System administrator` when created. Never deletes |
+| `dictionaries` | merged into `cabinet-kit.api.dictionaries`, the endpoint the cabinet's `$dictionaries` already calls. A host that had its own `cabinet.api.dictionaries` keeps it: that answer is merged in and wins on equal names |
+| `translations` | a folder of `{locale}.json` for `$t()` in the cabinet; host keys win |
+| `sitemap` | called by `sitemap:generate` after the SEO records, with the sitemap object and the site locales |
+| `menu` | a group in `cabinet-kit.menu` format — used only by hosts whose menu comes from config, not from `admin_links` |
+| `doctor` / `syncConfig` | extra checks and repair steps, run under the module's heading |
+
+### 3. Menu: a migration of the module
+
+```php
+use Posio\CabinetKit\Support\ModuleMenu;
+
+public function up(): void
+{
+    ModuleMenu::install('Catalog', [
+        ['name' => 'Products', 'icon' => 'mdi:package-variant', 'route' => 'catalog.products'],
+    ], 'sysper-catalog');
+}
+
+public function down(): void
+{
+    ModuleMenu::uninstall('Catalog', ['catalog.products']);
+}
+```
+
+The group lands after everything already in the menu; rerunning adds nothing
+twice. After `composer remove` its items disappear by themselves — an item
+whose route is not registered is hidden — but `down()` is what removes the
+rows.
+
+### 4. SEO of a module's public pages
+
+A product page has one route for all products, so a record in the SEO section
+cannot describe each of them. The controller sets the meta for the request:
+
+```php
+app(\Posio\CabinetKit\Services\SeoService::class)
+    ->override([
+        'meta_title' => $product->name,
+        'meta_description' => $product->summary,
+        'og_image' => $product->cover,
+        'index' => true,
+    ])
+    ->addJsonLd(['@type' => 'Product', 'name' => $product->name /* ... */]);
+```
+
+Keys are the SEO record's own; they win over the record for that request only.
+Extra nodes are appended to the page `@graph`.
+
+### 5. Installing into a host
+
+A module needs `posio/cabinet-kit ^0.4`. Its own install command raises a lower
+`^0.x` constraint with `HostComposerJson::raiseCaretConstraint('posio/cabinet-kit', '^0.4')`.
+Updates go through `updcab`, which updates every `posio/*` package at once.
+
 ## Known gaps (intentionally out of scope)
 
 - Additional social login providers, 2FA and magic links are not bundled;

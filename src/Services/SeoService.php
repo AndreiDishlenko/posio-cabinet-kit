@@ -15,13 +15,32 @@ class SeoService {
     protected array $seo_meta = [];
     protected array $seo_data = [];
 
+	protected array $overrides = [];
+	protected array $extra_jsonld = [];
+
     public function __construct() {
     }
 
+	// Мета страницы, которую не завести записью раздела SEO: у всех товаров один
+	// маршрут, а заголовок, описание и картинка у каждого свои. Ключи — как у
+	// записи раздела (meta_title, meta_description, og_image, index…); действует
+	// на текущий запрос и выигрывает у записи.
+	public function override(array $meta): static {
+		$this->overrides = array_replace($this->overrides, $meta);
+
+		return $this;
+	}
+
+	// Узел микроразметки страницы сверх общего графа (товар, статья).
+	public function addJsonLd(array $node): static {
+		$this->extra_jsonld[] = $node;
+
+		return $this;
+	}
+
     public function getInfo() : array {
 		// var_dump('<br>SeoService.getSeoData');
-		$current_route_name = $this->baseRouteName();
-		$cp_seo_data = $this->getRouteSeoData($current_route_name);
+		$cp_seo_data = $this->currentSeoData();
 
 		// OG image: per-page override or global fallback from config
 		$default_og_image = config('general.default_og_image', '');
@@ -36,7 +55,7 @@ class SeoService {
 			'meta_data'		=> $this->currentPageMetaData(),
 			'alternate'		=> $this->alternatePageData(),
 			'breadcrumbs'	=> app(BreadcrumbService::class)->get(),
-            'jsonld'        => app(JsonLdObject::class)->make($cp_seo_data ? $cp_seo_data->toArray() : [])->get(),
+            'jsonld'        => $this->withExtraJsonLd(app(JsonLdObject::class)->make($cp_seo_data)->get()),
 			// Open Graph
 			'og_image'        => $og_image,
 			'og_image_width'  => config('general.default_og_image_width', 1200),
@@ -69,8 +88,7 @@ class SeoService {
 	}
 
 	public function currentPageMetaData() {
-		$current_route_name = $this->baseRouteName();
-		$cp_seo_data = $this->getRouteSeoData($current_route_name);
+		$cp_seo_data = $this->currentSeoData();
 
 		$result = [
 			'page_name' => $cp_seo_data['page_name'] ?? '',
@@ -123,6 +141,22 @@ class SeoService {
         return $route_seo_data;
 	}
 
+	// Запись текущей страницы с переопределениями контроллера поверх.
+	protected function currentSeoData(): array {
+		$record = $this->getRouteSeoData($this->baseRouteName());
+
+		return array_replace($record ? $record->toArray() : [], $this->overrides);
+	}
+
+	protected function withExtraJsonLd(array $jsonld): array {
+		if ( empty($this->extra_jsonld) )
+			return $jsonld;
+
+		$jsonld['@graph'] = [...($jsonld['@graph'] ?? []), ...$this->extra_jsonld];
+
+		return $jsonld;
+	}
+
 	// Канонический адрес всегда на основном домене сайта и без параметров запроса:
 	// страница, открытая через алиас хоста (www) или с метками и мусором в адресе,
 	// иначе объявит канонической саму себя, и поисковик заведёт на неё дубль.
@@ -163,10 +197,16 @@ class SeoService {
 		};
 	}
 
+	// Альтернативы — только реально объявленные языки сайта: одноязычный сайт,
+	// заявивший чужие локали, вводит соцсети и поисковики в заблуждение.
 	protected function ogLocaleAlternates(string $current): array {
-		$map = ['uk' => 'uk_UA', 'en' => 'en_US', 'ru' => 'ru_RU'];
-		return collect($map)
-			->except([$current])
+		$current_og_locale = $this->ogLocale($current);
+
+		return collect((array) config('general.locales', []))
+			->filter(fn ($locale) => is_string($locale) && $locale !== '')
+			->map(fn ($locale) => $this->ogLocale($locale))
+			->reject(fn ($og_locale) => $og_locale === $current_og_locale)
+			->unique()
 			->values()
 			->all();
 	}

@@ -282,8 +282,8 @@ announce() {
 	echo "== $step/$steps $*"
 }
 
-announce "composer update posio/cabinet-kit"
-composer_cmd update posio/cabinet-kit --no-interaction || fail
+announce "composer update posio/*"
+composer_cmd update "posio/*" --no-interaction || fail
 
 # No-op when the composer post-update hook already ran it. Also refreshes the
 # integration docs in docs/cabinet-kit/ that assistants read.

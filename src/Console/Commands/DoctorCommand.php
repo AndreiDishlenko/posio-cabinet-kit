@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
+use Posio\CabinetKit\CabinetKit;
 use Posio\CabinetKit\Support\CabinetKitRoles;
 use Posio\CabinetKit\Support\CabinetRedirects;
 use Posio\CabinetKit\Support\FrontendDependencies;
@@ -62,6 +63,8 @@ class DoctorCommand extends Command
         $this->check($this->seoRecordsExist(), 'At least one SEO record exists', 'Run the SEO seeder (part of cabinet-kit:install) or add a record in the cabinet SEO section.');
         $this->check(File::exists(base_path(HostDocs::TARGET_DIR.'/README.md')), 'Integration docs are present in the project', 'Run php artisan cabinet-kit:sync-config.');
 
+        $this->checkModules();
+
         if ($this->failures > 0) {
             $this->newLine();
             $this->error("CabinetKit doctor found {$this->failures} problem(s).");
@@ -72,6 +75,79 @@ class DoctorCommand extends Command
         $this->info('CabinetKit doctor is green.');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Модуль ломается теми же тихими способами, что и сам пакет: шаблоны без
+     * стилей, если их не сканирует Tailwind, и белая страница, если нет его
+     * npm-зависимости. Сверх этого — собственные проверки модуля.
+     */
+    protected function checkModules(): void
+    {
+        $kit = app(CabinetKit::class);
+        $modules = $kit->modules();
+        $checks = $kit->doctorChecks();
+
+        foreach ($modules as $name => $module) {
+            $this->newLine();
+            $this->line("<options=bold>Module {$name}</> ({$module['package']})");
+
+            $this->check($this->modulePagesArePrefixed($module), "Cabinet pages live under pages/{$name}/", "Move the module's cabinet pages into pages/{$name}/ — Inertia names share one namespace with the package and the host.");
+            $this->check(HostTailwindConfig::contentCovers((string) $this->tailwindConfigContents(), $module['tailwind_glob']), 'tailwind.config scans the module templates', "Add '{$module['tailwind_glob']}' to the content array, or run php artisan cabinet-kit:sync-config.");
+
+            foreach ($module['npm'] as $package => $version) {
+                $this->check($this->packageJsonHas($package), "package.json contains {$package}", "Run npm install {$package}@\"{$version}\", or php artisan cabinet-kit:sync-config.");
+            }
+
+            $this->runModuleChecks($checks[$name] ?? []);
+        }
+
+        // Проверки модуля, не объявившего себя в composer.json, всё равно выполняются.
+        foreach (array_diff_key($checks, $modules) as $name => $moduleChecks) {
+            $this->newLine();
+            $this->line("<options=bold>Module {$name}</>");
+            $this->runModuleChecks($moduleChecks);
+        }
+    }
+
+    protected function runModuleChecks(array $checks): void
+    {
+        foreach ($checks as $provider) {
+            try {
+                foreach ((array) $provider() as [$ok, $label, $hint]) {
+                    $this->check((bool) $ok, (string) $label, (string) $hint);
+                }
+            } catch (\Throwable $e) {
+                $this->check(false, 'Module checks ran', $e->getMessage());
+            }
+        }
+    }
+
+    protected function modulePagesArePrefixed(array $module): bool
+    {
+        if ($module['admin'] === null) {
+            return true;
+        }
+
+        $pages = $module['admin'].DIRECTORY_SEPARATOR.'pages';
+
+        if (! File::isDirectory($pages)) {
+            return true;
+        }
+
+        foreach (File::files($pages) as $file) {
+            if ($file->getExtension() === 'vue') {
+                return false;
+            }
+        }
+
+        foreach (File::directories($pages) as $directory) {
+            if (basename($directory) !== $module['module']) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     // Пустой раздел SEO читается как поломка, поэтому отсутствие записей —
@@ -144,7 +220,7 @@ class DoctorCommand extends Command
     {
         $broken = [];
 
-        foreach (config('cabinet-kit.menu', []) as $group) {
+        foreach ([...config('cabinet-kit.menu', []), ...app(CabinetKit::class)->menuGroups()] as $group) {
             foreach ($group['children'] ?? [] as $item) {
                 $route = $item['route'] ?? null;
 

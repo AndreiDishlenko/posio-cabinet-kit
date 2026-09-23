@@ -14,6 +14,8 @@ import { Emitter } from './posio/system/Emitter.js';
 import { Popup } from './posio/system/Popup.js';
 import { Toast } from './posio/system/ToastMessages.js';
 import { resolveCabinetKitPage } from './resolvePage.js';
+// Страницы установленных модулей собирает плагин сборки пакета.
+import cabinetKitModulePages from 'virtual:cabinet-kit-modules';
 import './vee-validator.js';
 // Перенесённый код кабинета пишет в журнал через console.msg / console.wrn —
 // подключение модуля их и определяет.
@@ -45,10 +47,12 @@ export function createCabinetKitApp({
     return createInertiaApp({
         title,
         progress: progress ?? { color: '#4B5563' },
+        // Порядок поиска: переопределения хоста → страницы модулей → страницы пакета.
         resolve: (name) => resolveCabinetKitPage(
             name,
             overrides,
             {
+                ...cabinetKitModulePages,
                 ...import.meta.glob('../_admin/js/pages/**/*.vue', { eager: true }),
                 ...import.meta.glob('./pages/**/*.vue', { eager: true }),
             },
