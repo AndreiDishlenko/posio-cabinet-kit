@@ -14,6 +14,7 @@ export default {
     "registration-approved": "Registration approved. The user can now sign in to the cabinet — we have emailed them about it.",
     "registration-already-approved": "This registration has already been approved.",
     "registration-approval-link-invalid": "This approval link is no longer valid: the user was deleted or their email address has changed.",
+    "system-password-message": "This account was created during installation with a default password shared by every installation. Set your own password to continue.",
 
     "Please wait {number} s. before retrying.": "Please wait {number} s. before retrying.",
 

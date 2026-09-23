@@ -87,7 +87,7 @@
                                 <!-- Inertia-навигация -->
                                 <Link v-if="item.route" class="gm-link"
                                     :href="route(item.route)"
-                                    :prefetch="['mount', 'hover']"
+                                    :prefetch="link_prefetch"
                                     >
                                     <Icon :icon="item.icon" class="gm-icon"/>
                                     <span class="gm-label">{{ $t(item.label) }}</span>
@@ -120,7 +120,7 @@
                 <!-- Пользователь → страница настроек, таб «User profile» -->
                 <Link class="gm-link gm-footer-user"
                     :href="profileHref"
-                    :prefetch="['mount', 'hover']"
+                    :prefetch="link_prefetch"
                     :title="userName"
                     >
                     <Avatar :src="userAvatar" :user_name="userName" size="26px" class="gm-footer-avatar"/>
@@ -151,7 +151,7 @@
                             :key="tab.id"
                             class="gm-footer-menu-item"
                             :href="settingsHref(tab.id)"
-                            :prefetch="['mount', 'hover']"
+                            :prefetch="link_prefetch"
                             >
                             {{ $t(tab.label) }}
                         </Link>
@@ -219,6 +219,12 @@
             }
         },
         computed: {
+            // Отключённое меню стоит на экране-шлюзе: предзагрузка его ссылок вернула бы
+            // редирект на тот же шлюз, и после выхода из него клик по пункту отдал бы
+            // закэшированный шлюз вместо раздела.
+            link_prefetch() {
+                return this.disabled ? false : ['mount', 'hover'];
+            },
             brand() {
                 return this.$page.props.site?.cabinet ?? {};
             },
