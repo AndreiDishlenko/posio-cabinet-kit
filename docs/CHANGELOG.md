@@ -1,5 +1,34 @@
 # Changelog
 
+## Unreleased — Page tools in the header, rounded search field
+
+**Added**
+- `CabinetLayout` slot `header_tools`: a page puts its own controls (e.g. a
+  list view switch) into the cabinet header, right of the title. Pages that
+  don't fill it render the header as before.
+- `@/js/Elements/Forms/SearchableInputRounded.vue` — filled "pill" search field
+  from the source project (same props and events as `SearchableInput`); colour
+  token `--search-input-background` in both themes.
+- Cards (from the source project): `.full-height-card` keeps a modal card at
+  the full height the modal allows; `ModalForm` prop `backClose` closes the
+  modal with the browser/gesture "back" (off by default); `.page-filters`
+  spacing rule in `cards_admin.scss`.
+- `overlayHistory`: `setBackFallback` / `clearBackFallback`; an overlay's
+  close handler may return `false` to stay open on "back"; closing an overlay
+  also closes the ones opened on top of it.
+
+**Changed**
+- Table tools panel search (`panelitems` of type `search`) uses the rounded
+  search field.
+- A table inside a card sits on the card's surface: header and row lines use
+  the new `--card-table-header-background` / `--card-table-border-color`
+  tokens (both themes). Footer buttons of `ModalCard` get the `card-button`
+  class.
+
+**Fixed**
+- Tall content in a card with a set height no longer squeezes the card header
+  and footer (`flex-shrink: 0`).
+
 ## 0.4.0 (unreleased) — Module API
 
 Minor bump: hosts on `^0.3` change the constraint to `^0.4` (or let the first

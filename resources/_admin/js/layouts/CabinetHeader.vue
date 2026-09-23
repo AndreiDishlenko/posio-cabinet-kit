@@ -26,6 +26,12 @@
 
 		<div class="grow !ms-0"></div>
 
+		<!-- Инструменты текущей страницы (например переключатель вида списка):
+		     появляются в шапке только там, где страница их передала. -->
+		<span v-if="$slots.tools" class="header-item header-page-tools flex">
+			<slot name="tools" />
+		</span>
+
 		<!-- <div class="header-menu flex flex-row items-center lt-sm:space-x-5 md:space-x-10"> -->
 
 		<span class="header-item hidden sm:flex">

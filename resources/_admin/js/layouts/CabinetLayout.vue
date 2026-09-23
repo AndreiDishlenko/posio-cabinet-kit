@@ -27,7 +27,11 @@
 
         <div class="page-layout relative grow min-w-0 flex flex-col" >
 
-            <CabinetHeader class="min-h-0 px-3 sm:px-5" :page_name="page_name" :header_title="header_title" :page_menu="page_menu"/>
+            <CabinetHeader class="min-h-0 px-3 sm:px-5" :page_name="page_name" :header_title="header_title" :page_menu="page_menu">
+                <template v-if="$slots.header_tools" #tools>
+                    <slot name="header_tools" />
+                </template>
+            </CabinetHeader>
 
 			<div class="page-content-wrapper p-2 lg:p-4 flex flex-col overflow-hidden "
 				:class="['space-y-'+space_y]"

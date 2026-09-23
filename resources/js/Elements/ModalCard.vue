@@ -18,7 +18,7 @@
 		<!-- Card footer -->
 		<div v-if="buttons.length" class="card-footer">
 			<button v-for="(btn, index) in buttons" :key="index"
-				class="button"
+				class="button card-button"
 				:class="[btn.class, { spinner: btn.loading }]"
 				:disabled="btn.disabled"
 				@click="btn.action && btn.action()"

@@ -40,6 +40,8 @@
     import { VueFinalModal }    from 'vue-final-modal'
     import ScrolledWrapper      from '@/js/Elements/ScrolledWrapper.vue';
 
+    import { pushOverlay, popOverlay } from '@/js/overlayHistory';
+
     export default {
         components: { VueFinalModal, ScrolledWrapper },
         props: {
@@ -62,6 +64,13 @@
             cardclasses: {
                 type: String,
                 default: ''
+            },
+            // Закрытие кнопкой/жестом «назад»: модалка получает свою запись в
+            // истории. По умолчанию выключено — в кабинете историю ведёт
+            // содержимое карточки, и вторая запись требовала бы двух возвратов.
+            backClose: {
+                type: Boolean,
+                default: false
             }
         },
         emits: ['save', 'close', 'opened', 'afterOpen'],
@@ -71,10 +80,27 @@
                 isSlimScreen: false,
             }
         },
+        watch: {
+            // Модалку закрывают и мимо своих методов (клик вне, Esc средствами
+            // самой накладки), поэтому запись истории заводится и снимается по
+            // фактической видимости, а не в открытии/закрытии.
+            isOpen(is_open) {
+                if ( !this.backClose )
+                    return;
+
+                if ( is_open )
+                    pushOverlay(this, this.close);
+                else
+                    popOverlay(this);
+            }
+        },
         mounted() {
             this.isSlimScreen = (window.matchMedia('(max-width: 768px)')).matches
             if (this.escClose)
                 window.addEventListener('keydown', this.handleEsc);
+        },
+        beforeUnmount() {
+            popOverlay(this);
         },
         unmounted() {
             if (this.escClose)

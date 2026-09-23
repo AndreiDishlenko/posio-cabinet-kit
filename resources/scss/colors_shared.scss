@@ -193,6 +193,11 @@ html.dark {
 	--table-slave-color:                rgba(28, 28, 28, .65);
 	--table-parent-expanded-background: #f6f7f9;
 	--table-slave-background:           #f6f7f9;
+
+	// Тона таблицы, стоящей на подложке карточки: они отсчитываются от карточки,
+	// а не от страницы — иначе шапка и линии между строками пропадают на ней.
+	--card-table-header-background:     #f2f4f7;
+	--card-table-border-color:          #ececef;
 }
 
 html.dark {
@@ -212,6 +217,8 @@ html.dark {
 	--danger-button-hover-background: #6d2c2b;
 
 	--table-header-background-80:       rgba(38, 38, 38, .8);
+	--card-table-header-background:     #2b2b2b;
+	--card-table-border-color:          #313131;
 	--table-slave-accent:               rgba(255, 255, 255, .45);
 	--table-slave-color:                rgba(255, 255, 255, .65);
 	--table-parent-expanded-background: #1a1a1a;

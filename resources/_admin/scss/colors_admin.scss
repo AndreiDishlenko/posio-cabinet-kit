@@ -57,6 +57,9 @@ html.light {
 	--form-control-border-color-focus:  #F2F4F5;
 	--placeholder-color:                   #b8bbc1;
 
+	// Поле поиска-«пилюля» — залитое, как поиск товара на кассе.
+	--search-input-background:     #F2F4F5;
+
 	// ── Buttons ──
 	--button-text-color:               #1c1c1c;
 	--button-background:               #f0f1f3;
@@ -205,6 +208,8 @@ html.dark {
     --form-control-border-color: #414141;
     --form-control-border-color-focus: #616161;
     --placeholder-color: #4e4e4e;
+
+    --search-input-background: #292929;
 
     --button-background: #2c2c2c; //#434344;
     --button-hover-background: rgb(53, 53, 53);

@@ -39,6 +39,17 @@
 			md:p-11;
 	}
 
+	// Таблица внутри карточки стоит на её подложке, а не на подложке страницы:
+	// иначе фон страницы просвечивает сквозь скруглённые углы шапки таблицы.
+	// Шапка и линии между строками отсчитываются от той же подложки — на карточке
+	// они на тон светлее её, на странице остаются прежними.
+	// Редактируемая таблица не затрагивается: она красит клетки сама.
+	.card .table, .compact-card .table, .card-shape .table {
+		--table-surface:           var(--card-background);
+		--table-header-background: var(--card-table-header-background);
+		--table-border-color:      var(--card-table-border-color);
+	}
+
 	.card-paddings {
 		@apply
 			p-7
@@ -51,6 +62,21 @@
 	// чтобы перебить собственные минимумы карточки на широких экранах.
 	.card.wide-card {
 		min-width: var(--modal-max-width, 90vw);
+	}
+
+	// Карта завжди займає всю висоту, дозволену модалкою (той самий ліміт, що
+	// ModalForm.vue задає контенту через max-height), а не звужується під короткий
+	// таб чи короткий контент. Підключати табам/карткам, де висота має бути стабільна.
+	.card.full-height-card {
+		height: 95vh;
+		height: 95dvh;
+	}
+
+	@media (max-width: 767px) {
+		.card.full-height-card {
+			height: 97.5vh;
+			height: 97.5dvh;
+		}
 	}
 
 	.compact-card {
@@ -67,8 +93,13 @@
 
 	.card-header {
 		font-size: var(--text-2xl);
-		
-		@apply 
+
+		// Шапка и подвал карточки — фиксированные полосы: высоту им задаёт только
+		// собственное содержимое. Иначе высокий контент внутри карточки с заданной
+		// высотой сжимает их до нечитаемого.
+		flex-shrink: 0;
+
+		@apply
 			w-full
 			flex
 			flex-col
@@ -90,7 +121,9 @@
 	}
 
 	.card-footer {
-		@apply         
+		flex-shrink: 0;
+
+		@apply
 			flex
 			items-center
 			justify-center

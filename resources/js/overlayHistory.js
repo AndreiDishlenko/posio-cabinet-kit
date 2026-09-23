@@ -20,6 +20,10 @@ let self_pops = 0;
 // «Назад», потраченное на оверлей, никому больше не показывается.
 let exclusive = false;
 
+// Экран, с которого уводить назад нельзя, ставит здесь свой обработчик: он
+// получает событие, когда закрывать оверлеи больше нечего.
+let back_fallback = null;
+
 // Открытие помечается своей записью в истории, чтобы «назад» тратился на
 // закрытие оверлея, а не на уход со страницы.
 const MARKER = { overlay: true };
@@ -41,14 +45,30 @@ function onPopState(event) {
 
 	const top = stack.pop();
 
-	if (!top)
+	if (!top) {
+		if (back_fallback) {
+			keepToOurselves(event);
+			back_fallback();
+		}
+
 		return;
+	}
 
 	keepToOurselves(event);
 
 	// Запись уже снята браузером — закрываем, не трогая историю повторно.
+	// Снятие до вызова обработчика обязательно: закрытие своими средствами
+	// внутри него не должно потратить ещё один возврат.
 	top.marked = false;
-	top.close();
+
+	// Оверлей, который обязан остаться на экране (блокирующее сообщение с
+	// выбором), отвечает отказом — возврат тратится впустую, а запись
+	// возвращается ему, иначе следующее «назад» уйдёт мимо него.
+	if (top.close() === false) {
+		top.marked = true;
+		stack.push(top);
+		window.history.pushState(MARKER, '');
+	}
 }
 
 function startListening() {
@@ -87,11 +107,22 @@ export function popOverlay(owner) {
 	if (index === -1)
 		return;
 
-	const [entry] = stack.splice(index, 1);
+	// Вместе с оверлеем уходит и всё, что открыто поверх него: оно закрывается
+	// заодно, а записи в истории иначе остались бы выше и съели следующий
+	// возврат — вместо верхнего оверлея он потратился бы впустую.
+	const removed = stack.splice(index);
 
-	if (entry.marked && typeof window !== 'undefined') {
-		self_pops++;
-		window.history.back();
+	for (let position = removed.length - 1; position >= 0; position--) {
+		const entry = removed[position];
+
+		if (entry.marked && typeof window !== 'undefined') {
+			self_pops++;
+			window.history.back();
+		}
+
+		// Сам оверлей закрылся своими средствами, вложенные — ещё нет.
+		if (position > 0)
+			entry.close();
 	}
 }
 
@@ -107,6 +138,19 @@ export function popOverlaySilent(owner) {
 		return;
 
 	stack.splice(index, 1);
+}
+
+// Реакция на «назад» там, где закрывать нечего: экран, который обязан остаться
+// на месте, решает сам, что делать с событием (и обязан вернуть себе запись
+// истории — иначе следующий возврат уйдёт из приложения).
+export function setBackFallback(handler) {
+	back_fallback = handler;
+	startListening();
+}
+
+export function clearBackFallback(handler) {
+	if (back_fallback === handler)
+		back_fallback = null;
 }
 
 export function hasOpenOverlays() {

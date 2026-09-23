@@ -44,7 +44,7 @@
 		<!-- Panel items (left) -->
 		<template v-for="(item, idx) in panelItemsList" :key="'p-'+idx">
 
-			<SearchableInput
+			<SearchableInputRounded
 				v-if="item.type === 'search'"
 				:class="['shrinkable max-w-xs w-full min-w-[80px]', item.class]"
 				:model-value="item.model"
@@ -188,11 +188,11 @@
     import SelectableButton  from '../Forms/SelectableButton.vue'
     import CheckboxButton    from '../Forms/CheckboxButton.vue'
     import Checkbox          from '../Forms/Checkbox.vue'
-    import SearchableInput   from '../Forms/SearchableInput.vue'
+    import SearchableInputRounded from '@/js/Elements/Forms/SearchableInputRounded.vue'
     import ShowDeletedToggle from '@/js/Elements/Table/ShowDeletedToggle.vue'
 
     export default {
-        components: { Icon, SelectableButton, CheckboxButton, Checkbox, SearchableInput, ShowDeletedToggle },
+        components: { Icon, SelectableButton, CheckboxButton, Checkbox, SearchableInputRounded, ShowDeletedToggle },
         props: {
             settings: {
                 type: Object,
