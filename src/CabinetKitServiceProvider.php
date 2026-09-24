@@ -2,7 +2,11 @@
 
 namespace Posio\CabinetKit;
 
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Database\Events\MigrationsEnded;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Exceptions\InvalidSignatureException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Illuminate\Database\Events\NoPendingMigrations;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
@@ -16,6 +20,7 @@ use Posio\CabinetKit\Console\Commands\GenerateSitemap;
 use Posio\CabinetKit\Console\Commands\ImportSiteBrand;
 use Posio\CabinetKit\Console\Commands\InstallCommand;
 use Posio\CabinetKit\Console\Commands\SyncConfigCommand;
+use Posio\CabinetKit\Console\Commands\TestCommand;
 use Posio\CabinetKit\Services\SeoService;
 use Posio\CabinetKit\Services\SiteSettingsService;
 use Posio\CabinetKit\Http\Middleware\RequireSystemPasswordChange;
@@ -77,6 +82,7 @@ class CabinetKitServiceProvider extends ServiceProvider
 
         $this->registerInertiaPagePaths();
         AuthMail::register();
+        $this->registerCabinetRedirects();
         $this->registerSocialAuth();
         $this->registerLogViewerAuth();
         $this->registerSiteSettings();
@@ -128,6 +134,7 @@ class CabinetKitServiceProvider extends ServiceProvider
                 InstallCommand::class,
                 SyncConfigCommand::class,
                 ImportSiteBrand::class,
+                TestCommand::class,
             ]);
         }
 
@@ -289,6 +296,22 @@ class CabinetKitServiceProvider extends ServiceProvider
                 ? $user->canSystem('sysper-log-view')
                 : $user->can('sysper-log-view');
         });
+    }
+
+    /**
+     * Не хватило прав на страницу — профиль вместо голого 403; испорченная ссылка
+     * подтверждения почты — вход с объяснением. Правила общие с posio.cabinet.
+     */
+    protected function registerCabinetRedirects(): void
+    {
+        $handler = $this->app->make(ExceptionHandler::class);
+
+        if (! method_exists($handler, 'renderable')) {
+            return;
+        }
+
+        $handler->renderable(fn (AccessDeniedHttpException $e, Request $request) => CabinetRedirects::deniedPage($request));
+        $handler->renderable(fn (InvalidSignatureException $e, Request $request) => CabinetRedirects::brokenVerificationLink($request));
     }
 
     /**

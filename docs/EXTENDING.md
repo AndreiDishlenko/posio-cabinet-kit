@@ -30,8 +30,9 @@ take the whole page down. `cabinet-kit:doctor` lists what got hidden.
 ## Where the auth flow lands
 
 `config/cabinet-kit-redirects.php` holds one route name per step: `home`
-(cabinet root), `after_login`, `after_verify`, `after_logout`. A value
-starting with `/` or `http` is used as a plain address instead of a route name.
+(cabinet root), `after_login`, `after_verify`, `after_logout`, plus `profile` —
+the page every closed target falls back to. A value starting with `/` or `http`
+is used as a plain address instead of a route name.
 
 Point `home` and `after_login` at your own route to open the cabinet on your
 own page. Registration has no landing key: a form-based sign-up always goes to
@@ -40,6 +41,35 @@ own page. Registration has no landing key: a form-based sign-up always goes to
 A value naming a route the application doesn't register is ignored in favour of
 the package default, so a page you later remove can't lock anyone out of
 signing in. `cabinet-kit:doctor` reports those.
+
+The target of each step — the page the user was heading to, or the one named
+here — opens only if the user may open it: every permission gate on its route
+(`Support\PermissionGate`, e.g. `CanSystemPermission`) is asked in advance.
+A missing or closed target lands on `profile`, and so does any cabinet page
+denied for lack of permission (a data request still gets 403). Give your own
+permission middleware the same interface so its pages follow the rule:
+
+```php
+use Posio\CabinetKit\Support\PermissionGate;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+
+class CanCatalog implements PermissionGate
+{
+    public function handle($request, $next, string $permission)
+    {
+        if (! static::allows($request->user(), $permission)) {
+            throw new AccessDeniedHttpException();
+        }
+
+        return $next($request);
+    }
+
+    public static function allows($user, string $parameters): bool
+    {
+        return (bool) $user?->canAccount($parameters);
+    }
+}
+```
 
 ## Adding a Settings tab
 

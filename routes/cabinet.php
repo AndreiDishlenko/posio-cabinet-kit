@@ -24,6 +24,7 @@ use Posio\CabinetKit\Http\Controllers\SettingsController;
 use Posio\CabinetKit\Http\Controllers\SystemPasswordController;
 use Posio\CabinetKit\Http\Middleware\ApplyCabinetKitLocale;
 use Posio\CabinetKit\Http\Middleware\CanSystemPermission;
+use Posio\CabinetKit\Http\Middleware\NewGuest;
 use Posio\CabinetKit\Http\Middleware\RequireRegistrationNotClosed;
 use Posio\CabinetKit\Http\Middleware\UseCabinetKitRootView;
 
@@ -44,8 +45,10 @@ Route::middleware(['web', UseCabinetKitRootView::class, ApplyCabinetKitLocale::c
         // convention (login, register, ...) so framework internals (the
         // `auth` middleware's redirect-to-login, signed verification links)
         // resolve them without extra config.
+        // Вошедшего ведём на стартовую страницу кабинета, а не на «домашнюю» хоста,
+        // которую подставил бы штатный гостевой посредник фреймворка.
         if (config('cabinet-kit.auth_routes', true)) {
-            Route::middleware('guest')->group(function () {
+            Route::middleware(NewGuest::class)->group(function () {
                 Route::get('login', [LoginController::class, 'showLogin'])->name('login');
                 Route::post('login', [LoginController::class, 'login']);
 
@@ -76,13 +79,17 @@ Route::middleware(['web', UseCabinetKitRootView::class, ApplyCabinetKitLocale::c
                 });
             });
 
+            // Подтверждение почты удостоверяется подписью URL, а не сессией: ссылку можно
+            // открыть на другом устройстве, где пользователь не вошёл или вошёл под другим
+            // аккаунтом. Поэтому маршрут вне группы только для вошедших.
+            Route::get('email/verify/{id}/{hash}', [VerificationController::class, 'verify'])
+                ->middleware('signed')
+                ->name('verification.verify');
+
             Route::middleware('auth')->group(function () {
                 Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 
                 Route::get('email/verify', [VerificationController::class, 'notice'])->name('verification.notice');
-                Route::get('email/verify/{id}/{hash}', [VerificationController::class, 'verify'])
-                    ->middleware('signed')
-                    ->name('verification.verify');
                 Route::post('email/verification-notification', [VerificationController::class, 'send'])
                     ->middleware('throttle:6,1')
                     ->name('verification.send');

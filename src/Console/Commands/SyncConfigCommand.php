@@ -12,6 +12,7 @@ use Posio\CabinetKit\Support\FrontendDependencies;
 use Posio\CabinetKit\Support\HostComposerJson;
 use Posio\CabinetKit\Support\HostConfigDrift;
 use Posio\CabinetKit\Support\HostDocs;
+use Posio\CabinetKit\Support\HostScripts;
 use Posio\CabinetKit\Support\HostTailwindConfig;
 use Posio\CabinetKit\Support\HostUpdateLaunchers;
 use Posio\CabinetKit\Support\HostViteConfig;
@@ -40,6 +41,7 @@ class SyncConfigCommand extends Command
         $this->syncTailwindContent();
         $this->syncHostDocs();
         $this->syncUpdateLaunchers();
+        $this->syncHostScripts();
         $this->syncModules();
 
         if (! File::exists(config_path('cabinet-kit.php'))) {
@@ -110,6 +112,36 @@ class SyncConfigCommand extends Command
 
         foreach ($widened as $name) {
             $this->info("Patched {$name}: it now updates every posio/* package, modules included.");
+        }
+    }
+
+    /**
+     * Скрипты деплоя и релиза доезжают до уже установленных проектов так же, как
+     * лаунчер обновления. Тесты входа и регистрации пакета должны гоняться при
+     * каждом релизе проекта, поэтому устаревший скрипт релиза, не умеющий
+     * запускать проверки, заменяется, а в готовые проверки добавляется их шаг.
+     */
+    protected function syncHostScripts(): void
+    {
+        try {
+            foreach (HostScripts::scaffold() as $name) {
+                $this->info("Created {$name} — a starting point, adapt it to this project's server.");
+            }
+
+            if (HostScripts::upgradeReleaseScript()) {
+                $this->info('Replaced '.HostScripts::RELEASE.' with the version that runs '.HostScripts::CHECKS.' before a release; the old one is kept as '.HostScripts::RELEASE.'.bak.');
+            }
+
+            $wired = HostScripts::wireTestsIntoReleaseChecks();
+        } catch (\Throwable $e) {
+            $this->warn('Project scripts were not updated: '.$e->getMessage());
+            return;
+        }
+
+        if ($wired === true) {
+            $this->info('Patched '.HostScripts::CHECKS.': the CabinetKit tests now run before every release.');
+        } elseif ($wired === null) {
+            $this->warn('Could not add the CabinetKit tests to '.HostScripts::CHECKS.' — add "php artisan '.HostScripts::TEST_COMMAND.'" to it manually.');
         }
     }
 

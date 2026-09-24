@@ -33,7 +33,7 @@ class HostUpdateLaunchers
         $created = [];
 
         foreach (self::LAUNCHERS as $name => $stub) {
-            if (self::write($name, $stub)) {
+            if (self::writeStub($name, $stub)) {
                 $created[] = $name;
             }
         }
@@ -77,7 +77,10 @@ class HostUpdateLaunchers
         return $patched;
     }
 
-    protected static function write(string $name, string $stub): bool
+    /**
+     * Кладёт стаб пакета в проект под указанным путём, если файла там ещё нет.
+     */
+    public static function writeStub(string $name, string $stub): bool
     {
         $path = base_path($name);
 
@@ -85,29 +88,36 @@ class HostUpdateLaunchers
             return false;
         }
 
-        $source = dirname(__DIR__, 2).DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.$stub;
+        $source = self::stubPath($stub);
 
         if (! File::exists($source)) {
             return false;
         }
 
-        $contents = File::get($source);
-        $isShell = ! str_ends_with($name, '.bat');
+        File::ensureDirectoryExists(dirname($path));
+        File::put($path, self::withPlatformLineEndings($name, File::get($source)));
 
-        // Скрипт с виндовыми переводами строк ядро запустить отказывается
-        // («bad interpreter»), а записан файл может быть с любой платформы.
-        if ($isShell) {
-            $contents = str_replace("\r\n", "\n", $contents);
-        }
-
-        File::put($path, $contents);
-
-        if ($isShell) {
+        if (! str_ends_with($name, '.bat')) {
             @chmod($path, 0755);
             self::markExecutableInGit($name);
         }
 
         return true;
+    }
+
+    public static function stubPath(string $stub): string
+    {
+        return dirname(__DIR__, 2).DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.$stub;
+    }
+
+    // Скрипт с виндовыми переводами строк ядро запустить отказывается («bad
+    // interpreter»), а cmd с юниксовыми путается в метках, — стаб же мог приехать
+    // с любой платформы.
+    public static function withPlatformLineEndings(string $name, string $contents): string
+    {
+        $contents = str_replace("\r\n", "\n", $contents);
+
+        return str_ends_with($name, '.bat') ? str_replace("\n", "\r\n", $contents) : $contents;
     }
 
     /**

@@ -1,0 +1,11 @@
+@echo off
+php artisan config:cache
+php artisan config:clear
+php artisan route:cache
+php artisan cache:clear
+php artisan view:cache
+php artisan optimize:clear
+
+php artisan permission:cache-reset
+
+if exist bootstrap\cache\routes-v7.php del /q bootstrap\cache\routes-v7.php

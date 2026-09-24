@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Schema;
 use Posio\CabinetKit\Support\FrontendDependencies;
 use Posio\CabinetKit\Support\HostComposerJson;
 use Posio\CabinetKit\Support\HostDocs;
+use Posio\CabinetKit\Support\HostScripts;
 use Posio\CabinetKit\Support\HostTailwindConfig;
 use Posio\CabinetKit\Support\HostUpdateLaunchers;
 use Posio\CabinetKit\Support\HostViteConfig;
@@ -304,6 +305,14 @@ MD);
     {
         foreach (HostUpdateLaunchers::scaffold() as $name) {
             $this->info("Created {$name} — runs the whole CabinetKit update.");
+        }
+
+        foreach (HostScripts::scaffold() as $name) {
+            $this->info("Created {$name} — a starting point, adapt it to this project's server.");
+        }
+
+        if (HostScripts::wireTestsIntoReleaseChecks() === null) {
+            $this->warn('Could not add the CabinetKit tests to '.HostScripts::CHECKS.' — add "php artisan '.HostScripts::TEST_COMMAND.'" to it manually.');
         }
     }
 

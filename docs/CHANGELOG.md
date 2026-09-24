@@ -3,6 +3,22 @@
 ## Unreleased — Page tools in the header, rounded search field
 
 **Added**
+- Auth and registration tests that run inside the host project:
+  `php artisan cabinet-kit:test` (sign-in, sign-out, password reset,
+  registration modes, email confirmation links, registration approval). They
+  boot the host's own app — its migrations, user model and config — on an
+  in-memory SQLite database by default (`--db-connection` / `--db-database` for
+  another one; its name must contain a `test` marker, it is wiped). Refuses to
+  run with cached config. PHPUnit comes from the host's dev dependencies.
+- Project scripts, created by `cabinet-kit:install` and `cabinet-kit:sync-config`
+  only when missing: `deploy` (git pull, migrate, re-cache, queue restart,
+  sitemap, `npm run buildssr`/`build`, site check, `--rollback`), `cc` / `cc.bat`
+  (cache reset), `release.bat` and `scripts/pre-push-checks.sh` (runs
+  `cabinet-kit:test`, `php artisan test` and the build before a release).
+  An existing `scripts/pre-push-checks.sh` gets the `cabinet-kit:test` step
+  added; an older `release.bat` of the same family that cannot run the checks
+  is replaced (the old one stays as `release.bat.bak`). `cabinet-kit:doctor`
+  warns when a release would skip the package tests.
 - Registration modes: `cabinet-kit.registration` / `CABINET_REGISTRATION` =
   `closed` (default) | `approval` | `open`. Closed: the sign-in page has no
   "Sign up" link (shared prop `registration_open`) and no social buttons; the
@@ -23,6 +39,47 @@
 - `overlayHistory`: `setBackFallback` / `clearBackFallback`; an overlay's
   close handler may return `false` to stay open on "back"; closing an overlay
   also closes the ones opened on top of it.
+
+**Changed**
+- A missing or closed target lands on the profile. The target of every auth
+  step — the page the user was heading to, or the one named in
+  `cabinet-kit-redirects` — opens only if all permission gates on its route let
+  the user through (`Support\PageAccess`); otherwise the user lands on the new
+  `profile` key (`cabinet-kit.settings`, the one page no permission gates).
+  Password sign-in keeps the remembered page when it is open. A cabinet page
+  denied by a permission gate now redirects to the profile too, instead of a
+  bare 403; data requests keep the 403. With the package defaults a fresh user
+  used to land on the users page, which needs `sysper-users`, and saw a 403.
+- A signed-in user opening a guest auth page (sign-in, sign-up, password
+  reset) lands on the cabinet `home` target — or the profile when it is closed
+  to them — instead of the framework default, which picked the host's
+  `dashboard` or `home` route: a leftover starter-kit `dashboard` route sent
+  such a user to a page that no longer rendered, and a public `home` took them
+  out of the cabinet. The guest routes use `Http\Middleware\NewGuest` (ported
+  from posio.cabinet) instead of the `guest` alias.
+- Every cabinet page opened with a plain GET is remembered as the intended one
+  (`Http\Middleware\NewAuth`, ported from posio.cabinet, first in the fixed
+  part of the cabinet stack): sign-in, the cabinet button on the site and a
+  confirmed email return to it. Actions, data requests, sign-out and the
+  email notice screen are not remembered. A repeated confirmation link opened
+  by its own signed-in user adds `verified=1` to the target, as upstream does.
+- Permission gates implement `Support\PermissionGate` (a static `allows()`)
+  and throw `AccessDeniedHttpException`: `CanSystemPermission` does, and a
+  host's own gate joins the rule by doing the same (see EXTENDING).
+- Email confirmation: an already confirmed user on the notice screen, the
+  resend action or a repeated link goes to the remembered page or `home`, as
+  in posio.cabinet (was `after_verify`).
+
+**Fixed**
+- Email confirmation link no longer answers 403 when opened while another user
+  is signed in: the link is identified by its signature, not by the session
+  (route moved out of the `auth` group), and that case renders
+  `pages/Auth/EmailVerificationOutcome` — whose address was confirmed, who is
+  signed in, "continue" / "sign in as" buttons. Opened signed out it confirms
+  and sends to sign-in with a status; a link whose user was deleted or whose
+  address changed leads to sign-in with `verification-link-invalid`; a damaged
+  signature (GET or a mail scanner's HEAD) leads to sign-in with
+  `verification-link-broken` instead of a bare 403.
 
 **Build**
 - Settings tabs load lazily: `settingsTabs.js` exports `settingsTabLoader(file)`,

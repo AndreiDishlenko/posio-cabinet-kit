@@ -13,6 +13,7 @@ use Posio\CabinetKit\Support\FrontendDependencies;
 use Posio\CabinetKit\Support\HostComposerJson;
 use Posio\CabinetKit\Support\HostConfigDrift;
 use Posio\CabinetKit\Support\HostDocs;
+use Posio\CabinetKit\Support\HostScripts;
 use Posio\CabinetKit\Support\HostTailwindConfig;
 use Posio\CabinetKit\Support\HostViteConfig;
 
@@ -62,6 +63,11 @@ class DoctorCommand extends Command
         $this->check(File::exists(public_path('storage')), 'Public storage is linked', 'Run php artisan storage:link — uploaded logos and favicons are served from storage/app/public/site.');
         $this->check($this->seoRecordsExist(), 'At least one SEO record exists', 'Run the SEO seeder (part of cabinet-kit:install) or add a record in the cabinet SEO section.');
         $this->check(File::exists(base_path(HostDocs::TARGET_DIR.'/README.md')), 'Integration docs are present in the project', 'Run php artisan cabinet-kit:sync-config.');
+
+        // Предупреждение, а не провал: как проект выпускает релизы, решает он сам.
+        if (! HostScripts::releaseRunsPackageTests()) {
+            $this->warn('  ! '.HostScripts::RELEASE.' does not run the CabinetKit tests before a release — run php artisan cabinet-kit:sync-config, or call php artisan cabinet-kit:test from your own release checks.');
+        }
 
         $this->checkModules();
 

@@ -20,6 +20,11 @@ return [
     // Where email confirmation lands.
     'after_verify' => 'cabinet-kit.users',
 
+    // Profile — the one cabinet page no permission gates. Every target (the page
+    // the user was heading to, or one named above) that is missing or closed to
+    // the user lands here, and so does a page denied for lack of permission.
+    'profile' => config('cabinet-kit.route_name_prefix', 'cabinet-kit.').'settings',
+
     // Where signing out lands. The package default leaves the cabinet entirely.
     'after_logout' => '/',
 

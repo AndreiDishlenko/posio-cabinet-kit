@@ -1,0 +1,23 @@
+#!/bin/bash
+#
+# Прод-аналог cc.bat: сброс/пересборка кэшей Laravel.
+# Запуск: ./cc   (свой интерпретатор: PHP_BIN=/path/to/php ./cc)
+
+cd "$(dirname "$0")" || exit 1
+
+# CLI-php хостинга по умолчанию бывает старее 8.2, нужного приложению. На CloudLinux/cPanel
+# интерпретаторы лежат отдельно — берём самый свежий 8.2+ оттуда.
+PHP="$PHP_BIN"
+[ -z "$PHP" ] && PHP="$(ls -d /opt/alt/php8[2-9]/usr/bin/php /opt/cpanel/ea-php8[2-9]/root/usr/bin/php 2>/dev/null | sort -V | tail -n1)"
+[ -z "$PHP" ] && PHP="php"
+
+"$PHP" artisan config:cache
+"$PHP" artisan config:clear
+"$PHP" artisan route:cache
+"$PHP" artisan cache:clear
+"$PHP" artisan view:cache
+"$PHP" artisan optimize:clear
+
+"$PHP" artisan permission:cache-reset
+
+rm -f bootstrap/cache/routes-v7.php

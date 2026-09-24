@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Posio\CabinetKit\Http\Middleware\ApplyCabinetKitLocale;
+use Posio\CabinetKit\Http\Middleware\NewAuth;
 use Posio\CabinetKit\Http\Middleware\NotVerified;
 use Posio\CabinetKit\Http\Middleware\RequireRegistrationApproval;
 use Posio\CabinetKit\Http\Middleware\RequireSystemPasswordChange;
@@ -53,13 +54,14 @@ class CabinetKit
     /**
      * Стек авторизованной группы кабинета. Подтверждение почты, одобрение
      * регистрации и смена пароля встроенных учёток не настраиваются: хост и
-     * модуль не должны открывать кабинет в обход них.
+     * модуль не должны открывать кабинет в обход них. Страница запоминается
+     * до проверки почты: после подтверждения пользователь вернётся на неё.
      */
     public function cabinetMiddleware(): array
     {
         return array_merge(
             config('cabinet-kit.middleware', ['web', 'auth']),
-            [NotVerified::class, RequireRegistrationApproval::class, SetPermissionTeam::class, ShareCabinetKitData::class, RequireSystemPasswordChange::class],
+            [NewAuth::class, NotVerified::class, RequireRegistrationApproval::class, SetPermissionTeam::class, ShareCabinetKitData::class, RequireSystemPasswordChange::class],
         );
     }
 

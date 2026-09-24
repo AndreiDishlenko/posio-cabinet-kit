@@ -9,6 +9,8 @@ export default {
     "verification-link-broken": "The confirmation link is damaged or incomplete — your email app may have wrapped it onto another line. Copy the whole address from the email, or sign in and request a new confirmation email.",
     "email-verified": "Your email address has been confirmed. Please sign in.",
     "email-already-verified": "This email address has already been confirmed. Please sign in.",
+    "email-verified-signed-in-as-other": "The email address {verified_email} has been confirmed. In this browser you are signed in as {current_email}.",
+    "email-already-verified-signed-in-as-other": "The email address {verified_email} has already been confirmed. In this browser you are signed in as {current_email}.",
     "social-auth-failed": "Sign-in was not completed. Please try again — click the sign-in button once and do not reload the page you return to.",
     "registration-pending-approval": "Your registration has not been approved by an administrator yet. We will email you as soon as it is.",
     "registration-approved": "Registration approved. The user can now sign in to the cabinet — we have emailed them about it.",

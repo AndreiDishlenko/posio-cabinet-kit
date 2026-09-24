@@ -40,6 +40,10 @@ Vite — nothing is copied into the project.
    Do not invent your own update sequence.
 5. **Diagnose with `php artisan cabinet-kit:doctor`** before concluding that
    something is broken in the package.
+6. **Check auth after any change to users, auth config or migrations:**
+   `php artisan cabinet-kit:test` runs the package's sign-in and registration
+   tests against this project on an in-memory database. `./release` runs them
+   through `scripts/pre-push-checks.sh` — do not remove that step.
 
 ## What the package puts on the host's plate
 

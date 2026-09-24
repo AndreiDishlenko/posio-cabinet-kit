@@ -44,7 +44,8 @@ src/
   Traits/                         IsCabinetKitUser (User), HasAccount, HasSettings, HasCustomFields
   Repositories/AccountRepository.php
   Services/                       AccountService (role writes + account creation), MenuService (menu filtering)
-  Support/CabinetRedirects.php    auth flow landing pages, with a fallback for targets that resolve to nothing
+  Support/CabinetRedirects.php    auth flow landing pages and denied pages: a missing or closed target lands on the profile
+  Support/PageAccess.php          can the current user open a page: walks the route's permission gates (Support/PermissionGate)
   Support/CabinetKitRoles.php     reference roles/permissions, synced after every php artisan migrate (see "Roles and permissions")
   Console/Commands/               InstallCommand, DoctorCommand, SyncConfigCommand
 database/
@@ -52,7 +53,7 @@ database/
   seeders/CabinetKitRolesSeeder.php  thin wrapper over Support/CabinetKitRoles, kept for hosts that call it by name
 routes/cabinet.php                mounted automatically, prefix+name from config
 config/cabinet-kit.php            user_model, menu[], roles, route prefixes
-config/cabinet-kit-redirects.php  home, after_login, after_verify, after_logout
+config/cabinet-kit-redirects.php  home, after_login, after_verify, profile, after_logout
 config/cabinet_onboarding.php     post-registration step switches (same keys as posio.cabinet), all off
 resources/js/
   layouts/                        CabinetLayout, CabinetHeader, SideMenu, AccountSwitcher, AuthLayout
@@ -190,9 +191,15 @@ required.
 Route **names** for the auth group are Laravel's own unprefixed convention
 (`login`, `register`, `logout`, `password.*`, `verification.*`) rather than
 `cabinet-kit.*` — that's not a style choice, framework internals (the `auth`
-middleware's redirect-to-login, `EmailVerificationRequest`) look those exact
+middleware's redirect-to-login, the default verification mail) look those exact
 names up. Only the *authenticated* users/settings/account route group
 uses the `cabinet-kit.` name prefix.
+
+The email confirmation link (`verification.verify`) sits outside both the guest
+and the `auth` group: the URL signature identifies the user, not the session, so
+the link works on another device, signed out, or while someone else is signed
+in (that case gets a page saying whose address was confirmed and who is signed
+in, instead of a 403).
 
 ## First sign-in of a seeded account
 

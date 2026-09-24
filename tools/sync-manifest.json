@@ -191,6 +191,20 @@
       "notes": "Verbatim apart from the namespace. Mounted in routes/cabinet.php outside the configurable cabinet-kit.middleware list, so a host cannot open the cabinet to an unconfirmed user."
     },
     {
+      "id": "middleware-new-auth",
+      "mode": "manual",
+      "source": "app/Http/Middleware/NewAuth.php",
+      "target": "src/Http/Middleware/NewAuth.php",
+      "notes": "Verbatim apart from the namespace. Added to the fixed part of CabinetKit::cabinetMiddleware() ahead of NotVerified, after the host-configurable list (which keeps the framework 'auth'): there it remembers every opened cabinet page as the intended one; its own guest redirect only fires for a host list without 'auth'."
+    },
+    {
+      "id": "middleware-new-guest",
+      "mode": "manual",
+      "source": "app/Http/Middleware/NewGuest.php",
+      "target": "src/Http/Middleware/NewGuest.php",
+      "notes": "Verbatim apart from the namespace and the CabinetRedirects import. Replaces the framework 'guest' alias on the package's guest auth routes: the framework default sends a signed-in user to the host's 'dashboard' or 'home' route."
+    },
+    {
       "id": "routes-cabinet",
       "mode": "manual",
       "source": "routes/cabinet_routes.php",
@@ -659,6 +673,34 @@
       "notes": "Verbatim except the AuthLayout import path. Manual, not copy: -Apply would bring back the source's module alias."
     },
     {
+      "id": "support-cabinet-redirects",
+      "mode": "manual",
+      "source": "app/Support/CabinetRedirects.php",
+      "target": "src/Support/CabinetRedirects.php",
+      "notes": "Shared methods (url, intended, profile, deniedPage, brokenVerificationLink, resolve, isAddress) are verbatim; CONFIG names the package config. Package-only: LEGACY_KEYS, unresolvable(), defaults() and the package default as the second candidate."
+    },
+    {
+      "id": "support-page-access",
+      "mode": "manual",
+      "source": "app/Support/PageAccess.php",
+      "target": "src/Support/PageAccess.php",
+      "notes": "Verbatim except the namespace."
+    },
+    {
+      "id": "support-permission-gate",
+      "mode": "manual",
+      "source": "app/Support/PermissionGate.php",
+      "target": "src/Support/PermissionGate.php",
+      "notes": "Verbatim except the namespace. Source gates: SystemPermission, AccountPermission, IsSystemUser; package gate: CanSystemPermission (mirrors SystemPermission)."
+    },
+    {
+      "id": "page-email-verification-outcome",
+      "mode": "manual",
+      "source": "resources/_main/js/Pages/Auth/EmailVerificationOutcome.vue",
+      "target": "resources/js/pages/Auth/EmailVerificationOutcome.vue",
+      "notes": "AuthLayout import path; sign-out button sends POST because the package registers logout as a POST route (the source uses GET)."
+    },
+    {
       "id": "page-auth-login",
       "mode": "manual",
       "source": "resources/_main/js/Pages/Auth/Login.vue",
@@ -872,6 +914,87 @@
       "mode": "package_only",
       "target": "src/Http/Controllers/Api/DictionariesApiController.php",
       "notes": "Kit-owned dictionaries endpoint merging module providers with a host's legacy cabinet.api.dictionaries."
+    },
+    {
+      "id": "host-tests-authentication",
+      "mode": "manual",
+      "source": "tests/Feature/Auth/A_AuthenticationTest.php",
+      "target": "tests/Host/Auth/AuthenticationTest.php",
+      "notes": "Same scenarios on the package's routes; own users on a fresh in-memory database instead of the source's chained user in a persistent test DB."
+    },
+    {
+      "id": "host-tests-registration",
+      "mode": "manual",
+      "source": "tests/Feature/Auth/B_RegistrationTest.php",
+      "target": "tests/Host/Auth/RegistrationTest.php",
+      "notes": "Plus the package's registration modes (closed answers 404). Standard VerifyEmail notification instead of the source's custom one."
+    },
+    {
+      "id": "host-tests-email-verification",
+      "mode": "manual",
+      "source": "tests/Feature/Auth/C_EmailVerificationTest.php",
+      "target": "tests/Host/Auth/EmailVerificationTest.php",
+      "notes": "Merges C_EmailVerificationTest and EmailVerificationLinkTest; the source's company-setup and menu-service cases have no counterpart in the package."
+    },
+    {
+      "id": "host-tests-email-verification-link",
+      "mode": "manual",
+      "source": "tests/Feature/Auth/EmailVerificationLinkTest.php",
+      "target": "tests/Host/Auth/EmailVerificationTest.php",
+      "notes": "See host-tests-email-verification."
+    },
+    {
+      "id": "host-tests-registration-approval",
+      "mode": "manual",
+      "source": "tests/Feature/Auth/RegistrationApprovalTest.php",
+      "target": "tests/Host/Auth/RegistrationApprovalTest.php",
+      "notes": "Approval is switched by cabinet-kit.registration=approval; approver is a System administrator with its own password (seeded accounts are held on the password-change form)."
+    },
+    {
+      "id": "host-tests-infrastructure",
+      "mode": "package_only",
+      "target": "tests/Host/HostTestCase.php",
+      "notes": "Runs inside the host app (its bootstrap, migrations, user model); with tests/bootstrap.php, phpunit.host.xml and src/Console/Commands/TestCommand.php (cabinet-kit:test)."
+    },
+    {
+      "id": "host-script-release",
+      "mode": "copy",
+      "source": "release.bat",
+      "target": "stubs/release.bat.stub",
+      "notes": "Self-contained release script, verbatim. Runs scripts/pre-push-checks.sh before committing."
+    },
+    {
+      "id": "host-script-cc-bat",
+      "mode": "copy",
+      "source": "cc.bat",
+      "target": "stubs/cc.bat.stub",
+      "notes": "Verbatim."
+    },
+    {
+      "id": "host-script-deploy",
+      "mode": "manual",
+      "source": "deploy",
+      "target": "stubs/deploy.stub",
+      "notes": "Generalized: no server-specific NVM path or SSR process name (npm run buildssr when the host has it), PHP_BIN override, sitemap, site check."
+    },
+    {
+      "id": "host-script-checks",
+      "mode": "manual",
+      "source": "scripts/pre-push-checks.sh",
+      "target": "stubs/pre-push-checks.sh.stub",
+      "notes": "Generic set: cabinet-kit:test, php artisan test, build. Source's legacy-syntax and Vitest steps are product-specific."
+    },
+    {
+      "id": "host-script-cc",
+      "mode": "package_only",
+      "target": "stubs/cc.stub",
+      "notes": "Taken from the elo host: the source's cc hard-codes one server; this one resolves PHP 8.2+ on CloudLinux/cPanel and honours PHP_BIN."
+    },
+    {
+      "id": "host-scripts-scaffold",
+      "mode": "package_only",
+      "target": "src/Support/HostScripts.php",
+      "notes": "Creates deploy/cc/cc.bat/release.bat/scripts/pre-push-checks.sh when missing, upgrades a release.bat that cannot run checks, adds the cabinet-kit:test step to existing checks."
     }
   ]
 }

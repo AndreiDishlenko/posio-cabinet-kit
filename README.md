@@ -123,6 +123,34 @@ patches `vite.config`, `tailwind.config` and `app/Models/User.php` with
 launchers) in the project root, runs migrations, seeds base roles, and
 finishes with `cabinet-kit:doctor`.
 
+It also drops the project scripts that are missing — each a starting point
+that belongs to the project from then on:
+
+| file | what it does |
+|---|---|
+| `deploy` | production deploy over ssh: `git pull --ff-only`, migrate, re-cache, `queue:restart`, `sitemap:generate`, `npm run buildssr` (or `build`), site check; `./deploy --rollback` returns the previous code |
+| `cc`, `cc.bat` | reset and rebuild the Laravel caches |
+| `release.bat` | one-step patch release (`./release`): runs `scripts/pre-push-checks.sh`, commits, tags, pushes |
+| `scripts/pre-push-checks.sh` | the checks before a release: `php artisan cabinet-kit:test`, `php artisan test`, the build |
+
+### Tests in the host project
+
+`php artisan cabinet-kit:test` runs the package's sign-in and registration
+tests against this project — its migrations, user model and config — on an
+in-memory SQLite database, so the working database is never touched. Every
+`./release` runs them before committing; `cabinet-kit:sync-config` adds the
+step to an existing `scripts/pre-push-checks.sh` and keeps it there.
+
+```bash
+php artisan cabinet-kit:test                         # all tests
+php artisan cabinet-kit:test --filter=Registration   # a subset
+php artisan cabinet-kit:test --db-connection=mysql --db-database=myapp_test
+```
+
+A database other than in-memory SQLite must have `test` in its name — it is
+wiped and migrated from scratch. The command refuses to run with cached config
+(`php artisan config:clear`), and needs PHPUnit from the dev dependencies.
+
 If the database already contains users, the command asks whether to delete
 them (with their accounts, memberships and role assignments) before seeding.
 The default answer is **no** — say yes only on a database you are willing to

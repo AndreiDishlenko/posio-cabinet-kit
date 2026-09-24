@@ -49,7 +49,7 @@ class LoginController extends Controller
         $request->session()->regenerate();
 
         // Адрес, с которого отправили на вход (ссылка одобрения из письма), важнее стартовой страницы.
-        return redirect()->intended(CabinetRedirects::url('after_login'));
+        return redirect(CabinetRedirects::intended('after_login'));
     }
 
     public function logout(Request $request)

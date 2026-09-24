@@ -3,3 +3,8 @@
 # is unrunnable, a batch file with LF is unreliable.
 stubs/updcab.stub text eol=lf
 stubs/updcab.bat.stub text eol=crlf
+stubs/deploy.stub text eol=lf
+stubs/cc.stub text eol=lf
+stubs/pre-push-checks.sh.stub text eol=lf
+stubs/cc.bat.stub text eol=crlf
+stubs/release.bat.stub text eol=crlf

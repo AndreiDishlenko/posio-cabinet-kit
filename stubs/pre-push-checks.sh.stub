@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Быстрый набор проверок перед релизом: release.bat запускает его до коммита,
+# чтобы сломанное состояние не получило версию и не ушло в удалённый репозиторий.
+#
+# Базовая версия от CabinetKit: дальше файл принадлежит проекту. Шаг с тестами
+# пакета убирать не нужно — обновление пакета вернёт его обратно.
+
+set -u
+
+root="$(git rev-parse --show-toplevel)"
+cd "$root" || exit 1
+
+step() {
+	echo ""
+	echo "[checks] $1"
+}
+
+fail() {
+	echo ""
+	echo "[checks] ПРОВАЛЕНО: $1"
+	exit 1
+}
+
+step "Вход и регистрация CabinetKit"
+php artisan cabinet-kit:test || fail "тесты CabinetKit"
+
+step "PHP-тесты проекта"
+php artisan test || fail "PHP-тесты"
+
+# Сайт на проде может рендериться на сервере: серверный бандл ловит обращения к
+# браузерным объектам при импорте, которые клиентская сборка пропускает.
+if grep -q '"buildssrlocal"[[:space:]]*:' package.json 2>/dev/null; then
+	step "Сборка клиентского и серверного бандлов"
+	npm run buildssrlocal --silent || fail "сборка"
+else
+	step "Сборка фронта"
+	npm run build --silent || fail "сборка"
+fi
+
+echo ""
+echo "[checks] Все проверки пройдены."
+exit 0

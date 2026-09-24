@@ -1,0 +1,230 @@
+#!/bin/bash
+#
+# Деплой на прод: обновление кода из git, миграции, пересборка кэшей, sitemap и
+# фронта, мягкий перезапуск очереди, проверка живости сайта.
+# Запуск: ./deploy             — обновить до свежего main
+#         ./deploy --rollback  — вернуть код предыдущего деплоя (миграции не откатываются)
+#
+# Базовая версия от CabinetKit: пакет кладёт её один раз и больше не трогает —
+# дальше скрипт принадлежит проекту и правится под его сервер.
+# Обновление пакета кабинета сюда не входит — для него ./updcab (--ssr).
+#
+# Фронт собирается npm-скриптом проекта: buildssr, если он есть (сам перезапускает
+# SSR-процесс — его имя и супервизор знает только проект), иначе build.
+#
+# Переопределяемое окружение:
+#   PHP_BIN=/path/to/php8.3 ./deploy   — интерпретатор, если автоподбор не подходит
+#   NVM_DIR=/path/to/.nvm ./deploy     — nvm, если node ставился не в домашний каталог
+#
+# Весь код — внутри функций: bash читает скрипт по ходу выполнения, и git pull,
+# меняющий этот же файл, иначе подсунул бы ему середину новой версии.
+
+STATE_DIR="storage/app/deploy"
+NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+
+main() {
+	cd "$(dirname "$0")" || return 1
+
+	local mode="deploy"
+	case "$1" in
+		"")         ;;
+		--rollback) mode="rollback" ;;
+		*)          echo "Неизвестный параметр: $1. Запуск: ./deploy [--rollback]"; return 2 ;;
+	esac
+
+	mkdir -p "$STATE_DIR" || return 1
+	acquire_deploy_lock || return 1
+
+	resolve_php || return 1
+
+	stash_server_changes || return 1
+
+	local from_head to_head
+	from_head="$(git rev-parse HEAD)" || return 1
+
+	if [ "$mode" = "rollback" ]; then
+		rollback_code "$from_head" || return 1
+	else
+		git pull --ff-only || { echo "git pull не удался — деплой остановлен."; return 1; }
+	fi
+
+	to_head="$(git rev-parse HEAD)"
+	echo "Код: ${from_head:0:8} -> ${to_head:0:8}"
+
+	# Точка отката — код, который работал до этого запуска; пустой деплой её не сдвигает.
+	[ "$from_head" != "$to_head" ] && echo "$from_head" > "$STATE_DIR/previous-head"
+
+	warn_changed_dependencies "$from_head" "$to_head"
+
+	if [ "$mode" = "deploy" ]; then
+		"$PHP" artisan migrate --force || { echo "Миграции упали — кэши и фронт не пересобраны."; return 1; }
+	fi
+
+	local failed=0
+	rebuild_laravel_caches || failed=1
+
+	# Сигнал воркерам только после сброса кэша: сброс стирает и сам сигнал.
+	# Воркер доделывает текущее задание и выходит, супервизор поднимает его на новом коде.
+	"$PHP" artisan queue:restart
+
+	# Карта сайта — артефакт сборки: строится из SEO-записей, которые могли смениться с кодом.
+	"$PHP" artisan sitemap:generate || { echo "sitemap не пересобран."; failed=1; }
+
+	build_frontend || failed=1
+
+	# Проверка идёт и после неудачной сборки: она показывает, отдаётся ли сайт вообще.
+	check_site || failed=1
+
+	if [ "$failed" -ne 0 ]; then
+		echo ""
+		echo "!!! ДЕПЛОЙ ЗАВЕРШИЛСЯ С ОШИБКАМИ. Вернуть прежний код: ./deploy --rollback"
+		return 1
+	fi
+
+	echo ""
+	echo "Деплой завершён: ${to_head:0:8}"
+}
+
+# Два деплоя одновременно перемешивают git pull, миграции и сборку.
+acquire_deploy_lock() {
+	local lock="$STATE_DIR/deploy.lock"
+
+	if command -v flock >/dev/null 2>&1; then
+		exec 9>"$lock"
+		flock -n 9 && return 0
+	elif mkdir "$lock.d" 2>/dev/null; then
+		trap 'rmdir "'"$lock.d"'"' EXIT
+		return 0
+	fi
+
+	echo "Деплой уже выполняется в другом сеансе — дождитесь его окончания."
+	return 1
+}
+
+# CLI-php хостинга по умолчанию бывает старее того, на котором работает сайт,
+# а приложению нужен >= 8.2. На CloudLinux/cPanel интерпретаторы лежат отдельно —
+# берём самый свежий 8.2+ оттуда, если php из PATH не подходит.
+resolve_php() {
+	PHP="${PHP_BIN:-php}"
+	php_is_supported "$PHP" && return 0
+
+	if [ -n "$PHP_BIN" ]; then
+		echo "PHP_BIN ($PHP_BIN) — не PHP 8.2+."
+		return 1
+	fi
+
+	PHP="$(ls -d /opt/alt/php8[2-9]/usr/bin/php /opt/cpanel/ea-php8[2-9]/root/usr/bin/php 2>/dev/null | sort -V | tail -n1)"
+	if [ -n "$PHP" ] && php_is_supported "$PHP"; then
+		echo "php из PATH не подходит, используется $PHP."
+		return 0
+	fi
+
+	echo "Не найден PHP 8.2+. Указать явно: PHP_BIN=/path/to/php ./deploy"
+	return 1
+}
+
+php_is_supported() {
+	[ "$("$1" -r 'echo PHP_VERSION_ID >= 80200 ? 1 : 0;' 2>/dev/null)" = "1" ]
+}
+
+# Правки, сделанные прямо на сервере, откладываются, а не теряются:
+# вернуть — git stash list / git stash pop.
+stash_server_changes() {
+	[ -z "$(git status --porcelain --untracked-files=no)" ] && return 0
+
+	git stash push -m "deploy $(date '+%Y-%m-%d %H:%M:%S')" || return 1
+	echo "Локальные правки сервера отложены в git stash."
+}
+
+rollback_code() {
+	local from_head="$1" prev_head
+
+	prev_head="$(cat "$STATE_DIR/previous-head" 2>/dev/null)"
+	if [ -z "$prev_head" ]; then
+		echo "Нет сохранённой точки отката — откатывать не на что."
+		return 1
+	fi
+
+	# Схема БД остаётся новой: старый код должен уметь с ней работать.
+	local added_migrations
+	added_migrations="$(git diff --name-only --diff-filter=A "$prev_head" "$from_head" -- database/migrations)"
+	if [ -n "$added_migrations" ]; then
+		echo "ВНИМАНИЕ: эти миграции остаются применёнными:"
+		echo "$added_migrations"
+	fi
+
+	git reset --hard "$prev_head"
+}
+
+# Зависимости скрипт не ставит — только предупреждает, что их пора обновить.
+warn_changed_dependencies() {
+	if ! git diff --quiet "$1" "$2" -- composer.lock; then
+		echo "ВНИМАНИЕ: изменился composer.lock — нужен composer install --no-dev (или ./updcab)."
+	fi
+	if ! git diff --quiet "$1" "$2" -- package-lock.json; then
+		echo "ВНИМАНИЕ: изменился package-lock.json — нужен npm ci."
+	fi
+}
+
+# Прод отдаётся из кэшированных конфига, маршрутов и шаблонов: после сброса
+# их нужно собрать заново, иначе сайт молча работает без кэша.
+rebuild_laravel_caches() {
+	"$PHP" artisan optimize:clear || return 1
+	"$PHP" artisan optimize || return 1
+	"$PHP" artisan permission:cache-reset
+}
+
+uses_ssr() {
+	grep -q '"buildssr"[[:space:]]*:' package.json 2>/dev/null
+}
+
+build_frontend() {
+	export NVM_DIR
+	[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+	local script="build"
+	uses_ssr && script="buildssr"
+
+	if ! npm run "$script"; then
+		echo "Сборка фронта упала (npm run $script)."
+		return 1
+	fi
+}
+
+# Главная по адресу приложения должна отвечать 200; при SSR — ещё и нести серверную
+# разметку: пустая корневая точка монтирования значит, что SSR не отработал.
+check_site() {
+	local app_url body status
+	app_url="$(sed -n 's/^[[:space:]]*APP_URL[[:space:]]*=[[:space:]]*//p' .env | head -n1 | tr -d "\"' \r")"
+	app_url="${app_url%/}"
+
+	if [ -z "$app_url" ] || ! command -v curl >/dev/null 2>&1; then
+		echo "Проверка сайта пропущена: нет APP_URL в .env или curl."
+		return 0
+	fi
+
+	# SSR-процесс только что перезапущен и открывает порт не мгновенно — даём ему время.
+	local attempt
+	for attempt in 1 2 3 4 5 6 7 8 9 10; do
+		body="$(curl -sS -L --max-time 20 -w '\n%{http_code}' "$app_url/")"
+		status="${body##*$'\n'}"
+
+		if [ "$status" != "200" ]; then
+			echo "!!! $app_url/ ответил $status."
+			return 1
+		fi
+
+		if ! uses_ssr || ! echo "$body" | grep -q '<div id="app" data-page="[^"]*"></div>'; then
+			echo "Сайт отвечает: $app_url/"
+			return 0
+		fi
+
+		sleep 2
+	done
+
+	echo "!!! $app_url/ отдаётся без серверной разметки — проверьте SSR-процесс: pm2 list, pm2 logs."
+	return 1
+}
+
+main "$@"
+exit $?
