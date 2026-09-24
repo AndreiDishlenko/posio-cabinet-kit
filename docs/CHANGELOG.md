@@ -3,6 +3,12 @@
 ## Unreleased — Page tools in the header, rounded search field
 
 **Added**
+- Localized public routes: `LocaleService` and the `cabinet-kit.set-locale`
+  middleware (ported from posio.cabinet). Routes named `<name>.<locale>`, the
+  language from the address, `general.unprefixed_locale` for a language served
+  without a prefix, `general.x_default_locale` for `x-default` in SEO and the
+  sitemap. `siteI18n.js` option `sourceLocale` for sites whose keys are written
+  in their own language. See `docs/host/i18n.md`.
 - Cabinet i18n on the host's public site: `@cabinet-kit/siteI18n.js` (Vue
   plugin: the cabinet vue-i18n instance merged with the site's own messages,
   SSR-safe) and middleware aliases `cabinet-kit.locale` / `cabinet-kit.i18n`
@@ -82,6 +88,12 @@
   in posio.cabinet (was `after_verify`).
 
 **Fixed**
+- Missing translations on a non-default language were filled from the default
+  language: an English page of a Ukrainian-first site showed Ukrainian texts of
+  the package. PHP translations now fall back to `general.site_fallback_locale`.
+- SEO: a record for the exact language wins over the record for all languages.
+- `_LangSelector` keeps route parameters when it moves to the same page in
+  another language (a product page no longer drops its slug).
 - Email confirmation link no longer answers 403 when opened while another user
   is signed in: the link is identified by its signature, not by the session
   (route moved out of the `auth` group), and that case renders

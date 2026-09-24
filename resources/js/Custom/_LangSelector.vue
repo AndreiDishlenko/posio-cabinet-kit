@@ -154,7 +154,8 @@
 					if (!m) return;
 
 					const baseName = m[1];
-					const newUrl = this.$locRoute(baseName, newLocale);
+					// Параметры текущего адреса (слаг товара) переносятся на тот же адрес другого языка.
+					const newUrl = this.$locRoute(baseName, newLocale, this.route().params);
 					if (newUrl) router.visit(newUrl);
 				} catch { /* noop */ }
 			},

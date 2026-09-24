@@ -88,7 +88,7 @@ class GenerateSitemap extends Command
 
 	public function addForAllLocales($sitemap, $seo_item) {
 		$locales = config('general.locales') ?? [];
-		$default_locale = in_array('en', $locales) ? 'en' : ($locales[0] ?? null);
+		$default_locale = $this->xDefaultLocale($locales);
 		$x_default_url = loc_route($seo_item['route_name'], $default_locale);
 
 		$freqObject = $this->getFrequencyObject( $seo_item['changeFrequency'] );
@@ -143,7 +143,7 @@ class GenerateSitemap extends Command
 			}
 
 			// x-default → English version if present in cluster, otherwise first available locale
-			$default_locale = in_array('en', $cluster_locales) ? 'en' : $cluster_locales[0];
+			$default_locale = $this->xDefaultLocale($cluster_locales);
 			if ( $default_locale === $locale ) {
 				$x_default_url = $url_with_locale;
 			} else {
@@ -156,6 +156,16 @@ class GenerateSitemap extends Command
 		$sitemap->add($sitemap_item);
 
 		return $sitemap;
+	}
+
+	// Язык x-default: названный сайтом, иначе английский, иначе первый из имеющихся.
+	protected function xDefaultLocale(array $locales): ?string {
+		$configured = (string) config('general.x_default_locale');
+
+		if ( $configured !== '' && in_array($configured, $locales) )
+			return $configured;
+
+		return in_array('en', $locales) ? 'en' : ($locales[0] ?? null);
 	}
 
 	// Незарегистрированный маршрут не должен ронять генерацию всей карты сайта.

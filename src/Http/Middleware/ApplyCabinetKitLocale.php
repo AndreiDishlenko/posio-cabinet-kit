@@ -4,6 +4,7 @@ namespace Posio\CabinetKit\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Posio\CabinetKit\Services\LocaleService;
 use Symfony\Component\HttpFoundation\Response;
 
 // Язык выбирается на всех маршрутах кабинета, включая гостевые: письма регистрации
@@ -20,6 +21,12 @@ class ApplyCabinetKitLocale
             ->keys()
             ->map(fn ($code) => (string) $code)
             ->all();
+
+        // Первый визит без выбора: язык браузера, как на сайте, — иначе вход и
+        // регистрация открылись бы на языке приложения по умолчанию.
+        if (! $locale || ! in_array($locale, $locales, true)) {
+            $locale = LocaleService::browserLocale((string) $request->server('HTTP_ACCEPT_LANGUAGE'));
+        }
 
         if ($locale && in_array($locale, $locales, true)) {
             app()->setLocale($locale);

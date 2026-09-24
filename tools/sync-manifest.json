@@ -1034,6 +1034,20 @@
       "mode": "package_only",
       "target": "src/Support/HostScripts.php",
       "notes": "Creates deploy/cc/cc.bat/release.bat/scripts/pre-push-checks.sh when missing, upgrades a release.bat that cannot run checks, adds the cabinet-kit:test step to existing checks."
+    },
+    {
+      "id": "php-locale-service",
+      "mode": "manual",
+      "source": "app/Services/LocaleService.php",
+      "target": "src/Services/LocaleService.php",
+      "notes": "Namespace; profile locale read through getSetting('locale'); general.unprefixed_locale added: an address without a prefix means that language; PHP fallback is general.site_fallback_locale."
+    },
+    {
+      "id": "php-set-locale-middleware",
+      "mode": "manual",
+      "source": "app/Http/Middleware/SetLocale.php",
+      "target": "src/Http/Middleware/SetLocale.php",
+      "notes": "Namespace; registered as the cabinet-kit.set-locale alias."
     }
   ]
 }

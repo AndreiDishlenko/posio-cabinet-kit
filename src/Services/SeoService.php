@@ -112,13 +112,15 @@ class SeoService {
 	public function alternatePageData() {
 		$base_route_name = $this->baseRouteName();
 
-		$result = [
-    		'x-default' => $this->onSiteHost(str_replace('/' . app()->getLocale(), '', url()->current())),
-		];
-
 		// Передаём параметры текущего маршрута (например token у password.reset),
 		// иначе loc_route бросает UrlGenerationException на параметризованных роутах.
 		$route_params = Route::current() ? Route::current()->parameters() : [];
+
+		$result = [
+			'x-default' => $this->isLocalizedPublicRoute()
+				? $this->languageSelectorUrl($base_route_name, $route_params)
+				: $this->onSiteHost(str_replace('/' . app()->getLocale(), '', url()->current())),
+		];
 
 		if ( !empty($base_route_name) )
 			collect( config('general.locales') )->each(function($locale) use (&$result, $base_route_name, $route_params) {
@@ -126,6 +128,26 @@ class SeoService {
 			});
 
 		return $result;
+	}
+
+	// Версия страницы по умолчанию (x-default) — адрес без языкового префикса с английским
+	// слагом: он сам уводит посетителя на его язык. Языковой слаг без префикса для этого не
+	// годится — он всегда ведёт на один язык.
+	// Сайт, назвавший язык x-default сам, объявляет ею версию страницы на этом языке.
+	public function languageSelectorUrl(string $base_route_name, array $route_params = []): string {
+		$x_default_locale = (string) config('general.x_default_locale');
+
+		if ( $x_default_locale !== '' )
+			return $this->onSiteHost(loc_route($base_route_name, $x_default_locale, $route_params));
+
+		$en_path = (string) parse_url(loc_route($base_route_name, 'en', $route_params), PHP_URL_PATH);
+
+		return $this->onSiteHost(url(preg_replace('#^/en(?=/|$)#', '', $en_path)));
+	}
+
+	public function isLocalizedPublicRoute(?string $route_name = null): bool {
+		$route_name = $route_name ?? Route::currentRouteName() ?? '';
+		return (bool) preg_match('/\.(' . $this->localePattern() . ')$/', $route_name);
 	}
 
 	public function getAllSeoData() : Collection {
@@ -142,10 +164,10 @@ class SeoService {
 
         $locale = !empty($locale) ? $locale : app()->getLocale();
 
-        $route_seo_data = $all_seo_data->first(function ($item) use ($route_name, $locale) {
-            return $item['route_name'] === $route_name &&
-                  ($item['locale'] === $locale || $item['locale'] === '');
-        });
+        // Запись на языке страницы важнее записи «для всех языков» (пустая строка или
+        // NULL): иначе порядок записей в таблице решал бы, на каком языке мета.
+        $route_seo_data = $all_seo_data->first(fn ($item) => $item['route_name'] === $route_name && $item['locale'] === $locale)
+            ?? $all_seo_data->first(fn ($item) => $item['route_name'] === $route_name && ($item['locale'] === '' || $item['locale'] === null));
 
         return $route_seo_data;
 	}

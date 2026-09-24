@@ -25,6 +25,7 @@ use Posio\CabinetKit\Services\SeoService;
 use Posio\CabinetKit\Services\SiteSettingsService;
 use Posio\CabinetKit\Http\Middleware\ApplyCabinetKitLocale;
 use Posio\CabinetKit\Http\Middleware\RequireSystemPasswordChange;
+use Posio\CabinetKit\Http\Middleware\SetLocale;
 use Posio\CabinetKit\Http\Middleware\ShareCabinetKitI18n;
 use Posio\CabinetKit\Notifications\AuthMail;
 use Posio\CabinetKit\Support\CabinetKitModules;
@@ -97,6 +98,8 @@ class CabinetKitServiceProvider extends ServiceProvider
         // Язык публичных страниц хоста — тот же, что у кабинета.
         $this->app['router']->aliasMiddleware('cabinet-kit.locale', ApplyCabinetKitLocale::class);
         $this->app['router']->aliasMiddleware('cabinet-kit.i18n', ShareCabinetKitI18n::class);
+        // Язык публичной страницы по её адресу (языковой префикс).
+        $this->app['router']->aliasMiddleware('cabinet-kit.set-locale', SetLocale::class);
 
         $this->publishes([
             __DIR__.'/../config/cabinet-kit.php' => config_path('cabinet-kit.php'),
