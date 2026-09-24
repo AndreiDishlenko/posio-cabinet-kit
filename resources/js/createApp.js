@@ -6,7 +6,7 @@ import { route as ziggyRoute } from 'ziggy-js';
 
 import CabinetApiClient from '../_admin/js/services/CabinetApiClient.js';
 import { i18n } from './i18n.config.js';
-import { applyLocale, browserLocale, storedLocale } from './localeSync.js';
+import { hydrateI18n, localizedRoute } from './i18nHydration.js';
 import { $inprogress, $modal_inprogress, $pauseApplication } from './pauseApplication.js';
 import Helpers from './posio/helpers.js';
 import { DictionariesClass } from './posio/system/DictionariesClass.js';
@@ -183,52 +183,6 @@ function resolveRouteName(name, config) {
         return ziggyRoute(undefined, undefined, undefined, config).has(name) ? name : alias;
     } catch {
         return alias;
-    }
-}
-
-function hydrateI18n(payload = {}) {
-    const locales = normalizeLocales(payload.locales);
-    const localeCodes = Object.keys(locales);
-    const fallbackLocale = payload.fallbackLocale || 'en';
-    const locale = payload.locale || storedLocale() || browserLocale();
-
-    if (localeCodes.length) {
-        i18n.global.locales = locales;
-        i18n.global.supported_locales = localeCodes;
-        i18n.global.default_locale = localeCodes.includes(fallbackLocale) ? fallbackLocale : localeCodes[0];
-    }
-
-    i18n.global.fallbackLocale = fallbackLocale;
-    // Хост отдаёт переводы через lang/{locale}.json — они дополняют собранные
-    // в бандл переводы кабинета, а не заменяют их полностью.
-    i18n.global.setLocaleMessage(locale, {
-        ...i18n.global.getLocaleMessage(locale),
-        ...(payload.messages ?? {}),
-    });
-    applyLocale(locale);
-}
-
-function normalizeLocales(locales = []) {
-    if (Array.isArray(locales)) {
-        return locales.reduce((result, locale) => {
-            if (locale?.code) result[locale.code] = locale;
-            return result;
-        }, {});
-    }
-
-    return Object.entries(locales).reduce((result, [code, locale]) => {
-        result[code] = typeof locale === 'object' ? { code, ...locale } : { code, name: locale };
-        return result;
-    }, {});
-}
-
-function localizedRoute(name, locale, params = {}, absolute = undefined) {
-    const localizedName = `${name}.${locale}`;
-
-    try {
-        return route(localizedName, params, absolute);
-    } catch {
-        return null;
     }
 }
 

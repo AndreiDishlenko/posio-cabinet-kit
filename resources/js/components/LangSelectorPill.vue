@@ -1,8 +1,6 @@
 <template>
 
-    <div class="w-min flex justify-center button pill-button">
-        <LangSelector mode="inline"/>
-    </div>
+    <LangSelector mode="inline" variant="pill"/>
 
 </template>
 

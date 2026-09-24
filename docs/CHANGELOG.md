@@ -3,6 +3,17 @@
 ## Unreleased — Page tools in the header, rounded search field
 
 **Added**
+- Cabinet i18n on the host's public site: `@cabinet-kit/siteI18n.js` (Vue
+  plugin: the cabinet vue-i18n instance merged with the site's own messages,
+  SSR-safe) and middleware aliases `cabinet-kit.locale` / `cabinet-kit.i18n`
+  for public routes. The site and the cabinet share one language choice. See
+  `docs/host/i18n.md`.
+- `Elements/LangSwitch.vue`: presentational language switch styled through
+  `--lang-switch-*` variables. The cabinet selector's inline mode renders it,
+  and a host passes a class to `_LangSelector mode="inline"` to restyle it.
+  `variant="pill"` renders the cabinet header pill (fixed size, shape and hover
+  animation; colors through variables); `LangSelectorPill` uses it instead of
+  the `button pill-button` wrapper.
 - Auth and registration tests that run inside the host project:
   `php artisan cabinet-kit:test` (sign-in, sign-out, password reset,
   registration modes, email confirmation links, registration approval). They

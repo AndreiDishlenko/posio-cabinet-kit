@@ -477,6 +477,27 @@
       "notes": "SEO record card. The AI button posts to seodata.generatemeta, which answers 'not configured' until cabinet-kit.seo.meta_generator is set."
     },
     {
+      "id": "vue-lang-switch",
+      "mode": "copy",
+      "source": "resources/js/Elements/LangSwitch.vue",
+      "target": "resources/js/Elements/LangSwitch.vue",
+      "notes": "Presentational locale switch styled through --lang-switch-* variables; used by the cabinet selector and by host sites."
+    },
+    {
+      "id": "vue-lang-selector",
+      "mode": "copy",
+      "source": "resources/js/Custom/_LangSelector.vue",
+      "target": "resources/js/Custom/_LangSelector.vue",
+      "notes": "Cabinet locale selector wired to i18n; inline mode renders the shared locale switch."
+    },
+    {
+      "id": "vue-lang-selector-pill",
+      "mode": "copy",
+      "source": "resources/_admin/js/components/LangSelectorPill.vue",
+      "target": "resources/_admin/js/components/LangSelectorPill.vue",
+      "notes": "Cabinet header locale selector: the shared switch in its pill variant."
+    },
+    {
       "id": "vue-seo-meta",
       "mode": "copy",
       "source": "resources/js/сomponents/SeoMeta.vue",
@@ -890,6 +911,24 @@
       "mode": "package_only",
       "target": "src/CabinetKit.php",
       "notes": "Module API registry (routes under the cabinet stack, system permissions, dictionaries, translations, sitemap providers, menu, doctor/sync-config hooks). No upstream counterpart: posio.cabinet has no modules."
+    },
+    {
+      "id": "package-i18n-share-middleware",
+      "mode": "package_only",
+      "target": "src/Http/Middleware/ShareCabinetKitI18n.php",
+      "notes": "Shares the visitor language, offered languages and JSON translations; used by the cabinet stack and by host public routes."
+    },
+    {
+      "id": "package-i18n-hydration",
+      "mode": "package_only",
+      "target": "resources/js/i18nHydration.js",
+      "notes": "Applies the server i18n payload to the shared vue-i18n instance; used by createApp.js and siteI18n.js."
+    },
+    {
+      "id": "package-site-i18n",
+      "mode": "package_only",
+      "target": "resources/js/siteI18n.js",
+      "notes": "Vue plugin that gives a host's public site the cabinet i18n instance, merged with the site's own messages."
     },
     {
       "id": "package-module-facade",

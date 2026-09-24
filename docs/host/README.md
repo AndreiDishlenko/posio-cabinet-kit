@@ -16,6 +16,7 @@ Vite — nothing is copied into the project.
 |---|---|
 | Site name, favicon, logos, default light/dark theme | [site-settings.md](site-settings.md) |
 | Page titles, descriptions, Open Graph, JSON-LD, sitemap, `robots` | [seo.md](seo.md) |
+| Language of the public site, the language switch and its styling | [i18n.md](i18n.md) |
 | Adding a page/menu item to the cabinet, roles, overriding a cabinet page | `vendor/posio/cabinet-kit/docs/EXTENDING.md` |
 | How the package is wired into the host at all | `vendor/posio/cabinet-kit/docs/ARCHITECTURE.md` |
 | What changed in the package between versions | `vendor/posio/cabinet-kit/docs/CHANGELOG.md` |

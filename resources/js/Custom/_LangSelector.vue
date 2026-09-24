@@ -44,16 +44,13 @@
 	</Dropdown>
 
 	<!-- Inline mode: locale codes in a row, no dropdown -->
-	<div v-else class="inline-selector">
-		<span
-			v-for="item in locales"
-			:key="item.code"
-			class="inline-lang-item"
-			:class="{ 'is-active': locale === item.code }"
-			@click="changeLocale(item.code)">
-			{{ shortNames[item.code] || item.code.toUpperCase() }}
-		</span>
-	</div>
+	<LangSwitch v-else
+		:locales="switchLocales"
+		:current="locale"
+		:variant="variant"
+		:label="$t('Language selection')"
+		@change="changeLocale"
+		/>
 
 </template>
 
@@ -64,11 +61,12 @@
 
 	import Dropdown from "@/js/Elements/Dropdown.vue";
 	import DropdownItem from "@/js/Elements/DropdownItem.vue";
+	import LangSwitch from "@/js/Elements/LangSwitch.vue";
 
 	import { applyLocale, browserLocale, isSupportedLocale, rememberLocale, storedLocale } from "@/js/localeSync.js";
 
 	export default {
-		components: {Icon, Dropdown, DropdownItem},
+		components: {Icon, Dropdown, DropdownItem, LangSwitch},
 		props: {
 			iconclass: {
 				type: String,
@@ -78,6 +76,11 @@
 				type: String,
 				default: 'compact',
 				validator: (value) => ['compact', 'text', 'inline'].includes(value),
+			},
+			// Вид строки кодов в режиме inline: plain | pill.
+			variant: {
+				type: String,
+				default: 'plain',
 			},
 		},
 		data: function() {
@@ -91,6 +94,14 @@
 					ru: 'RU',
 				},
 			}
+		},
+		computed: {
+			switchLocales() {
+				return Object.values(this.locales).map(item => ({
+					code: item.code,
+					label: this.shortNames[item.code] || item.code.toUpperCase(),
+				}));
+			},
 		},
 		async mounted() {
 			this.init();
@@ -197,31 +208,5 @@
 	.menu-item-text {
 		color: var(--text-secondary);
 		letter-spacing: 0.03em;
-	}
-
-	.inline-selector {
-		@apply flex items-center;
-		@include flex-gap(0.125rem);
-	}
-
-	.inline-lang-item {
-		@apply
-			cursor-pointer
-			text-sm
-			font-medium
-			px-1.5
-			py-0.5
-			rounded
-			opacity-50
-			transition-opacity
-			duration-150;
-
-		&.is-active {
-			@apply opacity-100;
-		}
-
-		&:not(.is-active):hover {
-			@apply opacity-75;
-		}
 	}
 </style>

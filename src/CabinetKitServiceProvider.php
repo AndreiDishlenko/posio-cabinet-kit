@@ -23,7 +23,9 @@ use Posio\CabinetKit\Console\Commands\SyncConfigCommand;
 use Posio\CabinetKit\Console\Commands\TestCommand;
 use Posio\CabinetKit\Services\SeoService;
 use Posio\CabinetKit\Services\SiteSettingsService;
+use Posio\CabinetKit\Http\Middleware\ApplyCabinetKitLocale;
 use Posio\CabinetKit\Http\Middleware\RequireSystemPasswordChange;
+use Posio\CabinetKit\Http\Middleware\ShareCabinetKitI18n;
 use Posio\CabinetKit\Notifications\AuthMail;
 use Posio\CabinetKit\Support\CabinetKitModules;
 use Posio\CabinetKit\Support\CabinetKitRoles;
@@ -92,6 +94,9 @@ class CabinetKitServiceProvider extends ServiceProvider
         // Aliased so a host can hold its own route groups behind the same gate —
         // the package can only speak for its own routes.
         $this->app['router']->aliasMiddleware('cabinet-kit.system-password', RequireSystemPasswordChange::class);
+        // Язык публичных страниц хоста — тот же, что у кабинета.
+        $this->app['router']->aliasMiddleware('cabinet-kit.locale', ApplyCabinetKitLocale::class);
+        $this->app['router']->aliasMiddleware('cabinet-kit.i18n', ShareCabinetKitI18n::class);
 
         $this->publishes([
             __DIR__.'/../config/cabinet-kit.php' => config_path('cabinet-kit.php'),
