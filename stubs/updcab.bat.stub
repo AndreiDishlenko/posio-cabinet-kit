@@ -3,36 +3,104 @@ rem Full CabinetKit update procedure (README "Update"), in the order the steps
 rem depend on each other. Stops at the first failing step so a broken update is
 rem not hidden by the steps after it.
 rem
-rem     updcab.bat --ssr   the site renders on the server: npm run buildssr
+rem     updcab.bat --ssr    the site renders on the server: npm run buildssr
+rem     updcab.bat --full   also update the packages' composer dependencies
+rem                         and reinstall node dependencies (npm install)
 setlocal EnableDelayedExpansion
 cd /d "%~dp0"
 
+set "BUILD_SCRIPT=build"
+set "INSTALL_DEPS=0"
+
+:parse_args
+if "%~1"=="" goto :args_done
 rem A plain build leaves the server-rendering process on the old bundle; the
 rem host's own script rebuilds both bundles and restarts that process.
-set "BUILD_SCRIPT=build"
-if /i "%~1"=="--ssr" set "BUILD_SCRIPT=buildssr"
-if not "%~1"=="" if /i not "%~1"=="--ssr" (
-	echo unknown option: %~1
-	exit /b 1
+if /i "%~1"=="--ssr" (
+	set "BUILD_SCRIPT=buildssr"
+	shift
+	goto :parse_args
 )
+rem Dependencies rarely change with a package update, and updating them is
+rem the slowest part of the run - so only on request.
+set "IS_FULL=0"
+if /i "%~1"=="--full" set "IS_FULL=1"
+if /i "%~1"=="-full" set "IS_FULL=1"
+if "%IS_FULL%"=="1" (
+	set "INSTALL_DEPS=1"
+	shift
+	goto :parse_args
+)
+echo unknown option: %~1
+exit /b 1
+:args_done
+
+rem Without installed dependencies the build cannot run at all.
+set "NPM_INSTALL=%INSTALL_DEPS%"
+if not exist node_modules\ set "NPM_INSTALL=1"
+
+set "COMPOSER_FLAGS="
+set "COMPOSER_NOTE= (dependencies kept, --full to update them)"
+if "%INSTALL_DEPS%"=="1" set "COMPOSER_FLAGS= --with-all-dependencies"
+if "%INSTALL_DEPS%"=="1" set "COMPOSER_NOTE="
 
 rem A package linked into vendor (junction or symlink) is a developer's working
 rem copy of its repository: composer would swap the link for a downloaded copy,
 rem and edits to the package would silently stop reaching this site.
 set "LINKED="
+set "LINKED_NAMES="
 set "UPDATE_TARGETS="
 for /d %%D in (vendor\posio\*) do (
 	dir /AL /B vendor\posio 2>nul | findstr /X /I /C:"%%~nxD" >nul
-	if errorlevel 1 (set "UPDATE_TARGETS=!UPDATE_TARGETS! posio/%%~nxD") else (set "LINKED=!LINKED! posio/%%~nxD")
+	if errorlevel 1 (
+		set "UPDATE_TARGETS=!UPDATE_TARGETS! posio/%%~nxD"
+	) else (
+		set "LINKED=!LINKED! posio/%%~nxD"
+		set "LINKED_NAMES=!LINKED_NAMES! %%~nxD"
+		for /f "tokens=2 delims=[]" %%T in ('dir /AL vendor\posio 2^>nul ^| findstr /L /I /C:" %%~nxD ["') do set "LINK_TARGET_%%~nxD=%%T"
+	)
 )
+
+rem A module required since the last run has no folder in vendor yet.
+set "MISSING="
+for /f "delims=" %%P in ('php -r "foreach (array_keys(json_decode(file_get_contents('composer.json'), true)['require'] ?? []) as $p) if (strncmp($p, 'posio/', 6) === 0 && is_dir('vendor/' . $p) === false) echo ' ', $p;"') do set "MISSING=%%P"
+
+if defined MISSING goto :with_missing
 if defined LINKED echo Not updated, linked to a working copy:%LINKED%
 rem Nothing linked: the wildcard also installs a module required since the last run.
 if not defined LINKED set "UPDATE_TARGETS= posio/*"
 if not defined UPDATE_TARGETS goto :composer_skipped
+goto :run_composer
 
-echo == 1/6 composer update%UPDATE_TARGETS%
-call composer update%UPDATE_TARGETS%
+rem The new module is released against the current kit, and composer moves only
+rem what it may update - so every posio package goes, the linked ones too. Their
+rem links are lifted for the run, so composer never works inside a working copy,
+rem and put back right after it, whatever composer ends with.
+:with_missing
+echo Not installed yet, required in composer.json:%MISSING%
+set "UPDATE_TARGETS= posio/*"
+if not defined LINKED goto :run_composer
+for %%N in (%LINKED_NAMES%) do if not defined LINK_TARGET_%%N (
+	echo Could not read where vendor\posio\%%N links to.
+	goto :failed
+)
+echo Linked to a working copy, relinked after the update:%LINKED%
+set "DETACHED=1"
+for %%N in (%LINKED_NAMES%) do rmdir "vendor\posio\%%N" 2>nul
+for %%N in (%LINKED_NAMES%) do if exist "vendor\posio\%%N\" (
+	echo Could not lift the link vendor\posio\%%N.
+	call :restore_links
+	goto :failed
+)
+
+:run_composer
+echo == 1/6 composer update%UPDATE_TARGETS%%COMPOSER_FLAGS%%COMPOSER_NOTE%
+call composer update%UPDATE_TARGETS%%COMPOSER_FLAGS%
+set "COMPOSER_FAILED="
+if errorlevel 1 set "COMPOSER_FAILED=1"
+if defined DETACHED call :restore_links
 if errorlevel 1 goto :failed
+if defined COMPOSER_FAILED goto :failed
 goto :composer_done
 :composer_skipped
 echo == 1/6 composer update: skipped, every posio package is linked
@@ -52,9 +120,14 @@ echo == 4/6 php artisan optimize:clear
 call php artisan optimize:clear
 if errorlevel 1 goto :failed
 
+if "%NPM_INSTALL%"=="0" goto :build_only
 echo == 5/6 npm install ^&^& npm run %BUILD_SCRIPT%
 call npm install
 if errorlevel 1 goto :failed
+goto :build
+:build_only
+echo == 5/6 npm run %BUILD_SCRIPT% (npm install skipped, --full to run it)
+:build
 call npm run %BUILD_SCRIPT%
 if errorlevel 1 goto :failed
 
@@ -70,3 +143,18 @@ exit /b 0
 echo.
 echo Update stopped: the step above failed. Fix it and run updcab.bat again.
 exit /b 1
+
+rem A link that survived the run is still the working copy - left as it is.
+:restore_links
+for %%N in (%LINKED_NAMES%) do (
+	dir /AL /B vendor\posio 2>nul | findstr /X /I /C:"%%N" >nul
+	if errorlevel 1 (
+		if exist "vendor\posio\%%N\" rmdir /s /q "vendor\posio\%%N"
+		mklink /J "vendor\posio\%%N" "!LINK_TARGET_%%N!" >nul
+		if errorlevel 1 (
+			echo Could not relink vendor\posio\%%N to !LINK_TARGET_%%N!
+			exit /b 1
+		)
+	)
+)
+exit /b 0

@@ -231,6 +231,19 @@ and edits to the package would silently stop reaching the site. The launcher
 names such packages and updates the rest by name; with every package linked,
 step 1 is skipped. The build in step 5 then uses the working copy as it is.
 
+A module listed in `require` of `composer.json` but not yet in `vendor/posio/`
+(just added with `composer require … --no-update`, or pulled in by another
+developer's commit) changes that: it is released against the current kit, and
+Composer moves only what it may update. Step 1 then runs `composer update
+"posio/*"` for every package, the linked ones too — each link is lifted for the
+run, so Composer never touches a working copy, and put back after it even when
+Composer fails. The module's version constraint on `posio/cabinet-kit` must fit
+the one in the project's `composer.json`; raise it there first if it does not.
+
+`--full` also updates the packages' own Composer dependencies
+(`--with-all-dependencies`) and runs `npm install`; without it both are kept, and
+`npm install` runs only when `node_modules/` is missing.
+
 Full procedure, in order:
 
 ```bash

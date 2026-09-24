@@ -107,6 +107,16 @@
   repository) and name them, so a package under live development keeps its
   link. Existing launchers are never overwritten: to get this, delete them and
   run `php artisan cabinet-kit:sync-config`.
+- `updcab` / `updcab.bat` install a `posio/*` module that is required in
+  `composer.json` but missing from `vendor/` even when another package is
+  linked. Before, a linked package made step 1 skip or update only installed
+  packages, and the next step failed on the module's missing classes. Now the
+  whole `posio/*` set is updated; linked packages are unlinked for the Composer
+  run and relinked after it, also when Composer fails.
+- `updcab --full` / `updcab.bat --full`: also updates the packages' Composer
+  dependencies (`--with-all-dependencies`) and runs `npm install`. Without it
+  dependencies are kept and `npm install` runs only when `node_modules/` is
+  missing.
 - Table tools panel search (`panelitems` of type `search`) uses the rounded
   search field.
 - A table inside a card sits on the card's surface: header and row lines use

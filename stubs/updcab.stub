@@ -8,6 +8,8 @@
 #
 #     ./updcab --no-build   assets are built elsewhere (CI, another machine)
 #     ./updcab --ssr        the site renders on the server: npm run buildssr
+#     ./updcab --full       also update the packages' composer dependencies
+#                           and reinstall node dependencies (npm install)
 #     PHP_BIN=/usr/bin/php8.3 ./updcab   overrides the PHP picked automatically
 #     COMPOSER_BIN=/path/to/composer ./updcab
 set -u
@@ -17,6 +19,7 @@ cd "$(dirname "$0")" || exit 1
 php_bin="${PHP_BIN:-php}"
 skip_build=0
 build_script="build"
+install_deps=0
 
 for arg in "$@"; do
 	case "$arg" in
@@ -30,8 +33,13 @@ for arg in "$@"; do
 		--ssr)
 			build_script="buildssr"
 			;;
+		# Dependencies rarely change with a package update, and updating them is
+		# the slowest part of the run — so only on request.
+		--full|-full)
+			install_deps=1
+			;;
 		-h|--help)
-			echo "usage: ./updcab [--no-build] [--ssr]"
+			echo "usage: ./updcab [--no-build] [--ssr] [--full]"
 			exit 0
 			;;
 		*)
@@ -269,6 +277,7 @@ fi
 # copy of its repository: composer would swap the link for a downloaded copy,
 # and edits to the package would silently stop reaching this site.
 linked=""
+link_map=""
 update_targets=""
 for dir in vendor/posio/*/; do
 	dir=${dir%/}
@@ -276,15 +285,64 @@ for dir in vendor/posio/*/; do
 
 	if [ -L "$dir" ]; then
 		linked="$linked posio/${dir##*/}"
+		link_map="$link_map${dir##*/}|$(readlink "$dir")
+"
 	else
 		update_targets="$update_targets posio/${dir##*/}"
 	fi
 done
 
+# A module required since the last run has no folder in vendor/ yet.
+missing=$("$php_bin" -r 'foreach (array_keys(json_decode(file_get_contents("composer.json"), true)["require"] ?? []) as $p) if (strncmp($p, "posio/", 6) === 0 && ! is_dir("vendor/".$p)) echo " ", $p;')
+
+# The new module is released against the current kit, and composer moves only
+# what it may update — so every posio package goes, the linked ones too. Their
+# links are lifted for the run, so composer never works inside a working copy,
+# and put back right after it, whatever composer ends with.
+lift_links=0
+if [ -n "$missing" ]; then
+	update_targets=" posio/*"
+	[ -n "$linked" ] && lift_links=1
 # Nothing linked: the wildcard also installs a module required since the last run.
-if [ -z "$linked" ]; then
+elif [ -z "$linked" ]; then
 	update_targets=" posio/*"
 fi
+
+# A link that survived the run is still the working copy — left as it is.
+restore_links() {
+	printf '%s' "$link_map" | while IFS='|' read -r name target; do
+		[ -n "$name" ] || continue
+		path="vendor/posio/$name"
+		[ -L "$path" ] && continue
+
+		rm -rf "$path"
+		if ! ln -s "$target" "$path"; then
+			echo "Could not relink $path to $target." >&2
+			exit 1
+		fi
+	done
+}
+
+detach_links() {
+	printf '%s' "$link_map" | while IFS='|' read -r name target; do
+		[ -n "$name" ] || continue
+
+		if [ -z "$target" ]; then
+			echo "Could not read where vendor/posio/$name links to." >&2
+			exit 1
+		fi
+	done || return 1
+
+	printf '%s' "$link_map" | while IFS='|' read -r name target; do
+		[ -n "$name" ] || continue
+		rm "vendor/posio/$name"
+
+		if [ -e "vendor/posio/$name" ]; then
+			echo "Could not lift the link vendor/posio/$name." >&2
+			exit 1
+		fi
+	done || { restore_links; return 1; }
+}
 
 # From here on posio/* is an argument for composer, not a path to expand.
 set -f
@@ -307,7 +365,15 @@ announce() {
 	echo "== $step/$steps $*"
 }
 
-if [ -n "$linked" ]; then
+if [ -n "$missing" ]; then
+	echo ""
+	echo "Not installed yet, required in composer.json:$missing"
+fi
+
+if [ "$lift_links" -eq 1 ]; then
+	echo "Linked to a working copy, relinked after the update:$linked"
+	detach_links || fail
+elif [ -n "$linked" ]; then
 	echo ""
 	echo "Not updated, linked to a working copy:$linked"
 fi
@@ -316,8 +382,21 @@ if [ -z "$update_targets" ]; then
 	echo ""
 	echo "== skipped: composer update (every posio/* package is linked)"
 else
-	announce "composer update$update_targets"
-	composer_cmd update $update_targets --no-interaction || fail
+	composer_flags=""
+	composer_note=" (dependencies kept, --full to update them)"
+	if [ "$install_deps" -eq 1 ]; then
+		composer_flags="--with-all-dependencies"
+		composer_note=" --with-all-dependencies"
+	fi
+
+	announce "composer update$update_targets$composer_note"
+	composer_status=0
+	composer_cmd update $update_targets $composer_flags --no-interaction || composer_status=$?
+
+	if [ "$lift_links" -eq 1 ]; then
+		restore_links || fail
+	fi
+	[ "$composer_status" -eq 0 ] || fail
 fi
 
 # No-op when the composer post-update hook already ran it. Also refreshes the
@@ -337,8 +416,15 @@ if [ "$skip_build" -eq 1 ]; then
 	echo ""
 	echo "== skipped: npm install && npm run build (--no-build)"
 elif command -v npm >/dev/null 2>&1; then
-	announce "npm install && npm run $build_script"
-	npm install || fail
+	# Without installed dependencies the build cannot run at all.
+	[ -d node_modules ] || install_deps=1
+
+	if [ "$install_deps" -eq 1 ]; then
+		announce "npm install && npm run $build_script"
+		npm install || fail
+	else
+		announce "npm run $build_script (npm install skipped, --full to run it)"
+	fi
 	npm run "$build_script" || fail
 else
 	echo "npm was not found. Install Node.js, or run with --no-build when the" >&2
