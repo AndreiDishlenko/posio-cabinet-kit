@@ -49,7 +49,7 @@ class SeoService {
 		[$og_image_width, $og_image_height] = $this->ogImageSize($og_image, $cp_seo_data, $default_og_image);
 		$og_image = $this->toAbsoluteUrl($og_image);
 
-		$enable_index = !empty($cp_seo_data['index']);
+		$enable_index = $this->isIndexable($cp_seo_data);
 
 		$result = [
             ...Collect($this->seo_data)->except(['id', 'locale', 'route_name', 'created_at', 'updated_at']),
@@ -90,8 +90,8 @@ class SeoService {
 	 * Routes are now registered as `{base}.{locale}` (e.g. usecases.coffeeshop.uk).
 	 * SeoMeta records store only the base name (e.g. usecases.coffeeshop).
 	 */
-	public function baseRouteName(): string {
-		$name = Route::currentRouteName() ?? '';
+	public function baseRouteName(?string $name = null): string {
+		$name = $name ?? Route::currentRouteName() ?? '';
 
 		return preg_replace('/\.(' . $this->localePattern() . ')$/', '', $name);
 	}
@@ -145,6 +145,18 @@ class SeoService {
 		return $this->onSiteHost(url(preg_replace('#^/en(?=/|$)#', '', $en_path)));
 	}
 
+	// Решение из SEO-меты (или переопределения контроллера) окончательно. Без неё публичная
+	// страница индексируется: лендинг, которому забыли завести мету, не должен молча
+	// выпадать из поиска.
+	protected function isIndexable(array $seo_data): bool {
+		if ( array_key_exists('index', $seo_data) )
+			return !empty($seo_data['index']);
+
+		return $this->isLocalizedPublicRoute();
+	}
+
+	// Публичные страницы сайта — только маршруты с языковым суффиксом; служебные
+	// (вход, регистрация, сброс пароля) его не имеют и без меты остаются закрытыми.
 	public function isLocalizedPublicRoute(?string $route_name = null): bool {
 		$route_name = $route_name ?? Route::currentRouteName() ?? '';
 		return (bool) preg_match('/\.(' . $this->localePattern() . ')$/', $route_name);

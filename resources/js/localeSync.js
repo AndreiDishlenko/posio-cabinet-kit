@@ -2,15 +2,16 @@ import axios from 'axios'
 
 import { i18n } from '@/js/i18n.config'
 
-// Славянские языки обслуживаем украинской версией — то же правило, что и на бэкенде.
-const SLAVIC = ['ru', 'be', 'uk', 'kk', 'uz', 'ky', 'sr', 'bg', 'mo', 'mk'];
+// Украинцев, русских и белорусов обслуживаем украинской версией, всех остальных —
+// английской. То же правило, что и на бэкенде.
+const SLAVIC = ['uk', 'ru', 'be'];
+const VISITOR_FALLBACK_LOCALE = 'en';
 
 export function isSupportedLocale(locale) {
 	return !!locale && i18n.global.supported_locales.includes(locale);
 }
 
-// Язык браузера, приведённый к поддерживаемому. Незнакомый язык — не повод
-// показывать английский: отдаём язык по умолчанию.
+// Язык браузера, приведённый к поддерживаемому.
 export function browserLocale() {
 	const lang = String(navigator.language || navigator.userLanguage || '')
 		.slice(0, 2)
@@ -19,7 +20,7 @@ export function browserLocale() {
 	if ( SLAVIC.includes(lang) )
 		return 'uk';
 
-	return isSupportedLocale(lang) ? lang : i18n.global.default_locale;
+	return isSupportedLocale(lang) ? lang : VISITOR_FALLBACK_LOCALE;
 }
 
 // Применение языка: перевод, атрибут документа и память между визитами.

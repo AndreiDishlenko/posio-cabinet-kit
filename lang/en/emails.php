@@ -113,4 +113,30 @@ return [
         'signoff'                => 'See you in Posio',
     ],
 
+    // Registration approval by an administrator (switched in config/cabinet_onboarding.php).
+    'registration_approval_request' => [
+        'subject'     => 'New registration awaits approval: :email',
+        'title'       => 'Registration approval · Posio',
+        'preheader'   => ':email has signed up and is waiting for access to the cabinet.',
+        'eyebrow'     => 'Registration approval',
+        'heading'     => 'New user: :name',
+        'lead'        => ':name (:email) has signed up for Posio. They cannot sign in to the cabinet until you approve the registration.',
+        'cta'         => 'Approve registration',
+        'cta_note'    => '* To approve, sign in with an account that is allowed to manage users.',
+        'footer_note' => 'You received this email because you manage Posio users.',
+        'signoff'     => 'The Posio team',
+    ],
+
+    'registration_approved' => [
+        'subject'     => 'Your Posio registration has been approved',
+        'title'       => 'Registration approved · Posio',
+        'preheader'   => 'An administrator approved your registration — you can sign in now.',
+        'eyebrow'     => 'Registration approved',
+        'heading'     => ':name, your registration has been approved',
+        'lead'        => 'An administrator has approved your registration. You can now sign in to the cabinet.',
+        'cta'         => 'Sign in to the cabinet',
+        'footer_note' => 'You received this email because you signed up for Posio.',
+        'signoff'     => 'With care for your business',
+    ],
+
 ];

@@ -30,7 +30,11 @@ function applyLock() {
 
 	// Полоса прокрутки исчезает вместе с прокручиваемой высотой — компенсируем её
 	// ширину, иначе на десктопе контент дёргается вбок в момент открытия.
-	const scrollbar = window.innerWidth - document.documentElement.clientWidth;
+	// Зарезервированное место под полосу не исчезает вместе с ней — компенсация дала бы сдвиг.
+	const root_reserves_gutter = window.getComputedStyle(document.documentElement).scrollbarGutter === 'stable';
+	const scrollbar = root_reserves_gutter
+		? 0
+		: window.innerWidth - document.documentElement.clientWidth;
 
 	body.style.position = 'fixed';
 	body.style.top      = `-${savedScroll}px`;

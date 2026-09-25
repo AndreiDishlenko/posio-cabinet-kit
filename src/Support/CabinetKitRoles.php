@@ -43,7 +43,8 @@ class CabinetKitRoles
     // Аккаунтные права эталонных ролей — как у одноимённых ролей в posio.cabinet, в пределах набора пакета.
     protected const ACCOUNT_ROLE_GRANTS = [
         'Account owner' => ['manage-members', 'manage-account'],
-        'Manager' => ['manage-members', 'manage-account'],
+        'Manager' => ['manage-members'],
+        'Administrator' => ['manage-account'],
     ];
 
     /**

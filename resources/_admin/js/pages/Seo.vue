@@ -6,7 +6,7 @@
 
 			<!-- Choose route -->
 			<!-- <div class=""> -->
-				<Table class="grow table-md"
+				<Table class="grow" size="md"
 					storage_key    = "seo"
 					:settings  = "table_settings"
 					:in_data   = "table_data" 
@@ -66,6 +66,7 @@
                         { field: 'locale',		 title: 'Locale',     width:'auto',  type:'string',  align:"start" },
                         { field: 'page_name',  	 title: 'Page Name',       width:'auto',  type:'string',  align:"start",  show:'sm' },
                         { field: 'index', 		 title: 'Google index',    width:'auto',  type:'checkbox',  align:"start",  show:'md' },
+                        { field: 'content_updated_at', title: 'Page updated', width:'min-content', type:'date', show:'lg' },
                         { field: 'is_published', title: 'Active',    width:'min',  type:'checkbox' },
                     ],
                     rowbar: [
@@ -114,8 +115,11 @@
 				
                 let result = await this.$apiClient.post( route('cabinet.api.createsitemaps'), {});
                 if ( result.error )
-                    return this.$toast.error(`Data update error: ${result.message}`);               
+                    return this.$toast.error(`Data update error: ${result.message}`);
 
+				// Генерация пересчитывает даты изменения страниц — показываем свежие.
+				await this.update();
+				this.$toast.success(this.$t('Sitemap created'));
 				return true
 			}
         }

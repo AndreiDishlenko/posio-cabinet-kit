@@ -8,7 +8,7 @@
 		<div v-if="settings.groupHeader?.length && expandedGroupHeader.some(c => c !== null)" class="table-header contents over-header-row">
 
 			<!-- Column index placeholder -->
-			<div v-if="row_header" class="header-cell !h-full !self-stretch">
+			<div v-if="row_header" class="header-cell !h-full !self-stretch" :class="items_class">
 				&nbsp;
 			</div>
 
@@ -48,8 +48,10 @@
 		<!-- Standart header -->
 		<div class="table-header contents">
 
-			<!-- Column index -->
-			<div v-if="row_header" class="header-cell !h-full !self-stretch">            
+			<!-- Column index. Оформление угловой ячейки задаёт хозяин таблицы: у
+			     редактируемой таблицы шапка без скруглений, поэтому класс ячеек
+			     шапки должен доставаться и этой заглушке. -->
+			<div v-if="row_header" class="header-cell !h-full !self-stretch" :class="items_class">
 				&nbsp;
 			</div>
 
@@ -82,19 +84,14 @@
 			<!-- Rowbar placeholder (grid track width is dictated by TableRowBar in data rows).
 			     Hosts the "show deleted" toggle (no label) when the table has a deleted filter. -->
 			<div v-if="show_rowbar" class="header-cell rowbar-cell">
-				<!-- The show-deleted toggle lives in the rowbar header whenever the rowbar
-				     column is visible (this cell only renders when show_rowbar). When the
-				     rowbar is hidden (e.g. desktop with rowbar_mobile_only), it falls back
-				     to the Table toolbar instead — see TableToolsPanel. -->
+				<!-- A deleted-filter table always keeps this column (show_rowbar is forced
+				     true for it), so the toggle always lives here — regardless of
+				     rowbar_mobile_only/rowbar_from, which only collapse the row-level
+				     action icons (see Table.vue show_rowbar_icons / TableRowBar). -->
 				<ShowDeletedToggle v-if="settings.filters?.deleted"
 					v-model="panel_data.showDeleted"
 					/>
 			</div>
-
-			<!-- Delete filter -->
-			<!-- <div v-if="settings?.rowbar || settings.filters?.deleted" class="header-cell">
-				<input v-if="settings.filters?.deleted" type="checkbox" v-model="showDeleted" class="form-control show-deleted-checkbox m-0 ms-auto">
-			</div> -->
 
 		</div>
 		<!-- </template> -->

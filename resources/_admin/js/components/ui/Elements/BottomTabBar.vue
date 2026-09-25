@@ -3,7 +3,9 @@
 <!-- {{ items.length }} -->
 
     <!-- Бар виден только на телефоне в портретной ориентации: landscape и ширина >= md скрывают его -->
-    <nav v-if="items.length" class="bottom-tab-bar-wrapper fixed inset-x-0 bottom-0 z-[1000] sm:hidden landscape:hidden flex justify-center px-2 pointer-events-none">
+    <!-- Слой бара ниже любых оверлеев (модалки, шторки, помощник): он часть страницы,
+         а не поверх неё — иначе перекрывает низ открытого окна вместе с его кнопками. -->
+    <nav v-if="items.length" class="bottom-tab-bar-wrapper fixed inset-x-0 bottom-0 z-[500] sm:hidden landscape:hidden flex justify-center px-2 pointer-events-none">
         
 		<div class="bottom-tab-bar w-full flex items-center justify-between pointer-events-auto 
                     backdrop-blur-xl
@@ -20,13 +22,18 @@
                     ? 'bg-blue-600 text-white'
                     : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'"
             	> -->
-			<Link class="grow button rounded-3xl"
+			<!-- Подпись видна только у активной вкладки, поэтому остальные несут имя
+			     атрибутом — иначе кнопка навигации читается как безымянная ссылка.
+			     Высота не ниже 44px: это основная навигация на телефоне. -->
+			<Link class="grow button rounded-3xl min-h-[44px]"
                 v-for="item in items"
                 :key="item.routeName"
                 :href="route(item.routeName)"
                 :prefetch="['mount', 'hover']"
+                :aria-label="$t(item.label)"
+                :aria-current="isActive(item.routeName) ? 'page' : null"
                 :class="isActive(item.routeName)
-                    ? 'lightblue-button'
+                    ? 'neutral-button'
                     : 'transparent-button text-secondary hover:text-zinc-200'"
             	>
 

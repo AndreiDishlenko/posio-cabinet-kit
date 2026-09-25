@@ -5,14 +5,14 @@
 			'space-y-2': state,
 			'collapsed': !state,
 			'fullwidth': fullwidth
-		}">
+		}"
+		@click="toggleByArea">
 
 		<!-- Accordion header -->
-        <div class="accordion-item-header" 
-			role="button" 
+        <div ref="header" class="accordion-item-header"
+			role="button"
 			tabindex="0"
-			@click="toggleAccordion()" 
-			@keydown.enter="toggleAccordion()" 
+			@keydown.enter="toggleAccordion()"
 			@keydown.space.prevent="toggleAccordion()"
             >
 			<div class="v-flex">
@@ -80,6 +80,15 @@
             this.toggleAccordion(this.state)           
         },
         methods: {
+            // Развернуть можно кликом в любую точку свёрнутого элемента, свернуть — только шапкой:
+            // иначе работа с раскрытым содержимым сворачивала бы его.
+            toggleByArea(event) {
+                if (this.state && !this.$refs.header.contains(event.target))
+                    return;
+
+                this.toggleAccordion();
+            },
+
             toggleAccordion(manualState=null) {
                 if (manualState!=null)
                     this.state = !manualState
@@ -112,6 +121,7 @@
     }
 
     .accordion-item-header {
+        cursor: pointer;
         @apply
             w-full 
             flex 
@@ -131,9 +141,9 @@
 
     .accordion-item-container {
         @apply
-            overflow-hidden 
-            transition-all 
-            duration-300 
+            overflow-hidden
+            transition-all
+            duration-300
             ease-in-out;
     }
 
@@ -149,6 +159,8 @@
     }
 
     .collapsed {
+        cursor: pointer;
+
         .accordion-item-container {
             @apply 
                 m-0
@@ -162,4 +174,4 @@
         }
     }
 
-</style>
+</style>

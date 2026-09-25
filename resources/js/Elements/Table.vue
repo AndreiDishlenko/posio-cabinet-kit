@@ -6,17 +6,21 @@
 		:data-drag-group="drag_group || null"
 		:data-drag-accept="accept_drag.length ? accept_drag.join(',') : null"
 		:style="{ '--tools-panel-height': toolsPanelHeight + 'px' }"
-		:class="{
-			'disabled': disabled,
-			'select-none': noSelect,
-			'min-w-0': fit_container || x_scroll,
-			'y-scroll': y_scroll || x_scroll,
-			'has-slaves': has_slaves,
-			'is-grouped': is_grouped,
-			'no-slave-marker': has_slaves && !slave_marker,
-			'wide-rows': wide_rows,
-			'auto-rows': auto_rows
-		}"
+		:class="[
+			sizeClasses,
+			rowSizeClasses,
+			{
+				'disabled': disabled,
+				'select-none': noSelect,
+				'min-w-0': fit_container || x_scroll,
+				'y-scroll': y_scroll || x_scroll,
+				'has-slaves': has_slaves,
+				'is-grouped': is_grouped,
+				'no-slave-marker': has_slaves && !slave_marker,
+				'wide-rows': wide_rows,
+				'auto-rows': auto_rows
+			}
+		]"
 		>
 
         <h2 v-if="header" class="table-title">
@@ -44,6 +48,9 @@
 		</Teleport>
 
 
+		<!-- Умова показу панелі повторює те, що вона справді вміє показати: інакше панель
+		     займає смугу порожнечі між фільтрами сторінки й таблицею. Меню документа сюди
+		     не входить — його кнопку перенесено в панель фільтрів. -->
 		<TableToolsPanel ref="toolsPanel" class="top-0 z-[200]"
 			v-show="!toolbar_hidden"
 			:class="{
@@ -53,9 +60,7 @@
 			:style="{ gridColumn: `span ${columnsCount}` }"
 			v-if="
 				Object.keys(settings.ctabutton || {}).length ||
-				Object.keys(settings.groupactions || {}).length ||
-				( Object.keys(settings.filters || {}).length && !show_rowbar ) ||
-				Object.keys(settings.dropdownmenu || {}).length ||
+				settings.groupactions?.add ||
 				Object.keys(settings.panelitems || {}).length ||
 				Object.keys(settings.custom_tools || {}).length ||
 				$slots.tools
@@ -63,7 +68,6 @@
 			:settings="settings"
 			:filters="filters"
 			:panel_data="panel_data"
-			:show_rowbar="show_rowbar"
 			:is_mobile="is_mobile"
 
 			@addRow="addRow()"
@@ -86,6 +90,8 @@
 			:y_scroll="y_scroll"
 			:slave_key="slave_key"
 			:show_rowbar="show_rowbar"
+			:stretch_body="!!empty_state_kind"
+			:header_rows="header_rows_count"
 			@scrolledChange="onWrapperScrolled"
 			>
 
@@ -122,7 +128,25 @@
 				:show_rowbar	= "show_rowbar"
 				/>
 
+			<!-- Пустой список объясняет своё состояние и предлагает следующий шаг:
+			     снять отбор или повторить неудавшийся запрос. Стоит сразу под шапкой:
+			     обёртка отдаёт этой строке весь остаток высоты. -->
+			<TableEmptyState
+				v-if="empty_state_kind"
+				:kind			= "empty_state_kind"
+				:settings		= "settings"
+				:error			= "error"
+				:columns_count	= "columnsCount"
+				@reset	= "resetTableFilters()"
+				@retry	= "$emit('retry')"
+				@action	= "emptyStateAction"
+				/>
+
 			<!-- Table Body Groups -->
+			<!-- Без записей группы не выводятся: их пустые заголовки заняли бы место
+			     сообщения о пустом списке. -->
+			<template v-if="!empty_state_kind">
+
 			<AccordionItem2 v-for="group_entry in group_entries"
 				:key	= "group_entry.key"
 				:ref	= "'group' + group_entry.key"
@@ -150,7 +174,7 @@
 							<TableGroupTitle
 								:group_entry="group_entry"
 								:settings="settings"
-								:actions="show_rowbar ? [] : groupActionsOf(group_entry)"
+								:actions="show_rowbar_icons ? [] : groupActionsOf(group_entry)"
 								@action="(action) => groupAction(action, group_entry)"
 								/>
 						</div>
@@ -178,7 +202,7 @@
 							class="table-group-header table-cell rowbar-cell group-actions-cell !justify-end"
 							:style="{ gridColumnStart: columnsCount }"
 							>
-							<TableGroupActions
+							<TableGroupActions v-if="show_rowbar_icons"
 								:actions="groupActionsOf(group_entry)"
 								:item="group_entry.item || {}"
 								@action="(action) => groupAction(action, group_entry)"
@@ -202,12 +226,20 @@
 					     записами довідника. -->
 					<template v-for="(entry, rowindex) in visibleRowsOf(group_entry.key)" :key="entry.row[row_key] ?? ('row' + rowindex)">
 
+						<!-- Строка кликабельна, поэтому обязана открываться и с клавиатуры:
+						     она не кнопка и не ссылка, и без явного попадания в порядок
+						     обхода список проходится только мышью. -->
 						<div
 							class="table-row contents"
 							:data-row-key="entry.row[row_key]"
+							:data-row-group="group_entry.key || null"
+							:tabindex="selectable ? 0 : null"
 							@click="rowClick(entry.row)"
+							@keydown.enter="rowClick(entry.row)"
+							@keydown.space.prevent="rowClick(entry.row)"
 							@contextmenu="onRowContext(entry.row, $event)"
 							@mousedown="canDragRow(entry) ? onRowMouseDown(entry.row, dragGroupOf(group_entry.key), $event) : null"
+							@touchstart="canDragRow(entry) ? onRowTouchStart(entry.row, dragGroupOf(group_entry.key), $event) : null"
 							:class="[
 								{
 									'selected': selectable && entry.row.selected,
@@ -265,6 +297,7 @@
 								:rowbar="settings.rowbar || []"
 								:deleted_filter="!!settings.filters?.deleted"
 								:hide_delete_icons="settings.rowbar_hide_delete || false"
+								:show_icons="show_rowbar_icons"
 								@action="rowbarAction"
 								/>
 
@@ -275,6 +308,8 @@
 				</template>
 
 			</AccordionItem2>
+
+			</template>
 
 			<div v-if="fit_container" ref="tableSpacer" class="table-spacer !min-h-0"
 				:style="{ gridColumn: `span ${columnsCount}` }"
@@ -316,6 +351,8 @@
 			:grouped_data="drag_grouped_data"
 			:tree_mode="tree_drag"
 			:groups_draggable="draggable_groups"
+			:group_drop="draggable_groups || move_rows_between_groups"
+			:external_only="drag_out_only"
 			:can_drop="canDropOn"
 			@drag-update="onDragUpdate"
 			@drop="onDragDrop"
@@ -325,12 +362,18 @@
 		     is scrolled down. When the table defines a CTA button
 		     (settings.ctabutton) that CTA replaces the scroll-to-top FAB here;
 		     otherwise a scroll-to-top FAB returns the table to the top.
-		     Место в углу — за общей очередью плавающих элементов: кнопка встаёт
-		     над тем, что уже висит в углу (напр. списком первых шагов), с тем же
-		     отступом от правого края экрана. -->
+		     Место в углу — за общей очередью плавающих элементов: действие списка
+		     встаёт самым верхним, над напоминанием о первых шагах и помощником,
+		     с тем же отступом от правого края экрана. -->
 		<Transition name="fab-fade">
-			<FloatingDock v-if="showFab" class="table-scroll-fab" :local="y_scroll">
+			<FloatingDock v-if="showFloatingAction" class="table-scroll-fab"
+				:local="y_scroll"
+				:weight="20"
+				:expanded="ctaOpen"
+				@collapse="$refs.ctabutton?.close()"
+				>
 				<SelectableButton v-if="hasCtaButton"
+					ref="ctabutton"
 					:actions="ctabuttonActions"
 					:label="settings.ctabutton.label"
 					:plain="!!settings.ctabutton.plain"
@@ -340,6 +383,7 @@
 					size="md"
 					direction="up"
 					@click.stop
+					@stateChange="(open) => ctaOpen = open"
 					>
 					<Icon v-if="settings.ctabutton.icon" class="icon icon-md" :icon="settings.ctabutton.icon" />
 				</SelectableButton>
@@ -373,10 +417,12 @@
     import TableChartRow    from './Table/TableChartRow.vue';
     import TableRowBar      from './Table/TableRowBar.vue';
     import TableTotals      from './Table/TableTotals.vue';
+    import TableEmptyState  from './Table/TableEmptyState.vue';
     import TableCopyHandler from './Table/TableCopyHandler.vue';
     import TableDragHandler from './Table/TableDragHandler.vue';
     import TableContextMenu from './Table/TableContextMenu.vue';
 	import { resolveRowAction, rowActionColorClass } from './Table/rowActions.js';
+	import { sizePropClasses } from './Table/sizeProp.js';
 
     import Checkbox from './Forms/Checkbox.vue';
     import SelectableButton from './Forms/SelectableButton.vue';
@@ -387,7 +433,7 @@
     // import ScrolledWrapper  from '@/js/Elements/ScrolledWrapper.vue';
 
     export default {
-        components: { Link, Icon, TableToolsPanel, TableWrapper, TableHeader, TableCell, TableGroupTitle, TableGroupActions, TableChartRow, TableRowBar, TableTotals, TableCopyHandler, TableDragHandler, TableContextMenu, Checkbox, SelectableButton, AccordionItem2, FabButton, FloatingDock },
+        components: { Link, Icon, TableToolsPanel, TableWrapper, TableHeader, TableCell, TableGroupTitle, TableGroupActions, TableChartRow, TableRowBar, TableTotals, TableEmptyState, TableCopyHandler, TableDragHandler, TableContextMenu, Checkbox, SelectableButton, AccordionItem2, FabButton, FloatingDock },
         props: { 
             header: {
                 type: String,
@@ -396,7 +442,19 @@
             in_data: {
                 type: Array,
                 default: []
-            }, 
+            },
+            // Сообщение о неудавшейся загрузке: список показывает его вместо строк
+            // и предлагает повторить запрос (событие retry).
+            error: {
+                type: String,
+                default: ''
+            },
+            // Пока данные едут, пустой список молчит: иначе на месте будущих строк
+            // мигает «записей ещё нет».
+            loading: {
+                type: Boolean,
+                default: false
+            },
             settings: {
                 type: Object,
                 default: {}
@@ -455,6 +513,12 @@
 				type: Boolean,
 				default: false
 			},
+			// Группы из справочника показываются и без единой строки в данных — вместо
+			// сообщения о пустом списке (группу завели, строк в ней ещё нет).
+			keep_empty_groups: {
+				type: Boolean,
+				default: false
+			},
 			expandedByDefault: {
 				type: Boolean,
 				default: false
@@ -477,6 +541,21 @@
 			wide_rows: {
 				type: Boolean,
 				default: false
+			},
+			// Базовий розмір таблиці (шрифт + висота шапки/підвалу/рядків/інпутів).
+			// Приймає ключове слово (xs|sm|md|lg) або рядок із брейкпоінтами в
+			// синтаксисі Tailwind: "xs sm:sm md:md". Розгортається у класи table-[size].
+			size: {
+				type: String,
+				default: 'md'
+			},
+			// Висота саме рядка (row-header-cell/table-cell), окремо від шрифту й від
+			// шапки/підвалу. Той самий синтаксис розмірів/брейкпоінтів, що й у size.
+			// Клас row-[size] специфічніший за table-[size] і завжди перекриває його
+			// висоту, лишаючи шрифт таким, який задав size.
+			row_size: {
+				type: String,
+				default: ''
 			},
 			disabled: {
 				type: Boolean,
@@ -529,6 +608,18 @@
 			// Шапку групи можна тягнути (порядок груп), а рядок — кидати на шапку
 			// (перенесення рядка в іншу групу). Потребує groupBy.
 			draggable_groups: {
+				type: Boolean,
+				default: false
+			},
+			// Рядок можна перенести в іншу групу (на її шапку чи рядок), не роблячи
+			// перетягуваними самі групи — коли порядок груп задає не ця таблиця.
+			move_rows_between_groups: {
+				type: Boolean,
+				default: false
+			},
+			// Рядки лише виносяться в сусідню таблицю (див. accept_drag): власний
+			// порядок рядків перетягуванням не змінюється.
+			drag_out_only: {
 				type: Boolean,
 				default: false
 			},
@@ -604,6 +695,10 @@
                 panel_data: {
                     showDeleted: false
                 },
+				// Объяснение пустоты появляется не сразу: первые кадры список пуст
+				// просто потому, что данные ещё едут.
+				empty_state_armed: false,
+				empty_state_timer: null,
 				openedGroups: new Set(),
 				// Стан розкриття гілок зберігається як відхилення від типового: коли
 				// підпорядковані рядки згорнуті за замовчуванням — позначаємо розкриті,
@@ -621,6 +716,9 @@
 				// (eases in a beat later); hidden immediately when scrolling back up.
 				showFab: false,
 				fabDelayTimer: null,
+				// Список действий CTA раскрыт — угол экрана держит раскрытым только
+				// один виджет, поэтому состояние нужно знать снаружи кнопки.
+				ctaOpen: false,
 				tableFillObserver: null,
 				panelItemUnwatchers: [],
 				restoringPanelItems: false,
@@ -644,6 +742,12 @@
 			// Master/slave mode is enabled whenever a slave_key is provided.
 			has_slaves() {
 				return !!this.slave_key;
+			},
+			sizeClasses() {
+				return sizePropClasses(this.size, 'table');
+			},
+			rowSizeClasses() {
+				return sizePropClasses(this.row_size, 'row');
 			},
 			// Спосіб заведення запису: 'inline' — назва вводиться прямо в новому рядку
 			// таблиці, 'modal' (типово) — рядок віддається сторінці, яка відкриває картку.
@@ -704,6 +808,16 @@
 			hasCtaButton() {
 				return this.settings.ctabutton?.type === 'SelectButton' && this.ctabuttonActions.length > 0;
 			},
+			// Возврат к началу списка в кабинете временно отключён: там угол экрана и
+			// без него занят помощником и напоминанием о первых шагах.
+			hasScrollTopFab() {
+				return this.$config?.app_module !== 'cabinet';
+			},
+			// Плавающее действие есть, только если ему есть что показать: пустая
+			// обёртка всё равно заняла бы место в общей очереди угла.
+			showFloatingAction() {
+				return this.showFab && ( this.hasCtaButton || this.hasScrollTopFab );
+			},
 			hasSelection() {
 				return this.table_data.some(row => row.is_selected);
 			},
@@ -737,9 +851,32 @@
 			// its actions live in the right-click context menu instead.
 			// `rowbar_from` gates the rowbar to a minimum breakpoint (e.g. 'lg') —
 			// shown only at that width and above. By default the rowbar is always on.
+			// A deleted-filter table keeps the column at every breakpoint regardless of
+			// rowbar_mobile_only/rowbar_from — it hosts the "Show deleted" toggle in the
+			// header, which must stay put; only the row-level action icons collapse to
+			// the context menu (see show_rowbar_icons).
 			show_rowbar() {
 				const configured = !!(this.settings?.rowbar?.length || this.settings.filters?.deleted);
 				if ( !configured )
+					return false;
+
+				if ( this.settings.filters?.deleted )
+					return true;
+
+				if ( this.settings.rowbar_mobile_only )
+					return this.is_mobile;
+
+				if ( this.settings.rowbar_from )
+					return this.windowWidth >= this.breakpointMinWidth(this.settings.rowbar_from);
+
+				return true;
+			},
+			// Whether the rowbar column shows its row-level action icons (Delete, custom
+			// buttons, etc). Unlike show_rowbar (column existence), this always respects
+			// rowbar_mobile_only/rowbar_from — an empty column stays reserved for the
+			// header's "Show deleted" toggle even when icons are collapsed to the context menu.
+			show_rowbar_icons() {
+				if ( !this.show_rowbar )
 					return false;
 
 				if ( this.settings.rowbar_mobile_only )
@@ -820,6 +957,31 @@
 
                 return result;
             },
+			// Строк в шапке списка: основная и, если настроена надстройка над
+			// колонками, ещё одна над ней. По ним обёртка отмеряет строку, которой
+			// отдаёт остаток высоты под сообщение о пустом списке.
+			header_rows_count() {
+				if ( this.settings.hideHeader )
+					return 0;
+
+				return (this.settings.groupHeader || []).some(cell => cell && cell.title) ? 2 : 1;
+			},
+
+			// Причина пустого списка: ошибка запроса, ни одной записи вообще или
+			// ничего не прошло текущий отбор. Пустая строка — список не пуст.
+			empty_state_kind() {
+				if ( this.error )
+					return 'error';
+
+				if ( this.loading || !this.empty_state_armed || this.table_data.length )
+					return '';
+
+				if ( this.keep_empty_groups && this.group_source.length )
+					return '';
+
+				return this.in_data.length ? 'filtered' : 'empty';
+			},
+
 			activeAccountId() {
 				return this.$page?.props?.account?.id ?? null;
 			},
@@ -958,11 +1120,11 @@
 
 					const rows = data[key] || [];
 
-					// М'яко видалений запис довідника ховається разом зі своїми рядками,
-					// поки не ввімкнено показ видалених: інакше видалена категорія лишалась
-					// би в списку тільки тому, що в ній ще є товари. Ключ позначаємо
-					// обробленим, щоб її рядки не виринули окремою групою нижче.
-					if ( item.is_deleted && !this.panel_data.showDeleted ) {
+					// М'яко видалений запис довідника ховається, поки не ввімкнено показ
+					// видалених. Але тільки порожній: якщо під ним лишились живі рядки,
+					// приховування групи прибирає з екрана і їх — товар зникає з каталогу
+					// разом з видаленою категорією, хоча далі продається на касі.
+					if ( item.is_deleted && !this.panel_data.showDeleted && !rows.length ) {
 						listed.add(key);
 						return;
 					}
@@ -1114,6 +1276,12 @@
 			present_row_ids() {
 				this.reselectCurrent();
 			},
+			// Пришедшие строки означают, что источник ответил: с этого момента пустой
+			// результат — это уже результат отбора, и объяснять его можно сразу.
+			'in_data.length'(length) {
+				if ( length )
+					this.empty_state_armed = true;
+			},
 		},
         created() {
             // Стан розгорнутих груп потрібен ДО першого рендеру: акордеон читає
@@ -1131,9 +1299,14 @@
             });
 			this.restoreSortRules();
 			this.restorePanelItems();
+
+			// Данные обычно приезжают отдельным запросом — даём им дойти, прежде чем
+			// объявлять список пустым.
+			this.empty_state_timer = setTimeout(() => { this.empty_state_armed = true }, 600);
         },
         beforeUnmount() {
             window.removeEventListener("resize", this.updateWidth);
+            clearTimeout(this.empty_state_timer);
             if (this.toolsPanelObserver) {
                 this.toolsPanelObserver.disconnect();
                 this.toolsPanelObserver = null;
@@ -1255,6 +1428,39 @@
 				this.mergeTableState({ sort: this.localSortRules });
 			},
 
+			// Снятие отбора из пустого состояния: список возвращает в исходное то,
+			// чем управляет сам (поиск и прочие поля своей панели, показ удалённых),
+			// и сообщает странице — её собственная панель фильтров живёт снаружи.
+			resetTableFilters() {
+				this.panel_data.showDeleted = false;
+
+				[ this.settings.panelitems || {}, this.settings.custom_tools || {} ].forEach(group => {
+					Object.keys(group).forEach(key => {
+						const item = group[key];
+
+						if ( !item || !('model' in item) )
+							return;
+
+						item.model = item.default !== undefined ? item.default : '';
+
+						if ( typeof item.action === 'function' )
+							item.action(item.model);
+					});
+				});
+
+				this.$emit('resetFilters');
+			},
+
+			// Первый шаг из пустого списка. Заведение записи идёт тем же путём, что и
+			// кнопка в тулбаре: подчинение выделенной строке, режим добавления и отмена
+			// уже описаны там. Остальное список переадресует странице своим событием.
+			emptyStateAction(name) {
+				if ( name === 'add' )
+					return this.addRow();
+
+				this.$emit(name);
+			},
+
 			// в”Ђв”Ђв”Ђ Panel items / custom tools persistence в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 			// Items marked with `persist: true` in settings.panelitems or
 			// settings.custom_tools get their `model` saved per-page.
@@ -1343,9 +1549,12 @@
 					this.toolsPanelHeight = el.offsetHeight + marginBottom;
 				};
 
-				this.toolsPanelObserver = new ResizeObserver(updateHeight);
-				this.toolsPanelObserver._el = el;
-				this.toolsPanelObserver.observe(el);
+				// Без наблюдателя размера (старые планшеты кассы) панель меряется разово.
+				if (typeof ResizeObserver !== 'undefined') {
+					this.toolsPanelObserver = new ResizeObserver(updateHeight);
+					this.toolsPanelObserver._el = el;
+					this.toolsPanelObserver.observe(el);
+				}
 				updateHeight();
 			},
 			observeTableFill() {
@@ -1362,9 +1571,11 @@
 
 				if (this.tableFillObserver) this.tableFillObserver.disconnect();
 
-				this.tableFillObserver = new ResizeObserver(() => this.updateTableSpacer());
-				this.tableFillObserver._el = wrapper;
-				this.tableFillObserver.observe(wrapper);
+				if (typeof ResizeObserver !== 'undefined') {
+					this.tableFillObserver = new ResizeObserver(() => this.updateTableSpacer());
+					this.tableFillObserver._el = wrapper;
+					this.tableFillObserver.observe(wrapper);
+				}
 				this.updateTableSpacer();
 			},
 			updateTableSpacer() {
@@ -2028,9 +2239,9 @@
 			// Right-click: highlight the row (without opening it) and show the context menu.
 			onRowContext(row, event) {
 				// Table.onRowContext
-				if (this.drag.active) return;
 				if (this.selection.active) return;
 				if (!this.hasContextMenu) return;
+				if (this.drag.active && !this.$refs.dragHandler?.yieldToContextMenu()) return;
 
 				event.preventDefault();
 
@@ -2063,6 +2274,14 @@
 				// Table.onGroupMouseDown — перетягування самої групи (порядок груп).
 				if (!this.draggable_groups) return;
 				this.$refs.dragHandler?.onGroupMouseDown(group_key, event);
+			},
+			onRowTouchStart(row, group, event) {
+				if (!this.drag_enabled) return;
+				this.$refs.dragHandler?.onRowTouchStart(row, group, event);
+			},
+			onGroupTouchStart(group_key, event) {
+				if (!this.draggable_groups) return;
+				this.$refs.dragHandler?.onGroupTouchStart(group_key, event);
 			},
 			// Плаский режим тягне лише верхній рівень (глибші рядки — наслідок
 			// підпорядкування, їх порядок несамостійний); дерево — рядок будь-якого рівня.
@@ -2124,9 +2343,10 @@
 					return this.emitGroupReorder(group_key, overGroupKey, overPos);
 
 				// Рядок кинули в сусідню таблицю-приймач: своєї моделі її рядка тут немає,
-				// сторінці віддається ключ, за яким вона його й знайде.
+				// сторінці віддається ключ, за яким вона його й знайде (ключ рядка, а в
+				// згрупованому приймачі — ключ групи).
 				if ( external )
-					return this.$emit('rowExternalDrop', { row, group: external.group, row_key: external.row_key });
+					return this.$emit('rowExternalDrop', { row, group: external.group, row_key: external.row_key, group_key: external.group_key });
 
 				// Рядок кинули на шапку групи — переходить у неї (в кінець).
 				if ( overGroupKey != null )
@@ -2137,7 +2357,7 @@
 
 				// Рядок кинули в іншу групу — переходить у неї на місце цілі.
 				if ( overGroup !== group ) {
-					if ( !this.draggable_groups )
+					if ( !this.draggable_groups && !this.move_rows_between_groups )
 						return;
 
 					return this.emitRowGroupMove(row, overRow?.[this.groupBy], overRow, overPos);
@@ -2527,6 +2747,7 @@
 				return {
 					'data-group-key': group_entry.key,
 					onMousedown:      (event) => this.onGroupMouseDown(group_entry.key, event),
+					onTouchstart:     (event) => this.onGroupTouchStart(group_entry.key, event),
 					onClickCapture:   (event) => {
 						if ( !this.drag.ignoreClick )
 							return;
@@ -2587,11 +2808,11 @@
 		// position: sticky;
 		// top: 0;
 		// z-index: 200;
-		background-color: var(--page-background, var(--table-body-background));
+		background-color: var(--table-surface, var(--table-body-background));
 	}
 
 	.table-sticky-panel {
-		background-color: var(--page-background, var(--table-body-background));
+		background-color: var(--table-surface, var(--table-body-background));
 	}
 
     .show-deleted-checkbox {
@@ -2666,7 +2887,7 @@
 	}
 
 	.table-spacer {
-		background-color: var(--table-body-background);
+		background-color: var(--table-surface, var(--table-body-background));
 		min-height: 0;
 		pointer-events: none;
 	}
@@ -2709,6 +2930,15 @@
 
 	::v-deep(.table-group-header.draggable-group) {
 		cursor: grab;
+	}
+
+	// Довге натискання на тачскріні бере рядок чи групу — без виділення тексту й
+	// системного меню iOS, які інакше перехоплюють цей жест.
+	::v-deep(.draggable-row .table-cell),
+	::v-deep(.table-group-header.draggable-group) {
+		-webkit-user-select: none;
+		user-select: none;
+		-webkit-touch-callout: none;
 	}
 
 	::v-deep(.table-group-header.dragging-group) {
@@ -2825,7 +3055,7 @@
 	}
 
     .table-row .table-cell {
-        background: var(--table-body-background);
+        background: var(--table-surface, var(--table-body-background));
     }
 
     .table-row:not(.table-header) .table-cell {              
@@ -2840,6 +3070,19 @@
         border-top-right-radius: var(--table-border-radius, 0.35rem);
         border-bottom-right-radius: var(--table-border-radius, 0.35rem);
     }
+
+	// Клавиатурный фокус строки. Сама строка — display:contents, у неё нет
+	// собственной коробки и контур рисовать не на чем, поэтому подсвечиваем её
+	// клетки. Подсветка идёт на :focus (планка старых браузеров), а полоска —
+	// отдельным правилом на :focus-visible: там, где браузер отличает клавиатуру
+	// от мыши, полоска не спорит с акцентной чертой строки-исключения.
+	.table-row:focus .table-cell {
+		background-color: var(--table-selection-color);
+	}
+
+	.table-row:focus-visible .table-cell {
+		box-shadow: inset 0 -2px 0 0 var(--focus-ring-color);
+	}
 
 	// Generic accent row — colored left bar (opt-in via settings.row_class).
 	// Рядок має display:contents, тож акцент малюємо на першій клітинці.

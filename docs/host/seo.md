@@ -126,6 +126,34 @@ Also available from the SEO page ("Create sitemaps.xml" button). The generator,
 `spatie/laravel-sitemap`, is installed with the package. Treat `public/sitemap.xml` as a build artifact: regenerate it on
 deploy rather than trusting the committed copy.
 
+`lastmod` of a page moves only when its content changes: the generator keeps a
+fingerprint of the page's meta (columns `content_fingerprint` /
+`content_updated_at` of `seo_meta`) and, when configured, of the page's own
+files in the site build. Point it at them in `config/seo.php`:
+
+```php
+'sitemap_lastmod' => [
+    'pages_dir'    => 'resources/js/Pages/',        // page of route `a.b` is A/B.vue
+    'content_dirs' => ['resources/js/Pages/Blocks/'], // imports counted as content
+    'manifests'    => ['build/manifest.json'],        // relative to public/
+],
+```
+
+Layouts, the header and shared components are not content: editing them does
+not refresh every page's date. With `pages_dir` empty the date follows the meta
+only. The first run takes the last git commit of the page files (or the meta
+edit date) instead of today, so a fresh sitemap does not claim everything
+changed at once.
+
+The generator also names public pages that have no SEO record (they are
+indexed, see below, but miss the sitemap) and indexed pages it cannot find in
+the build.
+
+A public page without an SEO record is **indexed**: a localized route
+(`name.<locale>`) that nobody described should not silently drop out of search.
+Service pages (sign-in, password reset) carry no locale suffix and stay closed.
+An SEO record, or `index` in `SeoService::override()`, always has the last word.
+
 ## Site-wide values: `config/seo.php`
 
 Published by the installer. Everything here is what the operator does *not*
@@ -150,6 +178,7 @@ edit from the cabinet:
   node on the platform's own site (for POSIO: `https://posio.com.ua/#software`).
   Leave `id` empty and nothing is emitted.
 - `sitenav_routes` — see above.
+- `sitemap_lastmod` — where the page files are, see "Regenerate the sitemap".
 
 `config/general.php` holds `locales` (drives hreflang, sitemap and the locale
 suffix stripping) and `default_og_image` (+ width/height).

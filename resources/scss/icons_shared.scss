@@ -7,8 +7,12 @@
 	--icon-lg: 		24px; // навигация, тулбары (Material default)
 	--icon-xl: 		32px; // крупные акценты, фичи
 	--icon-xxl:		40px; // крупные акценты, фичи
+	// Второе имя того же размера — под шкалу 2xl…6xl, как у типографики
+	--icon-2xl:		var(--icon-xxl);
 	--icon-3xl:		48px; // крупные акценты, фичи
 	--icon-4xl:		64px; // иллюстративные
+	--icon-5xl:		80px; // иллюстративные
+	--icon-6xl:		96px; // иллюстративные
 }
 
 .icon-label {
@@ -34,8 +38,11 @@
 		width: 	 	var(--icon-base);
 		min-width: 	var(--icon-base);
 		height: 	var(--icon-base);
-		min-height: var(--icon-base); 
-		background-color: inherit!important;
+		min-height: var(--icon-base);
+		// Фон значка не наследуем: на полупрозрачной подложке (кружок-заливка под
+		// значком) унаследованный цвет ложится вторым слоем, и квадрат значка
+		// проступает темнее круга вокруг него.
+		background-color: transparent;
 		fill: var(--icon-color, var(--text-color));
 	}
 
@@ -100,6 +107,13 @@
         min-height: var(--icon-xxl)!important;     
     }
 
+    .icon-2xl {
+		width:      var(--icon-2xl)!important;
+        min-width:  var(--icon-2xl)!important;
+        height:     var(--icon-2xl)!important;
+        min-height: var(--icon-2xl)!important;
+    }
+
     .icon-3xl {
 		width:      var(--icon-3xl)!important;
         min-width:  var(--icon-3xl)!important;
@@ -111,7 +125,21 @@
 		width:      var(--icon-4xl)!important;
         min-width:  var(--icon-4xl)!important;
         height:     var(--icon-4xl)!important;
-        min-height: var(--icon-4xl)!important;     
+        min-height: var(--icon-4xl)!important;
+    }
+
+    .icon-5xl {
+		width:      var(--icon-5xl)!important;
+        min-width:  var(--icon-5xl)!important;
+        height:     var(--icon-5xl)!important;
+        min-height: var(--icon-5xl)!important;
+    }
+
+    .icon-6xl {
+		width:      var(--icon-6xl)!important;
+        min-width:  var(--icon-6xl)!important;
+        height:     var(--icon-6xl)!important;
+        min-height: var(--icon-6xl)!important;
     }
 
     .icon-label-sm {
@@ -136,4 +164,4 @@
             margin: 0.5rem 0.75rem 0.5rem 0rem!important;
         }
     }
-}
+}

@@ -16,6 +16,17 @@
 			!bg-blue-600;
 	}
 
+	// Выбранное состояние без акцентного цвета — там, где подсветка отмечает
+	// текущее положение, а не предлагает действие.
+	.neutral-button {
+		background-color: var(--neutral-button-background)!important;
+		color: var(--neutral-button-text-color);
+	}
+
+	.neutral-button:not(:disabled):hover {
+		background-color: var(--neutral-button-hover-background)!important;
+	}
+
 	.transparent-button {
 		@apply
 			px-4

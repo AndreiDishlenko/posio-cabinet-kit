@@ -4,7 +4,7 @@
 	<transition name="fade">
 		<div
 			v-if="isVisible"
-			class="!m-0 fixed inset-0 bg-black bg-opacity-50 z-40"
+			class="!m-0 fixed inset-0 bg-black/50 z-40"
 			@click="close"
 			>
 		</div>
@@ -149,4 +149,4 @@
 	::-webkit-scrollbar-thumb:hover {
 		background: #6b7280;
 	}
-</style>
+</style>

@@ -3,7 +3,7 @@
 	     найширший набір іконок (у шапці групи їх більше, ніж у рядку), і при
 	     центруванні іконки рядків розійшлися б із рештою колонки по вертикалі. -->
 	<div class="table-cell row-cell rowbar-cell !justify-end">
-		<div class="rowbar">
+		<div v-if="show_icons" class="rowbar">
 
 			<!-- Меню дій: одна кнопка замість набору іконок, решта дій рядка — його пункти. -->
 			<Dropdown v-if="menu_action"
@@ -86,6 +86,14 @@
 			hide_delete_icons: {
 				type: [Boolean, Function],
 				default: false,
+			},
+			// Whether the row's action icons render at all. False keeps the column cell
+			// (grid alignment with the header) but empty — used when the host table has
+			// a deleted-filter and rowbar_mobile_only, so the column stays reserved for
+			// the header's "Show deleted" toggle while icons collapse to the context menu.
+			show_icons: {
+				type: Boolean,
+				default: true,
 			},
 		},
 		emits: ['action'],

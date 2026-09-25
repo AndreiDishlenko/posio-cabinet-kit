@@ -10,7 +10,7 @@
 			<slot :toggle="toggle"/>
 		</template>
 
-		<template #default="{ closeSilently }">
+		<template #default="{ closeSilently, is_mobile }">
 
 			<!-- Account selector -->
 			<div v-if="can_switch_account" class="px-5 v-center">
@@ -24,7 +24,7 @@
 					</div> -->
 					<Selectable
 						class="w-full"
-						size=""
+						:size="is_mobile ? 'lg' : ''"
 						v-model="selected_account"
 						:in_data="switchable_accounts"
 						:isChild="true"

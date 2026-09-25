@@ -32,6 +32,7 @@ class SeoRepository
         'priority',
         'is_published',
         'is_deleted',
+        'content_updated_at',
         // Open Graph
         'og_image',
         'og_title',

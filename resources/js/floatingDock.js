@@ -1,23 +1,26 @@
 import { reactive } from 'vue';
 
 // Спільна черга плаваючих елементів нижнього правого кута екрана: кнопка дії
-// списку, нагадування про перші кроки тощо. Кожен наступний елемент стає НАД
-// уже наявними, а не поверх них; коли нижній зникає — верхні опускаються.
-// Порядок стовпчика = порядок появи, тож перший елемент завжди стоїть на
-// звичному місці біля краю екрана.
+// списку, нагадування про перші кроки, помічник. Кожен елемент стає НАД
+// сусідами, а не поверх них; коли нижній зникає — верхні опускаються.
+// Порядок стовпчика задає вага елемента (менша — ближче до краю екрана), тож
+// місце кожного стале й не залежить від того, хто зʼявився раніше.
 
 // Проміжок між сусідніми елементами стовпчика.
 const GAP = 12;
 
 const state = reactive({
 	items: [],
+	// Розкритий віджет у стовпчику завжди один: два розкритих накрили б і один
+	// одного, і робочу область під ними.
+	opened: null,
 });
 
 let last_id = 0;
 
-export function joinDock() {
+export function joinDock(weight) {
 	const id = ++last_id;
-	state.items.push({ id, height: 0 });
+	state.items.push({ id, weight: weight || 0, height: 0 });
 
 	return id;
 }
@@ -39,7 +42,11 @@ export function setDockHeight(id, height) {
 export function dockOffsetOf(id) {
 	let offset = 0;
 
-	for ( const item of state.items ) {
+	// Копія перед упорядкуванням: сортування на місці перемішало б спільний
+	// масив і зробило б черговий перерахунок залежним від попереднього.
+	const column = state.items.slice().sort((a, b) => a.weight - b.weight);
+
+	for ( const item of column ) {
 		if ( item.id === id )
 			break;
 
@@ -48,4 +55,19 @@ export function dockOffsetOf(id) {
 	}
 
 	return offset;
+}
+
+// Розкриття віджета витісняє попередній: власник кожного слухає, чи він досі
+// той самий, і згортається сам.
+export function openDockWidget(id) {
+	state.opened = id;
+}
+
+export function closeDockWidget(id) {
+	if ( state.opened === id )
+		state.opened = null;
+}
+
+export function openedDockWidget() {
+	return state.opened;
 }

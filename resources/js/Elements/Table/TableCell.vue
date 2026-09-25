@@ -9,6 +9,7 @@
 			column.hide && column.hide + '-hidden',
 			column.nowrap && 'whitespace-nowrap',
 			row.is_deleted && 'is-deleted',
+			cell_value_class,
 		]"
 		:field="column.field"
 		>
@@ -92,12 +93,12 @@
 
 		<!-- Date -->
 		<template v-else-if="column.type == 'date'">
-			{{ this.$dayjs(row[column.field]).format('DD.MM.YYYY') }}
+			{{ row[column.field] ? this.$dayjs(row[column.field]).format('DD.MM.YYYY') : '' }}
 		</template>
 
 		<!-- Time -->
 		<template v-else-if="column.type == 'time'">
-			{{ this.$dayjs(row[column.field]).format('HH:mm:ss') }}
+			{{ row[column.field] ? this.$dayjs(row[column.field]).format('HH:mm:ss') : '' }}
 		</template>
 
 		<!-- Select -->
@@ -143,10 +144,14 @@
 		<template v-else-if="column.type == 'edit'">
 			<input
 				class="form-control form-control-sm text-center"
+				:class="{ 'input-error': edit_invalid }"
 				v-model="row[column.field]"
-				@focus="editBaseline = row[column.field]"
+				@click.stop
+				@mousedown.stop
+				@focus="startEdit($event)"
 				@input="column.onInput ? column.onInput(row) : null"
-				@change="row.blocked = true; column.onUpdate(row)"
+				@change="commitEdit()"
+				@blur="holdInvalidEdit($event)"
 				@keydown.esc.prevent="cancelEdit($event)"
 				/>
 		</template>
@@ -206,9 +211,20 @@
 				// Значення комірки на момент входу в редагування (type:'edit') —
 				// точка відкату для Esc.
 				editBaseline: null,
+				// Введене значення не пройшло перевірку колонки: з комірки не випускаємо,
+				// доки його не виправлять або не скасують по Esc.
+				edit_invalid: false,
+				// Помилку щойно показали при збереженні — при виході з комірки не дублюємо.
+				edit_error_shown: false,
 			};
 		},
 		computed: {
+			// Оформлення комірки від даних рядка (напр. колір суми за знаком) — задає колонка.
+			cell_value_class() {
+				const cell_class = this.column.cell_class;
+
+				return typeof cell_class === 'function' ? cell_class(this.row) : (cell_class ?? '');
+			},
 			inline_value_filled() {
 				return !!String(this.row[this.column.field] ?? '').trim();
 			},
@@ -281,12 +297,55 @@
 			},
 		},
 		methods: {
+			// Старе значення виділяється цілком: набране замінює його, а не дописується
+			// в кінець (так «1350» перетворювалось на «13501350»).
+			startEdit(event) {
+				// Повернення фокусу після помилки — те саме редагування: точка відкату
+				// для Esc лишається початковою, а не хибним значенням.
+				if ( !this.edit_invalid )
+					this.editBaseline = this.row[this.column.field];
+
+				event.target.select();
+			},
+			editError() {
+				return this.column.validate ? this.column.validate(this.row[this.column.field], this.row) : null;
+			},
+			// Колонка може перевірити значення до збереження: з помилкою запит не
+			// відправляється, а введене лишається в комірці для виправлення.
+			commitEdit() {
+				const error = this.editError();
+				if ( error ) {
+					this.edit_invalid = true;
+					this.edit_error_shown = true;
+					this.$toast.error(this.$t(error));
+					return;
+				}
+
+				this.edit_invalid = false;
+				this.row.blocked = true;
+				this.column.onUpdate(this.row);
+			},
+			// Вийти з комірки з хибним значенням не можна — фокус повертається назад.
+			holdInvalidEdit(event) {
+				if ( !this.edit_invalid )
+					return;
+
+				if ( !this.edit_error_shown )
+					this.$toast.error(this.$t(this.editError()));
+
+				this.edit_error_shown = false;
+
+				const input = event.target;
+				setTimeout(() => input.focus());
+			},
 			// Скасувати редагування комірки по Esc: повернути значення, яке було на
 			// вході в комірку (editBaseline), і зняти фокус. Значення повертається до
 			// фокусного (і в row, і в DOM), тож подія change не спрацьовує — onUpdate
 			// (збереження/перерахунок) не викликається.
 			cancelEdit(event) {
 				const input = event.target;
+				this.edit_invalid = false;
+				this.edit_error_shown = false;
 				this.row[this.column.field] = this.editBaseline;
 				input.value = this.editBaseline ?? '';
 				input.blur();

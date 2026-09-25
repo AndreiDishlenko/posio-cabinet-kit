@@ -3,7 +3,7 @@
 
 		<div class="email-verification-outcome card-body text-center space-y-3">
 			<div class="text-secondary">
-				{{ $t(outcome === 'email-already-verified' ? 'email-already-verified-signed-in-as-other' : 'email-verified-signed-in-as-other', { verified_email, current_email }) }}
+				{{ $t(outcome_message_key, { verified_email, current_email }) }}
 			</div>
 		</div>
 
@@ -13,7 +13,7 @@
 				<a :href="home_url" class="w-full button primary-button button-lg text-md">
 					{{ $t('Continue as {email}', { email: current_email }) }}
 				</a>
-				<!-- Выход ведёт на страницу входа с уже подставленной подтверждённой почтой. -->
+				<!-- Выход ведёт на страницу входа с уже подставленной почтой; после входа подтверждение завершится. -->
 				<Link as="button" method="post" :href="route('verification.switch-account')" class="w-full button outline-button button-lg text-md">
 					{{ $t('Sign in as {email}', { email: verified_email }) }}
 				</Link>
@@ -47,6 +47,13 @@
 			home_url: {
 				type: String,
 				default: '/',
+			},
+		},
+		computed: {
+			outcome_message_key() {
+				return this.outcome === 'email-already-verified'
+					? 'email-already-verified-signed-in-as-other'
+					: 'email-verification-sign-in-required-signed-in-as-other';
 			},
 		},
 	}

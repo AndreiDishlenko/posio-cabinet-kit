@@ -1,6 +1,6 @@
 <template>
 
-	<div class="filter-container compact-card !p-3 flex flex-col mb-3">
+	<div class="filter-container page-filters compact-card !p-3 flex flex-col">
 
 		<!-- Desktop header: title + reset -->
 		<!-- <div class="lt-md:hidden flex items-center justify-between mb-2">
@@ -117,6 +117,83 @@
 						@update:model-value="(new_val) => handleDateRangeChange(new_val, 'month')"
 						/>
 
+					<!-- Період довільної довжини: пресети збоку календаря (на телефоні — згорнуті
+					     під ним), стрілки — сусідній період -->
+					<div v-else-if="def.type === 'period'" class="period-filter flex items-center gap-1">
+
+						<button type="button"
+							class="button button-md button-square outline-button text-secondary shrink-0"
+							:title="$t('Previous period')"
+							@click="shiftPeriod(-1)">
+							<Icon icon="mdi:chevron-left" class="icon" />
+						</button>
+
+						<div class="grow min-w-0 md:w-[15.5rem]">
+							<VueDatePicker
+								ref="period_picker"
+								v-model="filters.date_range"
+								range
+								:multi-calendars="period_single_calendar ? false : { count: 2 }"
+								model-type="yyyy-MM-dd"
+								:format="formatPeriod"
+								:preset-dates="is_mobile ? [] : periodPresets"
+								:start-date="periodCalendarStart"
+								focus-start-date
+								:alt-position="placePeriodMenu"
+								:locale="$i18n.locale"
+								:week-start="1"
+								:enable-time-picker="false"
+								auto-apply
+								:ui="{ input: 'form-control form-control-md text-secondary !ps-8 !pe-7' }"
+								position="left"
+								:placeholder="$t('Period')"
+								:dark="true"
+								@update:model-value="handlePeriodChange"
+								>
+								<template #period-preset="{ label, value, presetDate }">
+									<button type="button"
+										class="button button-md preset-button w-full"
+										:class="{ selected: isActivePeriod(value) }"
+										@click="presetDate(value)">
+										{{ label }}
+									</button>
+								</template>
+
+								<!-- На телефоні пресети згорнуті під календарем і розгортаються за тапом:
+								     календар лишається головним, а розгорнуті пресети — просторими. -->
+								<template v-if="is_mobile" #left-sidebar>
+									<div class="period-presets-mobile">
+										<button type="button"
+											class="button button-sm preset-button w-full justify-between"
+											:aria-expanded="period_presets_open"
+											@click="period_presets_open = !period_presets_open">
+											<span>{{ $t('Quick select') }}</span>
+											<Icon icon="mdi:chevron-down" class="icon transition-transform"
+												:class="{ 'rotate-180': period_presets_open }" />
+										</button>
+
+										<div v-if="period_presets_open" class="grid grid-cols-2 gap-2 pt-2">
+											<button v-for="preset in periodPresets" :key="preset.label" type="button"
+												class="button button-md preset-button w-full"
+												:class="{ selected: isActivePeriod(preset.value) }"
+												@click="applyPeriodPreset(preset.value)">
+												{{ preset.label }}
+											</button>
+										</div>
+									</div>
+								</template>
+							</VueDatePicker>
+						</div>
+
+						<button type="button"
+							class="button button-md button-square outline-button text-secondary shrink-0"
+							:title="$t('Next period')"
+							@click="shiftPeriod(1)">
+							<Icon icon="mdi:chevron-right" class="icon" />
+						</button>
+
+					</div>
+
 					<!-- Рік -->
 					<VueDatePicker v-else-if="def.type === 'year'"
 						v-model="filters.year"
@@ -191,6 +268,14 @@
 
 	import Selectable		from '@/js/Elements/Forms/Selectable.vue';
 	import SelectableInput	from '@/js/Elements/Forms/SelectableInput.vue';
+
+	import mobileViewportMixin from '@/js/_mobileViewportMixin.js';
+
+	// Запас між меню періоду й краями видимої області.
+	const PERIOD_MENU_MARGIN = 8;
+	// Приблизна ширина меню з двома календарями й колонкою пресетів: у вужчій видимій
+	// області лишається один календар, інакше меню не вміщається.
+	const PERIOD_TWO_CALENDARS_WIDTH = 736;
 
 	// Реєстр фільтрів: порядок записів задає порядок колонок у рядку (порядок ключів,
 	// з якими сторінка перелічила фільтри, на вигляд не впливає).
@@ -293,6 +378,11 @@
 			model: 'date_range',
 		},
 		{
+			name: 'period',
+			type: 'period',
+			model: 'date_range',
+		},
+		{
 			name: 'report_month',
 			type: 'select',
 			model: 'month',
@@ -324,8 +414,13 @@
 	// що є: без страховки збій завантаження довідників залишив би порожній екран.
 	const DICTIONARIES_WAIT = 5000;
 
+	// Цілі періоди, які впізнає фільтр періоду, — у місяцях.
+	const PERIOD_MONTHS = { month: 1, quarter: 3, year: 12 };
+
 	export default {
 		components: { Icon, Selectable, SelectableInput, VueDatePicker },
+		// На телефоні один календар замість двох — два поруч не вміщаються.
+		mixins: [mobileViewportMixin],
 		inject: {
 			// Затвор первинного завантаження сторінки (дає міксин таблиці). Панель фільтрів
 			// сама повідомляє, коли значення підставлені й запит матиме сенс.
@@ -383,6 +478,8 @@
 				is_silent: false,
 				is_ready: false,
 				ready_timer: null,
+				period_presets_open: false,
+				period_menu_narrow: false,
 			}
 		},
 		computed: {
@@ -451,6 +548,46 @@
 					const year = current - i;
 					return { id: year, name: String(year) };
 				});
+			},
+			// Швидкий вибір цілого місяця / кварталу / року — поточного й попереднього.
+			periodPresets() {
+				const now           = this.$dayjs();
+				const month_start   = now.startOf('month');
+				const quarter_start = this.quarterStart(now);
+				const year_start    = now.startOf('year');
+
+				// Власну розмітку кнопки пакет бере лише зі слота, названого в самому пресеті.
+				return [
+					{ label: this.$t('This month'),   value: this.periodRange(month_start, 'month') },
+					{ label: this.$t('Last month'),   value: this.periodRange(month_start.subtract(1, 'month'), 'month') },
+					{ label: this.$t('This quarter'), value: this.periodRange(quarter_start, 'quarter') },
+					{ label: this.$t('Last quarter'), value: this.periodRange(quarter_start.subtract(3, 'month'), 'quarter') },
+					{ label: this.$t('This year'),    value: this.periodRange(year_start, 'year') },
+					{ label: this.$t('Last year'),    value: this.periodRange(year_start.subtract(1, 'year'), 'year') },
+				].map(preset => ({ ...preset, slot: 'period-preset' }));
+			},
+			// Один календар — на телефоні й там, де два поруч не вміщаються у видиму область.
+			period_single_calendar() {
+				return this.is_mobile || this.period_menu_narrow;
+			},
+			// Календар відкривається на місяці, де закінчується період, але не далі
+			// поточного — минуле потрібніше за майбутнє. На двох календарях цей місяць
+			// праворуч, а ліворуч — попередній, а не наступний.
+			periodCalendarStart() {
+				const [from, to] = this.filters.date_range || [];
+				if ( !from )
+					return null;
+
+				const today = this.$dayjs();
+				const start = this.$dayjs(from);
+				let focus   = this.$dayjs(to || from);
+
+				if ( focus.isAfter(today, 'month') )
+					focus = start.isAfter(today, 'month') ? start : today;
+
+				focus = focus.startOf('month');
+
+				return (this.period_single_calendar ? focus : focus.subtract(1, 'month')).toDate();
 			},
 			// Квартали для комбінованого фільтра рік-квартал.
 			quarterOptions() {
@@ -818,7 +955,10 @@
 				return true;
 			},
 
-			changeFilter(filter_name) {
+			// force_update — оновити дані навіть якщо значення не змінилось: скидання
+			// дати хрестиком повертає її на сьогодні, і саме сьогодні там і могло стояти,
+			// а користувач очікує від хрестика свіжі дані.
+			changeFilter(filter_name, force_update = false) {
 				// console.log('[Filters.changeFilter]', filter_name);
 
 				if (this.is_silent) return;
@@ -831,7 +971,7 @@
 				// Каскад: зміна точки може знецінити вибрану касу.
 				this.resolveDictFilters();
 
-				if ( !this.takeSnapshot() )
+				if ( !this.takeSnapshot() && !force_update )
 					return;
 
 				this.cacheFilters()
@@ -908,6 +1048,10 @@
 						month: now.month(), // от 0 до 11
 					}
 
+				// Період за замовчуванням — поточний місяць цілком (його можна розширити).
+				if (this.options.period)
+					this.filters.date_range = this.periodRange(now.startOf('month'), 'month');
+
 				// Комбінований фільтр рік-квартал: за замовчуванням поточний квартал.
 				if (this.options.year_quarter) {
 					if (!this.filters.year)
@@ -925,7 +1069,7 @@
 					this.$nextTick(() => {
 						this.setCurrentDate()
 						this.previousDocDate = this.filters.date
-						this.changeFilter(filter_name);
+						this.changeFilter(filter_name, true);
 					})
 				} else {
 					this.changeFilter(filter_name)
@@ -937,7 +1081,7 @@
 				if ( !new_val ) {
 					this.$nextTick(() => {
 						this.filters.year = this.$dayjs().year();
-						this.changeFilter('year');
+						this.changeFilter('year', true);
 					});
 					return;
 				}
@@ -969,10 +1113,154 @@
 							this.setCurrentDate()
 							// this.$emit('changeDateRange')
 						});
-						this.changeFilter(filter_name);
+						this.changeFilter(filter_name, true);
 					})
 				} else
 					this.changeFilter(filter_name)
+			},
+
+			// --- Період -------------------------------------------------------------------
+
+			// Межі цілого місяця / кварталу / року, що починається з вказаної дати.
+			periodRange(start, kind) {
+				const end = start.add(PERIOD_MONTHS[kind] - 1, 'month').endOf('month');
+
+				return [start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD')];
+			},
+			// Спершу на перше число: інакше 31 травня при переході на квітень переповзе в травень.
+			quarterStart(date) {
+				const month_start = date.startOf('month');
+
+				return month_start.month(Math.floor(month_start.month() / 3) * 3);
+			},
+			// Який цілий період вибрано: від нього залежать підпис у полі й крок стрілок.
+			periodKind(range) {
+				const [from, to] = range || [];
+				if ( !from || !to )
+					return null;
+
+				const start = this.$dayjs(from);
+				if ( start.date() !== 1 )
+					return 'custom';
+
+				if ( this.periodRange(start, 'month')[1] === to )
+					return 'month';
+				if ( start.month() % 3 === 0 && this.periodRange(start, 'quarter')[1] === to )
+					return 'quarter';
+				if ( start.month() === 0 && this.periodRange(start, 'year')[1] === to )
+					return 'year';
+
+				return 'custom';
+			},
+			isActivePeriod(value) {
+				const range = this.filters.date_range || [];
+
+				return range[0] === value[0] && range[1] === value[1];
+			},
+			// Цілий період зсувається на сусідній такий самий, довільний — на свою довжину.
+			shiftPeriod(direction) {
+				const range = this.filters.date_range;
+				const kind  = this.periodKind(range);
+				if ( !kind )
+					return;
+
+				const start = this.$dayjs(range[0]);
+
+				if ( kind === 'custom' ) {
+					const end  = this.$dayjs(range[1]);
+					const days = (end.diff(start, 'day') + 1) * direction;
+
+					this.filters.date_range = [
+						start.add(days, 'day').format('YYYY-MM-DD'),
+						end.add(days, 'day').format('YYYY-MM-DD'),
+					];
+				} else
+					this.filters.date_range = this.periodRange(start.add(PERIOD_MONTHS[kind] * direction, 'month'), kind);
+
+				this.changeFilter('period');
+			},
+			// Цілий період підписується словами («Вересень 2026», «Квартал 3, 2026», «2026»),
+			// довільний — датами, рік на початку опускається, якщо він той самий.
+			formatPeriod(dates) {
+				const [from, to] = (dates || []).filter(Boolean).map(date => this.$dayjs(date));
+				if ( !from )
+					return '';
+
+				const range = [from.format('YYYY-MM-DD'), (to || from).format('YYYY-MM-DD')];
+
+				switch ( this.periodKind(range) ) {
+					case 'month':
+						return `${this.monthOptions[from.month()].name} ${from.year()}`;
+					case 'quarter':
+						return `${this.$t('Quarter')} ${Math.floor(from.month() / 3) + 1}, ${from.year()}`;
+					case 'year':
+						return String(from.year());
+				}
+
+				if ( !to || from.isSame(to, 'day') )
+					return from.format('DD.MM.YYYY');
+
+				return `${from.format(from.isSame(to, 'year') ? 'DD.MM' : 'DD.MM.YYYY')} – ${to.format('DD.MM.YYYY')}`;
+			},
+			handlePeriodChange(new_val) {
+				// Період не буває порожнім: хрестик повертає поточний місяць.
+				if ( !new_val?.[0] ) {
+					this.$nextTick(() => {
+						this.filters.date_range = this.periodRange(this.$dayjs().startOf('month'), 'month');
+						this.changeFilter('period', true);
+					});
+					return;
+				}
+
+				// Календар закрили після першої дати — це період в один день.
+				if ( !new_val[1] )
+					this.filters.date_range = [new_val[0], new_val[0]];
+
+				this.changeFilter('period');
+			},
+			// Видима область меню періоду: екран, звужений предками, що обрізають вміст, —
+			// зокрема областю сторінки, поруч з якою стоїть бічне меню.
+			periodMenuBounds(input) {
+				let left  = 0;
+				let right = document.documentElement.clientWidth;
+
+				for ( let node = input.parentElement; node && node !== document.body; node = node.parentElement ) {
+					if ( getComputedStyle(node).overflowX === 'visible' )
+						continue;
+
+					const rect = node.getBoundingClientRect();
+					left  = Math.max(left, rect.left);
+					right = Math.min(right, rect.right);
+				}
+
+				return { left: left + PERIOD_MENU_MARGIN, right: right - PERIOD_MENU_MARGIN };
+			},
+			// Пакет вирівнює меню лише по краю екрана й не знає про бічне меню, під яким
+			// воно ховалося. Зсув у видиму область рахується відсотками від ширини самого
+			// меню, тож він правильний, ще до того як меню намальоване.
+			placePeriodMenu(input) {
+				const rect   = input.getBoundingClientRect();
+				const bounds = this.periodMenuBounds(input);
+				const min    = bounds.left - rect.left;
+				const max    = bounds.right - rect.left;
+				// На телефоні поле стоїть між стрілками — меню по центру видимої області.
+				const wanted = this.is_mobile ? `calc(${(min + max) / 2}px - 50%)` : '0px';
+
+				this.period_menu_narrow = bounds.right - bounds.left < PERIOD_TWO_CALENDARS_WIDTH;
+
+				return {
+					top:       `${rect.height + 10}px`,
+					left:      '0px',
+					transform: `translateX(max(${min}px, min(${wanted}, calc(${max}px - 100%))))`,
+				};
+			},
+			// Пресет із блоку телефона — те саме, що вибір пресета в самому календарі.
+			applyPeriodPreset(value) {
+				this.filters.date_range = value;
+				this.handlePeriodChange(value);
+
+				// Поле стоїть у переліку фільтрів, тому посилання на нього — масив.
+				[].concat(this.$refs.period_picker || [])[0]?.closeMenu();
 			},
 
 			removeChip(key) {
@@ -1054,5 +1342,53 @@
 	}
 	.filter-item {
 		min-width: 100px;
+	}
+	// Меню періоду: пресети колонкою ліворуч від календаря.
+	.period-filter {
+		:deep(.dp--preset-dates) {
+			display: grid;
+			gap: 0.5rem;
+			align-content: start;
+			min-width: 10.5rem;
+			padding: 0.5rem 1rem 0.5rem 0.5rem;
+			margin-right: 0.5rem;
+		}
+
+		// Меню зсувається у видиму область, і стрілка вказувала б повз поле.
+		:deep(.dp__arrow_top),
+		:deep(.dp__arrow_bottom) {
+			display: none;
+		}
+
+		// На телефоні колонка збоку робить меню ширшим за екран: пресети — згорнутим
+		// блоком під календарем, календар — на всю доступну ширину.
+		@media (max-width: 767px) {
+			:deep(.dp__menu) {
+				width: 20rem;
+				max-width: calc(100vw - 2rem);
+			}
+
+			// Бічна вставка в розмітці пакета стоїть перед календарем.
+			:deep(.dp__menu_content_wrapper) {
+				flex-direction: column-reverse;
+			}
+
+			:deep(.dp__sidebar_left) {
+				padding: 0.5rem 0.25rem 0.25rem;
+				margin-top: 0.25rem;
+				border: 0;
+				border-top: 1px solid var(--dp-border-color);
+			}
+
+			// Колонка дня тут ширша за сам день, і заливка діапазону рвалася б
+			// проміжками: день займає всю колонку — смуга суцільна, як на десктопі.
+			:deep(.dp__calendar_item) {
+				flex: 1 1 0;
+				min-width: 0;
+			}
+
+			:deep(.dp__cell_inner) {
+				width: 100%;
+			}		}
 	}
 </style>

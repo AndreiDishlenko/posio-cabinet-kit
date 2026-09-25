@@ -8,7 +8,7 @@
 			inputmode="decimal"
 			:value="display"
 			class="form-control w-full currency-input-field"
-			:class="[ input_class, sizeClass ]"
+			:class="[ input_class, sizeClass, signBefore ? 'currency-input-field-sign-before' : 'currency-input-field-sign-after' ]"
 			:placeholder="$t(placeholder)"
 			:readonly="disabled"
 			:disabled="disabled"
@@ -19,7 +19,10 @@
 			@keydown.enter = "(e) => handleEnter(e)"
 			/>
 
-		<span v-if="currencySymbol" class="currency-symbol" :class="sizeClass ? `currency-symbol-${size}` : ''">
+		<span v-if="currencySymbol"
+			class="currency-symbol"
+			:class="[ sizeClass ? `currency-symbol-${size}` : '', signBefore ? 'currency-symbol-before' : 'currency-symbol-after' ]"
+			>
 			{{ currencySymbol }}
 		</span>
 
@@ -28,6 +31,8 @@
 </template>
 
 <script>
+	import { currencySignPlacement, formatAmount, numberSeparators } from '@/js/currencyFormat.js';
+
 	export default {
 		name: 'CurrencyInput',
 		props: {
@@ -42,6 +47,16 @@
 			currency: {
 				type: String,
 				default: '',
+			},
+			// Международный код валюты (UAH, USD): определяет сторону знака у поля.
+			code: {
+				type: String,
+				default: '',
+			},
+			// Разделение разрядов в неактивном поле; при вводе число всегда голое.
+			grouping: {
+				type: Boolean,
+				default: true,
 			},
 			placeholder: {
 				type: String,
@@ -93,24 +108,44 @@
 
 				return this.value !== undefined ? this.value : '';
 			},
+			accountCurrency() {
+				const currency_id = this.$page?.props?.account?.currency_id;
+				const dict = this.$dictionaries?.currencies_a;
+
+				return (currency_id && dict) ? dict[currency_id] : null;
+			},
 			currencySymbol() {
 				if (this.currency) return this.currency;
 
-				const currency_id = this.$page?.props?.account?.currency_id;
-				const dict = this.$dictionaries?.currencies_a;
-				const entry = (currency_id && dict) ? dict[currency_id] : null;
+				const entry = this.accountCurrency;
 
 				return entry ? (entry.sign || entry.name || '') : '';
+			},
+			currencyCode() {
+				if (this.code) return this.code;
+
+				const entry = this.accountCurrency;
+
+				return entry ? (entry.name || '') : '';
+			},
+			// Гривна и евро ставят знак после суммы, доллар и фунт — перед ней.
+			signBefore() {
+				return currencySignPlacement(this.currencyCode, this.currencySymbol).position === 'before';
+			},
+			// Разделители текущей локали нужны, чтобы разобрать вставленную
+			// сгруппированную сумму обратно в число.
+			separators() {
+				return numberSeparators(this.$i18n?.locale);
 			},
 		},
 		watch: {
 			currentValue(newValue) {
 				if (!this.isFocused)
-					this.display = this.formatValue(newValue);
+					this.display = this.displayValue(newValue);
 			},
 		},
 		mounted() {
-			this.display = this.formatValue(this.currentValue);
+			this.display = this.displayValue(this.currentValue);
 		},
 		methods: {
 			focus() {
@@ -125,7 +160,7 @@
 			sanitize(raw) {
 				if (raw === null || raw === undefined) return '';
 
-				let s = String(raw).replace(/,/g, '.');
+				let s = this.stripGrouping(String(raw));
 
 				// При allow_negative запоминаем ведущий минус (по нему же определяем
 				// «одинокий минус» в процессе набора), затем чистим строку от знака.
@@ -148,6 +183,26 @@
 				// Возвращаем минус (в т.ч. одинокий «-» при наборе, чтобы его не съедало).
 				return neg ? '-' + s : s;
 			},
+			// CurrencyInput.stripGrouping — убирает разделители разрядов и приводит
+			// десятичный знак к точке. Разделитель дробной части — тот из «,» и «.»,
+			// что стоит правее: так «1,250.00» и «1.250,00» читаются одинаково верно.
+			stripGrouping(raw) {
+				let s = String(raw).replace(/[\s']/g, '');
+
+				const group = this.separators.group;
+				if (group && group !== '.' && group !== ',')
+					s = s.split(group).join('');
+
+				const last_comma = s.lastIndexOf(',');
+				const last_dot   = s.lastIndexOf('.');
+
+				if (last_comma !== -1 && last_dot !== -1)
+					return last_comma > last_dot
+						? s.split('.').join('').replace(/,/g, '.')
+						: s.split(',').join('');
+
+				return s.replace(/,/g, '.');
+			},
 			// CurrencyInput.formatValue — нормализует внешнее значение к строке с фиксированным числом знаков
 			formatValue(raw) {
 				if (raw === '' || raw === null || raw === undefined) return '';
@@ -156,6 +211,16 @@
 				if (isNaN(n)) return '';
 
 				return this.decimals >= 0 ? n.toFixed(this.decimals) : String(n);
+			},
+			// CurrencyInput.displayValue — вид суммы в неактивном поле: с разрядами
+			// и разделителями текущей локали.
+			displayValue(raw) {
+				const plain = this.formatValue(raw);
+
+				if (plain === '' || !this.grouping)
+					return plain;
+
+				return formatAmount(plain, { decimals: this.decimals, locale: this.$i18n?.locale });
 			},
 			emitValue(stringValue) {
 				// Одинокий «-» (набор отрицательного числа ещё не завершён) трактуем как пусто.
@@ -289,6 +354,7 @@
 			},
 			handleFocus(event) {
 				this.isFocused = true;
+				this.display = this.formatValue(this.currentValue);
 				this.$emit('inputFocus', event);
 			},
 			handleBlur(event) {
@@ -301,8 +367,9 @@
 				if (this.display !== '') {
 					const n = Number(this.display);
 					if (!isNaN(n)) {
-						this.display = this.decimals >= 0 ? n.toFixed(this.decimals) : String(n);
-						this.emitValue(this.display);
+						const plain = this.decimals >= 0 ? n.toFixed(this.decimals) : String(n);
+						this.emitValue(plain);
+						this.display = this.displayValue(plain);
 					} else {
 						// Ввод не сводится к числу (например одинокий «-») — очищаем.
 						this.display = '';
@@ -326,16 +393,22 @@
 	}
 
 	.currency-input-field {
-		// место под символ валюты в конце поля — !important, т.к. form-control-*
-		// классы (в т.ч. подключаемые снаружи для мобильных брейкпоинтов) задают
-		// свой padding-right с более высокой специфичностью и иначе перебивают его
-		padding-right: 2rem !important;
 		text-align: right;
+	}
+
+	// место под символ валюты — !important, т.к. form-control-* классы (в т.ч.
+	// подключаемые снаружи для мобильных брейкпоинтов) задают свои поля с более
+	// высокой специфичностью и иначе перебивают его
+	.currency-input-field-sign-after {
+		padding-right: 2rem !important;
+	}
+
+	.currency-input-field-sign-before {
+		padding-left: 2rem !important;
 	}
 
 	.currency-symbol {
 		position: absolute;
-		right: 1rem;
 		top: 1px;
 		bottom: 0;
 		display: flex;
@@ -348,6 +421,9 @@
 		white-space: nowrap;
 		line-height: 1;
 	}
+
+	.currency-symbol-after  { right: 1rem; }
+	.currency-symbol-before { left: 1rem; }
 
 	// размер символа валюты соразмерен размеру шрифта ввода суммы
 	.currency-symbol-sm { font-size: var(--text-sm); }

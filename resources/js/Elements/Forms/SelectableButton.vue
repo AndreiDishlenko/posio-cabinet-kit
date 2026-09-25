@@ -20,7 +20,7 @@
         :buttonclass="'dropdown-button flex items-center p-0'"
         :dropareaclass="dropareaclass + (offset ? '' : (direction === 'up' ? ' rounded-b-none' : ' rounded-t-none'))"
         @cancel="() => {$emit('cancel')}"
-        @changeState="(dd_state) => { state=dd_state }"
+        @changeState="(dd_state) => { state=dd_state; $emit('stateChange', dd_state) }"
         >
 
         <template #button>
@@ -206,9 +206,14 @@
         beforeDestroy() {
         },
         methods: {
+            // Закрыть список действий снаружи — например когда рядом раскрылся другой
+            // плавающий виджет. Кнопка с единственным действием списка не имеет.
+            close() {
+                this.$refs.dropdown?.close();
+            },
             // selectAction() {
             //     console.log('selectAction');
-            //     this.;                
+            //     this.;
             // }
         }
     }
@@ -218,4 +223,4 @@
     .button-button {
         border-color: #51738C; //var(--primary-button-hover-background);
     }
-</style>
+</style>

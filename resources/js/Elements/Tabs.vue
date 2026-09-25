@@ -56,7 +56,8 @@
 			</button>
 		</div>
 
-		<div class="tab-wrapper grow min-h-0 px-1 lg:px-2">
+		<div class="tab-wrapper grow min-h-0">
+			<!-- px-1 lg:px-2 -->
 		<!-- <div class="page-content-inner-scroller grow overflow-y-hidden scrolled-wrapper scrollbar  flex-col space-y-4"> -->
 			<template v-for="tab in tabs" :key="tab.id">
 				<!-- h-full: панель таба заполняет .tab-wrapper (grow min-h-0), чтобы

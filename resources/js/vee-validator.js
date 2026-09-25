@@ -116,6 +116,25 @@ export default (() => {
             : true;
     });
 
+    // Границы числового значения, а не длины строки — под размер числовой колонки в БД.
+    defineRule('min_value', (value, [limit]) => {
+        if (isEmpty(value) || isNaN(Number(value)))
+            return true;
+
+        return Number(value) < Number(limit)
+            ? '* ' + $t('must be at least {limit}', { limit })
+            : true;
+    });
+
+    defineRule('max_value', (value, [limit]) => {
+        if (isEmpty(value) || isNaN(Number(value)))
+            return true;
+
+        return Number(value) > Number(limit)
+            ? '* ' + $t('must be at most {limit}', { limit })
+            : true;
+    });
+
     defineRule('minwords', (value, [length]) => {
         if (isEmpty(value))
             return true;

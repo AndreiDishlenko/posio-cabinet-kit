@@ -15,6 +15,7 @@ import { Popup } from './posio/system/Popup.js';
 import { Toast } from './posio/system/ToastMessages.js';
 import { takeOverBackButton } from './overlayHistory.js';
 import { resolveCabinetKitPage } from './resolvePage.js';
+import CabinetMenuLayer from '../_admin/js/layouts/CabinetMenuLayer.vue';
 // Страницы установленных модулей собирает плагин сборки пакета.
 import cabinetKitModulePages from 'virtual:cabinet-kit-modules';
 import './vee-validator.js';
@@ -78,7 +79,11 @@ export function createCabinetKitApp({
                     hydrateI18n(payload);
             });
 
-            const app = createApp({ render: () => h(App, props) });
+            // Боковое меню — сосед страницы, а не её потомок: страницу маршрутизатор
+            // создаёт заново на каждом переходе, и меню теряло бы прокрутку и раскрытые
+            // разделы. Порядок важен: страница монтируется первой и успевает заявить
+            // о себе до первой отрисовки слоя меню.
+            const app = createApp({ render: () => [h(App, props), h(CabinetMenuLayer)] });
             const emitter = Emitter;
 
             app.use(plugin);

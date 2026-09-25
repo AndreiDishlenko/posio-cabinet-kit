@@ -7,16 +7,26 @@
 		"branch": "main"
 	},
 	"synced_through": {
-		"version": "2.5.38",
-		"commit": "c7985a2404ef509bfd42776363b1b662d0d3f7a8",
-		"short_commit": "c7985a24",
-		"commit_subject": "2.5.38 Table, products, page menu",
-		"commit_date": "2026-08-27",
-		"synced_at": "2026-08-27",
-		"package_version": "0.3.38",
-		"notes": "Реестр действий строки таблицы, FAB через общую очередь плавающих элементов, действия страницы в панели пользователя."
+		"version": "2.6.35",
+		"commit": "b03857054fcc9c6ecafbf0df1c9fa922b737c3c2",
+		"short_commit": "b0385705",
+		"commit_subject": "2.6.35",
+		"commit_date": "2026-09-25",
+		"synced_at": "2026-09-25",
+		"package_version": "0.4.14",
+		"notes": "Трёхсторонний перенос 2.5.39–2.6.35 поверх автономных правок пакета: подтверждение почты только под той же учётной записью, слой бокового меню вне страницы, страница «Users» (поиск, фильтры, компании, ручное подтверждение почты), SEO — индексация страниц без меты и lastmod по отпечатку содержания, общие Elements/SCSS/таблица, заглушка DeviceLog."
 	},
 	"history": [
+		{
+			"version": "2.5.38",
+			"commit": "c7985a2404ef509bfd42776363b1b662d0d3f7a8",
+			"short_commit": "c7985a24",
+			"commit_subject": "2.5.38 Table, products, page menu",
+			"commit_date": "2026-08-27",
+			"synced_at": "2026-08-27",
+			"package_version": "0.3.38",
+			"notes": "Реестр действий строки таблицы, FAB через общую очередь плавающих элементов, действия страницы в панели пользователя."
+		},
 		{
 			"version": "2.5.37",
 			"commit": "d1015bc3",

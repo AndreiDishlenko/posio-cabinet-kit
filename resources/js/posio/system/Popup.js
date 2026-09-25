@@ -3,6 +3,7 @@
 // Оформление подключается общим стилем проекта (копия в scss/vendor).
 import Swal from 'sweetalert2/dist/sweetalert2.esm.js'
 import { $t } from '@/js/i18n.config'
+import { pushOverlay, popOverlay } from '@/js/overlayHistory'
 
 // Базовый вид диалога — его видит касса: классы карточки задают фон, отступы и
 // типографику, иконка-акцент не показывается.
@@ -134,9 +135,18 @@ class PopupClass {
     }
 
     // Единая точка обращения к библиотеке: разбор её результата задаёт вызывающий.
+    // Диалог получает свою запись в истории — кнопка/жест «назад» снимает его
+    // как отмену (то же, что Esc), а не уводит с экрана под ним.
     fire(params, readResult) {
+        const dialog = {};
+
         return new Promise((resolve) => {
-            Swal.fire(params).then((result) => resolve(readResult(result)));
+            pushOverlay(dialog, () => Swal.close());
+
+            Swal.fire(params).then((result) => {
+                popOverlay(dialog);
+                resolve(readResult(result));
+            });
         });
     }
 
@@ -199,9 +209,9 @@ class PopupClass {
         console.warn('[Popup.notification] is not defined');
     }
 
-    // Диалог поверх формы не видит popstate (нативный слушатель Escape гасит
-    // его сам) — кнопка/жест «назад» проверяют это, чтобы не открыть второй
-    // диалог поверх уже показанного.
+    // Открытый диалог виден снаружи: карточка под ним проверяет это, чтобы не
+    // открыть второй диалог поверх уже показанного (свой диалог гаснет с
+    // анимацией, и возврат в этот момент дошёл бы до карточки).
     isOpen() {
         return Swal.isVisible();
     }

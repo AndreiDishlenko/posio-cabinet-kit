@@ -14,4 +14,8 @@ class SeoMeta extends Model
     protected $table = 'seo_meta';
 
     protected $guarded = [];
+
+    protected $casts = [
+        'content_updated_at' => 'datetime',
+    ];
 }

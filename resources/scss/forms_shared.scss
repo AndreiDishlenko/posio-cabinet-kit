@@ -284,6 +284,20 @@
 		box-shadow: none;
 	}
 
+	// Варіація поля на власній підкладці: світліша за фон блоку, рамки не видно —
+	// для панелей із власним кольором фону, де рамка читається зайвою рискою.
+	// Йде після загального правила фокуса, щоб перебивати його кольором рамки.
+	.form-control-plain,
+	.form-control-plain .form-control {
+		background-color: var(--form-control-plain-background);
+		border-color: transparent;
+	}
+
+	.form-control-plain:focus,
+	.form-control-plain .form-control:focus {
+		border-color: var(--form-control-plain-border-color-focus);
+	}
+
 	.spinner:before {
 		content:"";
 		position: relative;

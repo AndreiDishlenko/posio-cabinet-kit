@@ -1,5 +1,6 @@
 import axios            from "axios"
 import { Emitter }      from './Emitter.js'
+import { deviceLog }    from '@/js/DeviceLog'
 
 // Пауза интерфейса на время запроса: подходит кабинету, где обращение к серверу —
 // часть действия пользователя, и вредна кассе, где сеть фоновая. Ключ инициатора
@@ -9,6 +10,39 @@ let pause_counter = 0;
 // Сколько не трогаем авторизацию после отказа сети: без паузы каждый фоновый
 // запрос офлайн заново дёргает вход и плодит бесполезные попытки.
 const SIGNIN_RETRY_COOLDOWN = 10000;
+
+// Сколько верим браузерному «сети нет» после попытки, которая это подтвердила.
+// Дальше снова пробуем: сам признак бывает ложным, а без попытки ложь не вскроется.
+const OFFLINE_CONFIRM_WINDOW = 30000;
+
+// Состояние общее для всех клиентов: признак связи у браузера один на страницу.
+const browser_offline_flag = {
+    confirmed_at: 0,
+    // Сервер ответил, пока браузер утверждал, что сети нет (старые iOS, симулятор,
+    // VPN) — до перезагрузки признаку не верим, иначе обмен встал бы навсегда.
+    unreliable:   false,
+};
+
+function browserReportsOffline() {
+    return typeof navigator !== 'undefined' && navigator.onLine === false;
+}
+
+// Ответ сервера (любой код), а не сохранённая копия воркера — значит, связь есть.
+function noteServerReached(response) {
+    if ( !response || response.headers?.['x-sw-cache'] )
+        return;
+
+    if ( !browserReportsOffline() || browser_offline_flag.unreliable )
+        return;
+
+    browser_offline_flag.unreliable = true;
+    deviceLog('sync').warn('[AxiosApiClient] browser reports offline, but server responded — ignoring browser flag for this session');
+}
+
+function noteNetworkUnreachable() {
+    if ( browserReportsOffline() )
+        browser_offline_flag.confirmed_at = Date.now();
+}
 
 export class AxiosApiClientClass {
 
@@ -63,20 +97,40 @@ export class AxiosApiClientClass {
 
         this.axios.interceptors.response.use(
             (response) => {
+                noteServerReached(response);
+
                 // X-SW-Cache means response came from SW cache, not real network
-                if (!response.headers['x-sw-cache'])
-                    this.broadcastOnlineStatus(false);
+                if (response.headers['x-sw-cache']) {
+                    // «Данные старые, а ошибки нет» — самый частый класс жалоб:
+                    // ответ отдала сохранённая копия, и связи при этом не было.
+                    deviceLog('sync').debug('[AxiosApiClient] served from worker cache:', response.config?.url);
+                }
+                else
+                    this.broadcastOfflineStatus(false);
+
                 return response;
             },
             (error) => {
+                if ( error.response )
+                    noteServerReached(error.response);
+                else if ( !axios.isCancel(error) )
+                    noteNetworkUnreachable();
+
                 if (!error.response || [0, 504, 503, 502].includes(error.response?.status))
-                    this.broadcastOnlineStatus(true);
+                    this.broadcastOfflineStatus(true);
                 return Promise.reject(error);
             }
         );
     }
 
-    broadcastOnlineStatus(offline) {
+    // Передаётся признак ОТСУТСТВИЯ связи: имя метода про online противоречило
+    // значению аргумента и читалось наоборот на каждом вызове.
+    broadcastOfflineStatus(offline) {
+        // Внутри самой страницы признак раздаётся напрямую. Вещание между
+        // контекстами Apple понимает только с 15.4, и ниже планки кассы состояние
+        // связи не доходило до шапки вовсе: знак обмена оставался серым всю смену.
+        Emitter.emit('offline_mode', offline);
+
         if ('BroadcastChannel' in window) {
             const channel = new BroadcastChannel('channel4');
             channel.postMessage({key: 'offline_mode', value: offline});
@@ -91,6 +145,10 @@ export class AxiosApiClientClass {
     setCustomHeader(key, value) {
         // console.log('setHeader', key, value);
         this.custom_headers[key] = value;
+    }
+
+    removeCustomHeader(key) {
+        delete this.custom_headers[key];
     }
 
     pauseRequest(options={}) {
@@ -115,6 +173,43 @@ export class AxiosApiClientClass {
         return !code || [0, 502, 503, 504].includes(code);
     }
 
+    // Опережаем ожидание только на браузерном «сети нет»: «сеть есть» — лишь наличие
+    // интерфейса. Без этого каждый запрос офлайн стоит целой планки ожидания (15 с у
+    // кассы, 30 с у справочников).
+    //
+    // Но и отрицанию слепо не верим: на части устройств признак ложный, и касса без
+    // единой попытки не узнала бы, что связь есть. Поэтому пропускаем запросы, пока
+    // браузерное «сети нет» не подтверждено недавней неудачной попыткой.
+    isDisconnected() {
+        // Витрина отвечает себе сама подменённым транспортом — связь ей не нужна.
+        if ( this.options?.adapter )
+            return false;
+
+        if ( !browserReportsOffline() || browser_offline_flag.unreliable )
+            return false;
+
+        return Date.now() - browser_offline_flag.confirmed_at < OFFLINE_CONFIRM_WINDOW;
+    }
+
+    // Тот же вид, что у отказа сети из перехватчика: вызывающий код уже умеет его
+    // читать и отличать от отказа сервера.
+    disconnectedResponse(urlPrefix) {
+        deviceLog('sync').debug('[AxiosApiClient] request skipped — device is offline:', urlPrefix);
+        this.broadcastOfflineStatus(true);
+
+        return {
+            statusCode: 0,
+            // Признак «запрос вообще не отправляли» отличает решение самого браузера
+            // от неудачной попытки дозвониться: снаружи оба выглядят как код 0, а
+            // причина у них разная и проверять их нужно в разных местах.
+            offline: true,
+            error: 'Network unavailable',
+            message: 'Network unavailable',
+            errors: [],
+            data: {}
+        };
+    }
+
     // Авторизация в одном экземпляре: запросы стартового пакета летят параллельно и
     // на протухшем токене все разом попросили бы новый — это лишние обращения и
     // несколько одинаковых окон о лицензии подряд.
@@ -136,7 +231,7 @@ export class AxiosApiClientClass {
         // не показывая диалогов про лицензию — касса продолжит работать локально.
         if ( this.isNetworkFailure(response) ) {
             this.signin_failed_at = Date.now();
-            console.warn('[AxiosApiClient] Sign in skipped — no connection');
+            deviceLog('sync').warn('[AxiosApiClient] Sign in skipped — no connection');
             return null;
         }
 
@@ -191,7 +286,9 @@ export class AxiosApiClientClass {
         try {
             return await this.getToken(true);
         } catch (e) {
-            console.warn('[AxiosApiClient] Unable to renew access token');
+            // Без токена устройство остаётся без обмена вообще — до перезапуска
+            // или до вмешательства, поэтому исход фатальный, а не досадный.
+            deviceLog('sync').error('[AxiosApiClient] Unable to renew access token:', e.message);
             return null;
         }
     }
@@ -227,6 +324,9 @@ export class AxiosApiClientClass {
 
     async sendGet(urlPrefix, url_params={}, customHeaders={}, options={}) {
         let response = {};
+
+        if ( this.isDisconnected() )
+            return this.disconnectedResponse(urlPrefix);
 
         // Тяжёлые выборки (словари) на мобильной связи не укладываются в общий
         // таймаут клиента — вызывающий код задаёт свою планку поверх него.
@@ -273,8 +373,11 @@ export class AxiosApiClientClass {
     }
 
 	async postRaw(urlPrefix, customData={}, customHeaders={}, axiosParams = {}, options = {}) {
-		//     console.log('[ApiClient.postRaw]', urlPrefix, customData); 
+		//     console.log('[ApiClient.postRaw]', urlPrefix, customData);
 		let response = {}
+
+		if ( this.isDisconnected() )
+			return this.disconnectedResponse(urlPrefix);
 
 		const pause_token = this.pauseRequest(options);
 
@@ -293,7 +396,9 @@ export class AxiosApiClientClass {
 			let axios_response = await this.axios.post(urlPrefix, customData, config)
 
 			response = this.getSuccessResponse(axios_response);
-			this.checkResponse(axios_response)
+			// Проверке отдаётся нормализованный ответ, как и в ветке ошибки: с
+			// сырым она читала .status вместо .statusCode и не срабатывала.
+			this.checkResponse(response)
 			await this.checkFullResponse(axios_response)
 
 		} catch (axios_error) {
@@ -355,7 +460,9 @@ export class AxiosApiClientClass {
         // console.log('[ApiClient.getSuccessResponse]', axios_response);
         const contentType = axios_response.headers?.['content-type'] ?? '';
         if ( !contentType.includes('application/json') ) {
-            console.warn(`[AxiosApiClient] Unexpected Content-Type "${contentType}" — expected JSON`);
+            // Обычно это страница-заглушка провайдера вместо ответа API: запрос
+            // «прошёл», а данных нет — по коду ответа этого не видно.
+            deviceLog('sync').error(`[AxiosApiClient] Unexpected Content-Type "${contentType}" — expected JSON`);
             return {
                 statusCode: axios_response.status,
                 error: `Unexpected response format: ${contentType}`,

@@ -83,6 +83,20 @@
             license_summary: {
                 type: Object,
                 default: () => null
+            },
+            // Предупреждение о завершении лицензии — то же, о чём уходит письмо владельцу.
+            license_notice: {
+                type: Object,
+                default: () => null
+            },
+            license_plans: {
+                type: Array,
+                default: () => []
+            },
+            // Варианты срока для формы заявки менеджеру (ключи $t).
+            license_terms: {
+                type: Array,
+                default: () => []
             }
         },
         data() {
@@ -103,12 +117,6 @@
                 const tab = this.tabs.find(t => t.id === this.active_tab);
                 return tab ? tab.label : '';
             },
-            // Account-scoped tabs (Users, Integrations, Cash flow items, Cash
-            // accounts) surface the account name as a highlighted heading at the
-            // top of the tab content instead of in the page header / Title.
-            account_name() {
-                return this.own_account?.name;
-            },
             has_own_account() {
                 return !!Object.keys(this.own_account || {}).length;
             },
@@ -126,29 +134,31 @@
                         can_edit:   this.can_manage_members,
                         can_delete: this.is_owner,
                     },
-                    cash_accounts: {
-                        account_name: this.account_name,
-                    },
+                    cash_accounts: {},
                     users: {
-                        in_data:      this.own_account,
-                        users:        this.account_users,
-                        roles:        this.assignable_roles,
-                        can_edit:     this.can_manage_account_users,
-                        account_name: this.account_name,
+                        in_data:  this.own_account,
+                        users:    this.account_users,
+                        roles:    this.assignable_roles,
+                        can_edit: this.can_manage_account_users,
                     },
                     licenses: {
-                        licenses:     this.account_licenses,
-                        summary:      this.license_summary,
-                        account_name: this.account_name,
+                        licenses: this.account_licenses,
+                        summary:  this.license_summary,
+                        notice:   this.license_notice,
+                        plans:    this.license_plans,
+                        terms:    this.license_terms,
+                        // Заявку заполняет тот, кто её открыл, — его контакты и подставляем.
+                        contact: {
+                            name:  this.profile?.name,
+                            phone: this.profile?.phone,
+                            email: this.profile?.email,
+                        },
                     },
                     integrations: {
-                        in_data:      this.own_account.integrations,
-                        account_name: this.account_name,
-                        has_account:  this.has_own_account,
+                        in_data:     this.own_account.integrations,
+                        has_account: this.has_own_account,
                     },
-                    cashflow_items: {
-                        account_name: this.account_name,
-                    },
+                    cashflow_items: {},
                 };
             },
         },

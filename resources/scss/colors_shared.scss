@@ -89,8 +89,12 @@ html.dark {
     --form-control-border-color-focus: #616161;
     --placeholder-color: #4e4e4e;
 
+	// Безрамочное поле на собственной подложке — светлее фона блока, который его держит.
+	--form-control-plain-background:         #3a3a3a;
+	--form-control-plain-border-color-focus: #575757;
+
 	// Buttons
-	--button-text-color: var(--text-color);
+	--button-text-color: #fff; //var(--text-color);
     --button-background: #434344;
     --button-hover-background: rgb(53, 53, 53);
 
@@ -157,12 +161,6 @@ html.dark {
 }
 
 
-// Кольцо клавиатурного фокуса: единое для кнопок, пунктов меню и строк списка.
-// Цвет держим контрастным к обеим темам, чтобы не заводить парные значения.
-:root {
-	--focus-ring-color: #4C81F5;
-}
-
 // ── Готовые смеси цветов ────────────────────────────────────────────────────
 // Смешивание цветов средствами CSS Apple понимает только с 16.2, а объявление с
 // невалидным значением отбрасывается целиком — заливка пропадала бы вместе с ним.
@@ -187,6 +185,10 @@ html.dark {
 
 	// Подсветка строки-приёмника при перетаскивании — фиксированный синий, темой не правится.
 	--drop-into-row-background: rgba(59, 130, 246, .22);
+
+	// Кольцо клавиатурного фокуса: единое для кнопок, пунктов меню и строк списка.
+	// Цвет держим контрастным к обеим темам, чтобы не заводить парные значения.
+	--focus-ring-color: #4C81F5;
 
 	--table-header-background-80:       rgba(246, 247, 249, .8);
 	--table-slave-accent:               rgba(28, 28, 28, .45);
@@ -351,6 +353,12 @@ body {
 
 	.text-inverted {
 		color: var(--text-color-inverted)!important;
+	}
+
+	.divider {
+		// height: 1px;
+		border: 0px solid var(--divider-color);
+		border-bottom-width: 1px;
 	}
 }
 

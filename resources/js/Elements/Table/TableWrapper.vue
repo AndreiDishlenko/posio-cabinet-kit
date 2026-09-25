@@ -17,12 +17,13 @@
 				'overflow-y-auto y-scroll scrollbar-thin': y_scroll && !x_scroll
 			}">
         
-        <div class="t-block grid" 
-            :class="{ 
-					table_classes, 
-					// 'rounded-table' : rounded 
-				}" 
-            :style="columnsWidthes"
+        <div class="t-block grid"
+            :class="{
+					table_classes,
+					'stretch-body': stretch_body,
+					// 'rounded-table' : rounded
+				}"
+            :style="bodyStyles"
             >
 			<!-- h-full grow min-h-0-->
 			 <!-- w-full content-start  -->
@@ -100,6 +101,18 @@
 			y_scroll: {
 				type: Boolean,
 				default: false
+			},
+			// Тело занимает всю высоту обёртки, а строка под шапкой забирает остаток:
+			// так сообщение о пустом списке стоит по центру, а не под шапкой.
+			stretch_body: {
+				type: Boolean,
+				default: false
+			},
+			// Сколько строк занимает шапка — по ним отмеряется строка, которой
+			// достаётся остаток высоты при растянутом теле.
+			header_rows: {
+				type: Number,
+				default: 1
 			}
         },
         data() {
@@ -147,6 +160,20 @@
 
                 return gridTemplated;
             },
+			// Растянутое тело: строки шапки — по содержимому, а следующая забирает
+			// весь остаток высоты, поэтому её содержимое стоит по центру тела списка.
+			bodyStyles() {
+				if ( !this.stretch_body )
+					return this.columnsWidthes;
+
+				const rows = [];
+				for ( let i = 0; i < this.header_rows; i++ )
+					rows.push('min-content');
+
+				rows.push('1fr');
+
+				return Object.assign({}, this.columnsWidthes, { 'grid-template-rows': rows.join(' ') });
+			},
         },
         mounted() {
             this.$nextTick(() => this.setupScrollWatch());
@@ -279,8 +306,10 @@
 <style lang="scss" scoped>
 
 	// Block with scrollbar
+	// Подложка приходит от хозяина таблицы (карточка, панель), а страница — лишь
+	// значение по умолчанию: своя заливка рвала бы края шапки на любой другой.
     .t-wrapper {
-		background-color: var(--table-body-background);
+		background-color: var(--table-surface, var(--table-body-background));
     }
 
 	.t-wrapper.fit-container {
@@ -308,11 +337,17 @@
 	}
 
     .t-block {
-		background-color: var(--table-body-background);
+		background-color: var(--table-surface, var(--table-body-background));
 
 		grid-auto-rows: min-content;
   		align-content: start;
     }
+
+	// Тело на всю высоту обёртки — раскладку строк задаёт inline-стиль.
+	.t-block.stretch-body {
+		flex: 1 1 auto;
+		min-height: 0;
+	}
 
     .rounded-table {
         border-radius: var(--table-border-radius);

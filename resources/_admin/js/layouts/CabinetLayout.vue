@@ -17,13 +17,10 @@
     <div class="page-wrapper flex flex-row h-full overflow-y-hidden" :class="$inprogress.value ? 'disabled' : ''">
 		<!-- scrollbar-thin -->
 
-        <CabinetMenu class="page-menu max-h-dvh-100 h-dvh-100 "
-            :class="disable_menu ? 'disabled' : null"
-            :disabled="disable_menu"
-            ref="sideMenu"
-            >
-            Menu
-        </CabinetMenu>
+        <!-- Место под боковое меню: сама панель смонтирована вне страницы (иначе
+             переход пересоздавал бы её вместе со страницей), поэтому ширину в
+             потоке держит распорка по той же переменной. -->
+        <div class="page-menu-space"></div>
 
         <div class="page-layout relative grow min-w-0 flex flex-col" >
 
@@ -33,7 +30,9 @@
                 </template>
             </CabinetHeader>
 
-			<div class="page-content-wrapper p-2 lg:p-4 flex flex-col overflow-hidden "
+			<!-- Боковые поля живут на прокручиваемом слое, а не здесь: иначе полоса
+			     прокрутки встаёт рядом с правым полем и сдвигает край содержимого. -->
+			<div class="page-content-wrapper py-2 lg:py-4 flex flex-col overflow-hidden "
 				:class="['space-y-'+space_y]"
 				>
 				<!-- scrollbar -->
@@ -71,8 +70,7 @@
 
 <script>
     import { Head, router } from '@inertiajs/vue3';
-
-    import CabinetMenu      from "./CabinetMenu.vue"
+    
     import CabinetHeader    from "./CabinetHeader.vue"
     import CabinetBody      from "./CabinetBody.vue"
     import BottomTabBar     from "@/_admin/js/components/ui/Elements/BottomTabBar.vue"
@@ -83,6 +81,8 @@
 
     import Loader           from '@/js/Elements/PreloaderBars.vue';
 
+    import { cabinetShellPresence } from './cabinetShellPresence.js'
+    
     // import ModalForm        from '@/js/Elements/ModalForm.vue';
     // import InitCard         from '../Initial/InitCard.vue';
 
@@ -92,7 +92,7 @@
         // поэтому Vue не может автоматически наследовать на него атрибуты (class и т.п.).
         // Отключаем авто-наследование, чтобы не было предупреждений Extraneous non-props attributes.
         inheritAttrs: false,
-        components: { Head, CabinetMenu, CabinetHeader, CabinetBody, Loader, BottomTabBar, ProductTour, SpotlightHints, FirstReceiptCongrats },
+        components: { Head, CabinetHeader, CabinetBody, Loader, BottomTabBar, ProductTour, SpotlightHints, FirstReceiptCongrats },
         props: {
             page_name: {
                 type: String,
@@ -154,6 +154,19 @@
                 showProductTour: !!this.$page.props.onboarding?.product_tour && !this.$page.props.user?.tour_done,
             }
         },
+        watch: {
+            disable_menu(value) {
+                cabinetShellPresence.menu_disabled = value;
+            },
+            // Список первых шагов не спорит с обучающим туром за внимание, но
+            // смонтирован вне страницы — о ходе обучения узнаёт только отсюда.
+            showProductTour: {
+                handler(value) {
+                    cabinetShellPresence.tour_active = value;
+                },
+                immediate: true,
+            },
+        },
         methods: {
             // Вкладки страницы остаются смонтированными после переключения, поэтому
             // в меню попадают действия только той, что сейчас на экране.
@@ -180,6 +193,12 @@
                 router.reload({ only: ['first_steps_checklist'] });
             },
         },
+        created() {
+            // Заявляем о меню до первой отрисовки: слой меню рендерится следом за
+            // страницей и должен увидеть его нужным уже в этом кадре, иначе распорка
+            // на мгновение схлопнется и контент дёрнется.
+            cabinetShellPresence.attach(this.disable_menu);
+        },
         mounted() {
             // this.$nextTick(() => {
             //     if ( this.$page.props.user?.new_user )
@@ -187,6 +206,7 @@
             // });
         },
 		beforeUnmount() {
+            cabinetShellPresence.detach();
         },
         beforeDestroy() {
             // this.$emitter.off('pause_application')
@@ -202,7 +222,24 @@
 		// height:100%;
 	}
 	
+	// Ширину задаёт та же переменная, по которой меню считает занятое им место,
+	// поэтому распорка сворачивается и разворачивается вместе с панелью, а на
+	// мобильном (панель выезжает поверх) обнуляется.
+	.page-menu-space {
+		flex-shrink: 0;
+		width: var(--cabinet-menu-width, 0px);
+		transition: width var(--gm-ease-dur) var(--gm-ease);
+	}
+
 	.page-content-wrapper {
+		// Поле по бокам содержимого страницы; раздаётся вниз, потому что его
+		// правую половину занимает полоса прокрутки.
+		--page-side-padding: 0.5rem;
+
+		@media (min-width: 1024px) {
+			--page-side-padding: 1rem;
+		}
+
 		// Отступ под BottomTabBar — только когда бар виден (телефон в портретной ориентации, ширина < md)
 		@media (max-width: 767.98px) and (orientation: portrait) {
 			// height: calc( 100% + var(--bottom-tab-bar-height) );
@@ -213,7 +250,19 @@
 		// border: 1px solid red;
 		// padding-bottom: 200px;
 		height: 100%;
-		
+
+	}
+
+	.page-content-inner-scroller {
+		padding-left:  var(--page-side-padding);
+		padding-right: var(--page-side-padding);
+
+		// Прокручиваемый вариант отдаёт правое поле под полосу прокрутки: она
+		// стоит в поле, а не рядом с ним, поэтому зазоры слева и справа от
+		// содержимого одинаковы. Полоса зарезервирована всегда, скачка нет.
+		&.scrolled-wrapper {
+			padding-right: calc( var(--page-side-padding) - var(--scrollbar-size-thin) );
+		}
 	}
 
 	.page-bottom-spacer {

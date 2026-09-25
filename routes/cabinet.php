@@ -127,6 +127,8 @@ Route::middleware(['web', UseCabinetKitRootView::class, ApplyCabinetKitLocale::c
                     // Допуск самостоятельной регистрации из кабинета — альтернатива ссылке
                     // из письма (см. RegistrationApprovalService).
                     Route::post('/users/approve', [UsersController::class, 'approve'])->name('users.approve');
+                    // Ручное подтверждение почты — если письмо со ссылкой подтверждения не дошло.
+                    Route::post('/users/verifyemail', [UsersController::class, 'verifyEmail'])->name('users.verifyemail');
                 });
 
                 // Операторские разделы: бренд публичной части и кабинета,

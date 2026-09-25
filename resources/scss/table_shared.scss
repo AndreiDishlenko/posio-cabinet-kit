@@ -18,11 +18,14 @@
 				2xl:px-3
 		}
 
+		// Нумерация строки задаёт только минимум высоты и тянется на всю строку:
+		// при жёсткой высоте строка, выросшая под содержимое, показывала между
+		// номерами полосы подложки.
 		.row-header-cell {
 			border-color: var(--table-header-border-color);
 
 			font-size: var(--text-md);
-            height: 40px;
+            min-height: 40px;
 
 			@apply px-1;
 		}
@@ -31,12 +34,13 @@
 			border-color: var(--table-border-color);
 		}
 
+		// Линию рисует низ строки, а не её верх: при верхней границе первая строка
+		// добавляла лишнюю черту вплотную под шапкой, а шапка и без неё отделена
+		// собственным фоном.
 		.h_dividers {
-			.row-header-cell { border-top-width: 1px }
-			.table-cell { border-top-width: 1px }
-			.table-row:last-child .table-cell { border-bottom-width: 1px }
+			.row-header-cell { border-bottom-width: 1px }
+			.table-cell { border-bottom-width: 1px }
 			.footer-cell { border-width: 0px!important; }
-			// ::v-deep(.table-row:first-child .table-cell) { border-top:0px; }
 		}
 
 		.v_dividers {
@@ -67,7 +71,12 @@
 		}
 		.row-header-cell, .table-cell {
 			font-size: var(--text-xs)!important;
+		}
+		.table-cell {
 			height: 32px!important;
+		}
+		.row-header-cell {
+			min-height: 32px;
 		}
         input:not([type="checkbox"]), .form-control:not([type="checkbox"]) {
 			font-size: var(--text-xs)!important;
@@ -87,7 +96,12 @@
 		}
 		.row-header-cell, .table-cell {
 			font-size: var(--text-sm)!important;
+		}
+		.table-cell {
 			height: var(--ui-h-sm); //38px!important;
+		}
+		.row-header-cell {
+			min-height: var(--ui-h-sm);
 		}
         input:not([type="checkbox"]), .form-control:not([type="checkbox"]) {
 			font-size: var(--text-sm)!important;
@@ -104,16 +118,24 @@
 			font-size: var(--text-md)!important;
 			min-height: calc( var(--ui-h-md) + 4px ); //40px!important;
 		}
-		.row-header-cell, .table-cell {			
+		.row-header-cell, .table-cell {
 			font-size: var(--text-md)!important;
+        }
+		.table-cell {
             height: calc( var(--ui-h-md) + 4px ); //40px!important;
         }
-		// input:not([type="checkbox"]), .form-control:not([type="checkbox"]) {
-		// 	font-size: var(--text-md)!important;
-		// 	height: 36px!important;
-        //     min-height: 36px!important;
-        //     max-height: 36px!important;
-		// }
+		.row-header-cell {
+            min-height: calc( var(--ui-h-md) + 4px );
+        }
+		// Поле ввода ниже своей ячейки — иначе строка растягивается содержимым и
+		// между строками проступает подложка. Общий размер поля формы специфичнее,
+		// поэтому перебиваем его явно, как и в остальных размерах таблицы.
+		input:not([type="checkbox"]), .form-control:not([type="checkbox"]) {
+			font-size: var(--text-md)!important;
+			height: 36px!important;
+            min-height: 36px!important;
+            max-height: 36px!important;
+		}
     }
 
     // Висота рядка від вмісту: рядок росте під багаторядковий текст або велику
@@ -149,13 +171,71 @@
 		}
 		.row-header-cell, .table-cell {
 			font-size: var(--text-base)!important;
+		}
+		.table-cell {
 			height: 48px!important;
+		}
+		.row-header-cell {
+			min-height: 48px;
 		}
         input:not([type="checkbox"]), .form-control:not([type="checkbox"]) {
 			font-size: var(--text-base)!important;
 			height: 48px!important;
             min-height: 48px!important;
-            max-height: 48px!important;        
+            max-height: 48px!important;
 		}
     }
-}   
+
+    // Висота саме рядка — окремо від розміру таблиці (шрифт не чіпаємо). Складений
+    // селектор (.table.row-* / .tabledit.row-*) свідомо специфічніший за .table-xs
+    // тощо, тож перекриває висоту незалежно від того, який table-[size] заданий поруч.
+    .table.row-xs, .tabledit.row-xs {
+        --table-row-height: var(--ui-h-xs);
+        .table-cell {
+            height: var(--ui-h-xs)!important;
+        }
+        .row-header-cell {
+            min-height: var(--ui-h-xs);
+        }
+    }
+
+    .table.row-sm, .tabledit.row-sm {
+        --table-row-height: var(--ui-h-sm);
+        .table-cell {
+            height: var(--ui-h-sm)!important;
+        }
+        .row-header-cell {
+            min-height: var(--ui-h-sm);
+        }
+    }
+
+    .table.row-md, .tabledit.row-md {
+        --table-row-height: var(--ui-h-md);
+        .table-cell {
+            height: var(--ui-h-md)!important;
+        }
+        .row-header-cell {
+            min-height: var(--ui-h-md);
+        }
+    }
+
+    .table.row-base, .tabledit.row-base {
+        --table-row-height: var(--ui-h-base);
+        .table-cell {
+            height: var(--ui-h-base)!important;
+        }
+        .row-header-cell {
+            min-height: var(--ui-h-base);
+        }
+    }
+
+    .table.row-lg, .tabledit.row-lg {
+        --table-row-height: var(--ui-h-lg);
+        .table-cell {
+            height: var(--ui-h-lg)!important;
+        }
+        .row-header-cell {
+            min-height: var(--ui-h-lg);
+        }
+    }
+}

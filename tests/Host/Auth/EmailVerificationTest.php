@@ -37,7 +37,7 @@ class EmailVerificationTest extends HostTestCase
 
         Event::fake([Verified::class]);
 
-        $this->get($this->verificationUrl($user));
+        $this->actingAs($user)->get($this->verificationUrl($user));
 
         Event::assertDispatched(Verified::class);
 
@@ -64,39 +64,58 @@ class EmailVerificationTest extends HostTestCase
         $this->assertTrue($user->fresh()->hasVerifiedEmail());
     }
 
-    public function test_verifying_email_while_logged_out_redirects_to_login(): void
+    public function test_verifying_email_while_logged_out_requires_sign_in_first(): void
     {
         $user = $this->makeUser(verified: false);
+        $url = $this->verificationUrl($user);
 
-        $this->get($this->verificationUrl($user))
+        // Гость переходит по ссылке — почта не подтверждается до входа в эту учётную запись.
+        $this->get($url)
             ->assertRedirect(route('login'))
-            ->assertSessionHas('status', 'email-verified');
+            ->assertSessionHas('status', 'verification-sign-in-required')
+            ->assertSessionHas('email', $user->email)
+            ->assertSessionHas('url.intended', $url);
+
+        $this->assertFalse($user->fresh()->hasVerifiedEmail());
+        $this->get(route('login'))->assertOk();
+
+        // После входа та же ссылка подтверждает почту.
+        $this->actingAs($user)->get($url);
 
         $this->assertTrue($user->fresh()->hasVerifiedEmail());
-        $this->get(route('login'))->assertOk();
     }
 
-    public function test_link_opened_while_signed_in_as_other_user_explains_whose_email_was_confirmed(): void
+    public function test_link_opened_while_signed_in_as_other_user_does_not_confirm_email(): void
     {
         Event::fake([Verified::class]);
 
         $target = $this->makeUser(verified: false);
         $other = $this->makeUser();
+        $url = $this->verificationUrl($target);
 
         $this->actingAs($other)
-            ->get($this->verificationUrl($target))
+            ->get($url)
             ->assertOk()
             ->assertInertia(fn (AssertInertia $page) => $page
                 ->component('pages/Auth/EmailVerificationOutcome', false)
-                ->where('outcome', 'email-verified')
+                ->where('outcome', 'email-verification-sign-in-required')
                 ->where('verified_email', $target->email)
                 ->where('current_email', $other->email));
 
-        $this->assertTrue($target->fresh()->hasVerifiedEmail());
-        Event::assertDispatched(Verified::class);
+        // Чужой вход почту не подтверждает.
+        $this->assertFalse($target->fresh()->hasVerifiedEmail());
+        Event::assertNotDispatched(Verified::class);
 
-        // Сессия вошедшего не трогается: он сам решает, остаться или войти под подтверждённой почтой.
+        // Сессия вошедшего не трогается: он сам решает, остаться или войти в подтверждаемую учётную запись.
         $this->assertAuthenticatedAs($other);
+
+        // Переход ко входу в нужную учётную запись возвращает после входа на ту же ссылку.
+        $this->post(route('verification.switch-account'))
+            ->assertRedirect(route('login'))
+            ->assertSessionHas('email', $target->email)
+            ->assertSessionHas('url.intended', $url);
+
+        $this->assertGuest();
     }
 
     public function test_repeated_link_while_signed_in_as_other_user_says_email_was_confirmed_earlier(): void

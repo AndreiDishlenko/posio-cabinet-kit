@@ -1,6 +1,7 @@
 import { PropObjectClass }  from "../classes/PropObjectClass.js";
 import { Toast }            from '@/js/posio/system/ToastMessages'
 import { $t }               from '@/js/i18n.config'
+import { deviceLog }        from '@/js/DeviceLog'
 
 // Полная выборка (товары, модификаторы, цены, комментарии) на мобильной связи
 // не укладывается в общий таймаут клиента, а обрыв стоит дорого — до правки он
@@ -97,7 +98,7 @@ class DictionariesClass extends PropObjectClass {
     sanitize(items) {
         // console.log('[DictionariesClass.sanitize]');
         if ( typeof items !== 'object' || Array.isArray(items) ) {
-            console.warn('[DictionariesClass.sanitize] Root value is not an object — clearing storage');
+            deviceLog('sync').warn('[DictionariesClass.sanitize] Root value is not an object — clearing storage');
             localStorage.removeItem(this.storage_name);
             return {};
         }
@@ -110,14 +111,14 @@ class DictionariesClass extends PropObjectClass {
             if ( Array.isArray(val) || (typeof val === 'object' && val !== null) ) {
                 cleaned[key] = val;
             } else {
-                console.warn(`[DictionariesClass.sanitize] Dropping broken dict "${key}": expected array/object, got ${typeof val} — "${String(val).slice(0, 40)}"`);
+                deviceLog('sync').warn(`[DictionariesClass.sanitize] Dropping broken dict "${key}": expected array/object, got ${typeof val} — "${String(val).slice(0, 40)}"`);
                 hasBroken = true;
             }
         });
 
         if ( hasBroken ) {
-            console.warn('[DictionariesClass.sanitize] Broken entries removed — saving cleaned storage');
-            localStorage.setItem(this.storage_name, JSON.stringify(cleaned));
+            deviceLog('sync').warn('[DictionariesClass.sanitize] Broken entries removed — saving cleaned storage');
+            this.persist(cleaned);
         }
 
         return cleaned;
@@ -129,10 +130,14 @@ class DictionariesClass extends PropObjectClass {
 
 		let headers = dict_name ? {'X-only': dict_name} : {};
 
+		const started = Date.now();
+
 		const response = await this.apiClient.get( this.url, {}, headers, { disable_pause: true, timeout: UPDATE_TIMEOUT } )
         if ( response.error ) {
             Toast.error('Error while loading base dictionaries')
-            console.warn(`[DictionariesStorageClass.update] Can't update local dictionaries store. ${response.error}`);
+            // Без справочников касса работает вслепую на сохранённой копии,
+            // возраст которой ниоткуда не виден.
+            deviceLog('sync').error(`[DictionariesClass.update] Can't update local dictionaries store. ${response.error}`);
             return response;
         }
 
@@ -142,7 +147,7 @@ class DictionariesClass extends PropObjectClass {
         // приходят всегда) — значит ответ подменён или обрезан, и затирать им
         // рабочие данные нельзя.
         if ( !dict_name && !Object.keys(response.data ?? {}).length ) {
-            console.warn(`[DictionariesStorageClass.update] Empty dictionaries response — local store kept`);
+            deviceLog('sync').error(`[DictionariesClass.update] Empty dictionaries response — local store kept`);
             return { error: 'Empty dictionaries response' };
         }
 
@@ -156,7 +161,7 @@ class DictionariesClass extends PropObjectClass {
             if (!dict_name || key==dict_name) {
                 const val = response.data[key];
                 if ( !Array.isArray(val) && typeof val !== 'object' ) {
-                    console.warn(`[DictionariesClass.update] Skipping dict "${key}": expected array or object, got ${typeof val}`);
+                    deviceLog('sync').warn(`[DictionariesClass.update] Skipping dict "${key}": expected array or object, got ${typeof val}`);
                     return;
                 }
                 result[key] = val;
@@ -172,29 +177,54 @@ class DictionariesClass extends PropObjectClass {
         //     return item
         // })
 
-		this.removeUpdateListener()
-        localStorage.setItem(this.storage_name, JSON.stringify(result))      
-		this.createUpdateListener()
+		const stored = this.persist(result);
         // console.log('updated', result);
-        
+
         // super.setProperties(result)
         // this.addAssociativeVariations(result);
         // this.translate(result)
 
+        if ( !stored )
+            return { error: 'Unable to store dictionaries locally' };
+
         this.load()
 
         this.isUpdated = true;
-        console.msg(`[+] Dictionaries updated`);
 
-        return true;		
+        // Объём и время загрузки справочников — единственное, чем объясняется
+        // «касса долго стартует», и до сих пор их никто не фиксировал.
+        deviceLog('sync').msg(`[+] Dictionaries updated:`
+            + ` ${ dict_name || Object.keys(result).length + ' dicts' },`
+            + ` ${ Math.round(JSON.stringify(result).length / 1024) } KB,`
+            + ` ${ ((Date.now() - started) / 1000).toFixed(1) }s`);
+
+        return true;
     }
-    
+
+    // Запись справочников в локальное хранилище: переполнение бросает
+    // исключение посреди обновления, и без перехвата оно рвало старт кассы,
+    // оставляя её и без свежих данных, и без сохранённых.
+    persist(data) {
+        this.removeUpdateListener()
+
+        try {
+            localStorage.setItem(this.storage_name, JSON.stringify(data))
+            return true;
+        } catch (e) {
+            deviceLog('sync').error(`[DictionariesClass.persist] Local dictionaries store is not writable: ${e.message}`);
+            Toast.error( $t('Unable to save reference data on this device.') )
+            return false;
+        } finally {
+            this.createUpdateListener()
+        }
+    }
+
     save(dict_name) {
         let result = JSON.parse(localStorage.getItem(this.storage_name)) ?? {}
 
         result[dict_name] = super.getProperty(dict_name);
 
-        localStorage.setItem(this.storage_name, JSON.stringify(result)) 
+        this.persist(result)
     }
 
     clear() {
@@ -209,7 +239,7 @@ class DictionariesClass extends PropObjectClass {
         Object.keys(original).forEach(key => {
             const val = original[key];
             if ( !Array.isArray(val) && typeof val !== 'object' ) {
-                console.warn(`[DictionariesClass] Skipping assoc "${key}": not an array/object`);
+                deviceLog('sync').warn(`[DictionariesClass] Skipping assoc "${key}": not an array/object`);
                 return;
             }
             super.setProperty(key+'_a', val ? $H.Ar.toAssociative(val, 'id') : {} );
@@ -219,14 +249,17 @@ class DictionariesClass extends PropObjectClass {
     translate(dicts) {
         // console.log('translate dict', dicts, typeof dicts);
 		if ( typeof dicts !== 'object' ) {
-			Toast.error('[DictionaryClass.translate] dicts object is not object')
+			// Кассиру — переведённая суть, разбор поломки остаётся в журнале.
+			deviceLog('sync').error(`[DictionariesClass.translate] Root value is not an object, got ${typeof dicts}`);
+			Toast.error( $t('Reference data on this device is damaged.') )
 			return false
 		}
 
         Object.keys(dicts).forEach(key => {
 			// console.log('vv', key, typeof dicts[key]);
 			if ( !Array.isArray(dicts[key]) && typeof dicts[key] !== 'object' ) {
-				Toast.error('[DictionaryClass.translate] dict "'+key+'" is not array/object')
+				deviceLog('sync').error(`[DictionariesClass.translate] Dict "${key}" is not array/object, got ${typeof dicts[key]}`);
+				Toast.error( $t('Reference data on this device is damaged.') )
 				return
 			}
             let dict = Object.assign({}, dicts[key]);
@@ -240,4 +273,4 @@ class DictionariesClass extends PropObjectClass {
     }   
 }
 
-export { DictionariesClass }
+export { DictionariesClass }

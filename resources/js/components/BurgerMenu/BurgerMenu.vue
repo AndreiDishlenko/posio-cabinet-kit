@@ -12,7 +12,7 @@
 			@close="onSheetClose"
 			>
 			<BurgerMenuBody :show_user_info="show_user_info" :show_profile_divider="show_profile_divider" @close="close" @close-silently="closeSilently">
-				<slot :close="close" :close-silently="closeSilently"/>
+				<slot :close="close" :close-silently="closeSilently" :is_mobile="true"/>
 			</BurgerMenuBody>
 		</BottomSheet>
 
@@ -28,7 +28,7 @@
 					@click.stop=""
 					>
 					<BurgerMenuBody :show_user_info="show_user_info" :show_profile_divider="show_profile_divider" @close="close" @close-silently="closeSilently">
-						<slot :close="close" :close-silently="closeSilently"/>
+						<slot :close="close" :close-silently="closeSilently" :is_mobile="false"/>
 					</BurgerMenuBody>
 				</div>
 			</transition>

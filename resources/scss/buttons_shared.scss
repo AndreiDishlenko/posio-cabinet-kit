@@ -36,6 +36,16 @@
             shadow-stone-900/50
     }
 
+    // Клавиатурный фокус обязан быть виден: системный контур у кнопки снят выше,
+    // и без собственного кольца интерфейс не пройти с клавиатуры. Правило идёт
+    // после снятия контура и перебивает его, а на планке старых браузеров просто
+    // отбрасывается как неизвестное — прежнее поведение там сохраняется, и касса
+    // на планшете не получает кольца от каждого касания.
+    .button:focus-visible {
+        outline: 2px solid var(--focus-ring-color);
+        outline-offset: 2px;
+    }
+
     .button:not(:disabled):hover {
         background-color: var(--button-hover-background);
         box-shadow: 0px 3px 3px -1px rgba(0, 0, 0, 0.2), 0px 2px 4px 1px rgba(0, 0, 0, 0.14), 0px 1px 7px 1px rgba(0, 0, 0, 0.12);
@@ -43,12 +53,12 @@
         -moz-box-shadow: 0px 0px 32px -8px rgba(0,0,0,0.75); */
     }
 
+    // Недоступная кнопка не реагирует на наведение: подсветка под курсором читается
+    // как «кнопка работает» и провоцирует нажатие.
     .button:disabled {
         opacity: 0.5;
         cursor: auto!important;
         background-color: var(--button-disabled-background);
-		@apply
-        	hover:bg-neutral-700 
     }
 
 	/* button-{size}: alias for .ui-{size} + button-specific constraints */
@@ -170,7 +180,7 @@
 		background-color:  var(--primary-button-background)!important;
 	}
 
-	.primary-button:hover {
+	.primary-button:not(:disabled):hover {
 		background-color: var(--primary-button-hover-background)!important;
 	}
 
@@ -222,6 +232,44 @@
 		box-shadow: 0 0 #0000!important;
 	}
 
+	// Второстепенное действие рядом с акцентной кнопкой: та же геометрия и размер,
+	// но без заливки, рамки и тени — чтобы не спорить за внимание с основной кнопкой.
+	.plain-button {
+		background-color: transparent!important;
+		border: 1px solid transparent;
+		box-shadow: 0 0 #0000!important;
+		color: var(--text-color-secondary);
+	}
+
+	.plain-button:not(:disabled):hover {
+		background-color: var(--button-background)!important;
+		box-shadow: 0 0 #0000!important;
+	}
+
+	// Швидкий вибір у меню календаря (пресети періоду). Підпис — кольором тексту
+	// кнопок сторінки, як у решти кнопок кабінету; підкладка виділення — з токенів
+	// календаря, бо фон меню задає тема пакета, а не сторінки.
+	// Монохромна й без рамки: пресети — допоміжний вибір і не мають сперечатися за
+	// увагу з самим календарем. У спокої — лише приглушений підпис.
+	.preset-button {
+		background-color: transparent!important;
+		color: var(--button-text-color);
+		box-shadow: 0 0 #0000!important;
+		opacity: .5;
+	}
+
+	.preset-button:not(:disabled):hover {
+		opacity: 1;
+	}
+
+	// Вибраний пресет — сірою підкладкою меню, без акцентного кольору: акцент у меню
+	// лишається за виділеними датами. Наведення його не гасить.
+	.preset-button.selected,
+	.preset-button.selected:not(:disabled):hover {
+		background-color: var(--dp-hover-color)!important;
+		opacity: 1;
+	}
+
 	// Pill shape is fixed; height/padding/font-size come from the .button-{size}
 	// modifier so the size prop still has effect on a badge-styled button.
 	// Фолбэк перед color-mix: браузер, который его не понимает, отбрасывает объявление
@@ -250,7 +298,7 @@
 			rounded-3xl;
 	}
 
-	.pill-button:hover {
+	.pill-button:not(:disabled):hover {
 		background-color: transparent!important;
 
 		@apply
@@ -274,4 +322,4 @@
 	}
 
 
-}
+}

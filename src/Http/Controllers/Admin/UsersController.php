@@ -2,6 +2,7 @@
 
 namespace Posio\CabinetKit\Http\Controllers\Admin;
 
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
@@ -105,6 +106,34 @@ class UsersController extends Controller
         ]);
     }
 
+    // Ручное подтверждение почты администратором — когда письмо со ссылкой не дошло.
+    // Повторяет переход по ссылке из письма: системная роль выдаётся так же.
+    public function verifyEmail(Request $request)
+    {
+        $userModel = config('cabinet-kit.user_model', \App\Models\User::class);
+
+        $validated = $request->validate([
+            'id' => ['required', 'integer'],
+        ]);
+
+        $target = $userModel::query()->findOrFail($validated['id']);
+
+        if ($target->hasVerifiedEmail()) {
+            abort(422, 'E-mail is already verified.');
+        }
+
+        if ($target->markEmailAsVerified()) {
+            $target->assignDefaultSystemRole();
+            event(new Verified($target));
+        }
+
+        // Системная роль появилась только что — строке списка нужно её показать.
+        return response()->json([
+            'status'  => 'ok',
+            'role_id' => $target->fresh()->roles->first()?->id,
+        ]);
+    }
+
     protected function users(Request $request)
     {
         $usersTable = config('cabinet-kit.users_table', 'users');
@@ -121,6 +150,8 @@ class UsersController extends Controller
                 "{$usersTable}.name",
                 "{$usersTable}.email",
                 "{$usersTable}.created_at",
+                // Сама дата подтверждения списку не нужна — только признак.
+                DB::raw("{$usersTable}.email_verified_at is not null as email_verified"),
                 DB::raw('roles.name as role_name'),
                 DB::raw('roles.id as role_id'),
             ])
@@ -150,11 +181,39 @@ class UsersController extends Controller
             $query->addSelect("{$usersTable}.approval_requested_at", "{$usersTable}.approved_at");
         }
 
-        return $query->get()->map(function ($user) {
+        $users = $query->get();
+        $accountNames = $this->accountNames($users->pluck('id')->all());
+
+        return $users->map(function ($user) use ($accountNames) {
             $user->registered = $user->created_at ? date('d.m.Y', strtotime($user->created_at)) : null;
+            $user->email_verified = (int) $user->email_verified;
+            $user->account_names = $accountNames[$user->id] ?? '';
 
             return $user;
         });
+    }
+
+    // Компании пользователя одной строкой — список ищет человека и по названию компании,
+    // а он бывает и владельцем своей, и участником чужих.
+    protected function accountNames(array $userIds): array
+    {
+        if (! $userIds) {
+            return [];
+        }
+
+        $owned = DB::table('accounts')
+            ->whereIn('owner_id', $userIds)
+            ->get(['owner_id as user_id', 'name']);
+
+        $joined = DB::table('user_has_accounts')
+            ->join('accounts', 'accounts.id', '=', 'user_has_accounts.account_id')
+            ->whereIn('user_has_accounts.user_id', $userIds)
+            ->get(['user_has_accounts.user_id', 'accounts.name']);
+
+        return $owned->concat($joined)
+            ->groupBy('user_id')
+            ->map(fn ($rows) => $rows->pluck('name')->filter()->unique()->sort()->implode(', '))
+            ->all();
     }
 
     protected function userPayload($user): array

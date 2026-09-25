@@ -143,6 +143,40 @@ export const Datetime = {
 
 	// string => Date()
 	// --------------------
+	// Значение неизвестного происхождения (уже дата, метка времени, строка любого
+	// из принятых в проекте форматов) — в дату. Отдельная точка входа нужна из-за
+	// формата базы «ГГГГ-ММ-ДД чч:мм:сс» с пробелом: стандарт требует разделитель
+	// «T», и Apple такую строку не разбирает вовсе — дальше по цепочке час и
+	// минуты выходят «не числом» прямо в чек. Разбор по частям заодно снимает
+	// вопрос часового пояса: значение базы — местное время.
+	toDate: function (value) {
+		if ( !value )
+			return null;
+
+		if ( value instanceof Date )
+			return value;
+
+		if ( typeof value === 'number' )
+			return new Date(value);
+
+		const parts = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/.exec(String(value).trim());
+
+		if ( parts )
+			return new Date(
+				Number(parts[1]),
+				Number(parts[2]) - 1,
+				Number(parts[3]),
+				Number(parts[4] || 0),
+				Number(parts[5] || 0),
+				Number(parts[6] || 0)
+			);
+
+		// Со смещением или буквой зоны на конце строку разбирает сам движок.
+		const date = new Date(value);
+
+		return isNaN(date.getTime()) ? null : date;
+	},
+
 	// YYYY-MM-DDTHH:mm:ss.sssZ (local datetime)
 	parseIsoString: function(date_string) {								// Convert ISO string to date object
 		var userTimezoneOffset = new Date(date_string).getTimezoneOffset() * 60000;

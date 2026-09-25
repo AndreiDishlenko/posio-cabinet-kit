@@ -107,6 +107,16 @@
         gap: var(--ui-gap-xl);
     }
 
+    .ui-2xl {
+        @extend %ui-base;
+        height: var(--ui-h-xl);
+        padding-left: var(--ui-px-xl);
+        padding-right: var(--ui-px-xl);
+        font-size: var(--text-xl);
+        border-radius: var(--ui-radius-xl);
+        gap: var(--ui-gap-xl);
+    }
+
     // Отступ между элементами приходит из размерного класса, а не из утилиты,
     // поэтому фолбэк сборщика сюда не достаёт: на Apple ниже 14.1 иконка и подпись
     // слиплись бы. Раскладка этих классов всегда строчная.

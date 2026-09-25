@@ -19,7 +19,8 @@
 		<transition name="bs-slide-up">
 			<div
 				v-if="isVisible"
-				class="bs-sheet fixed left-0 right-0 bottom-0 z-[1001] flex flex-col main-background rounded-t-2xl shadow-2xl"
+				ref="sheet"
+				class="bs-sheet fixed left-0 right-0 bottom-0 z-[1001] flex flex-col overflow-hidden main-background rounded-t-2xl shadow-2xl"
 				:class="{ 'is-dragging': dragging }"
 				:style="sheetStyle"
 				role="dialog"
@@ -28,20 +29,24 @@
 				>
 
 				<!-- Drag-handle -->
-				<div class="bs-handle-zone flex justify-center pt-2 pb-1 shrink-0" @click="onHandleClick" @pointerdown="onDragStart">
+				<div class="bs-handle-zone flex justify-center pt-2 pb-1 shrink-0" @click="onHandleClick" v-on="dragListeners">
 					<div class="w-10 h-1.5 rounded-full bg-gray-400/60"></div>
 				</div>
 
 				<!-- Header -->
 				<div
 					v-if="header || $slots.header"
-					class="bs-header flex items-center justify-between px-4 py-2 border-b header-background shrink-0"
+					class="bs-header relative flex items-center justify-center px-12 py-2 border-b shrink-0"
 					>
 					<slot name="header">
-						<h2 class="truncate">{{ $t(header) }}</h2>
+						<!-- Своя типографика обязательна: базовая высота строки заголовка
+							 задана абсолютным значением меньше кегля, и обрезка длинного
+							 текста по ширине срезала бы заодно верх и хвосты букв -->
+						<h2 class="truncate text-xl font-semibold leading-tight">{{ $t(header) }}</h2>
 					</slot>
+					<!-- Крестик выведен из потока, иначе он смещал бы заголовок влево от центра -->
 					<button
-						class="p-2 -mr-2 rounded-lg hover:bg-gray-700/40 active:bg-gray-600/40 transition-colors"
+						class="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg hover:bg-gray-700/40 active:bg-gray-600/40 transition-colors"
 						@click="close"
 						>
 						<Icon icon="material-symbols:close" class="icon" />
@@ -49,7 +54,16 @@
 				</div>
 
 				<!-- Content -->
-				<div class="grow overflow-y-auto p-3 scrollbar-thin">
+				<!-- Обнулённый минимум обязателен: без него высокое содержимое считает
+					 свой размер минимально допустимым, растёт вверх и выдавливает
+					 шапку листа за верхнюю кромку экрана -->
+				<div class="bs-content grow min-h-0 p-3"
+					:class="fill ? 'flex flex-col' : 'overflow-y-auto scrollbar-thin'"
+					@touchstart="onContentTouchStart"
+					@touchmove="onContentTouchMove"
+					@touchend="onContentTouchEnd"
+					@touchcancel="onContentTouchEnd"
+					>
 					<slot />
 				</div>
 
@@ -66,6 +80,10 @@
 	import { lockPageScroll, unlockPageScroll } from '@/js/pageScrollLock';
 	import { pushOverlay, popOverlay, popOverlaySilent } from '@/js/overlayHistory';
 
+	// Пройденное расстояние, после которого понятно, куда ведёт палец. Пока оно
+	// не пройдено, жест остаётся за содержимым.
+	const DRAG_ACTIVATION_PX = 8;
+
 	export default {
 		name: 'BottomSheet',
 		inheritAttrs: false,
@@ -78,6 +96,14 @@
 			breakpoint: {
 				type: Number,
 				default: 768,
+			},
+			// Содержимое само распоряжается высотой листа: лист не прокручивает его
+			// целиком, а отдаёт всю высоту под раскладку. Нужно там, где нижний ряд
+			// действий должен стоять у края экрана, а прокручивается только часть
+			// содержимого.
+			fill: {
+				type: Boolean,
+				default: false,
 			},
 			minHeight: {
 				type: String,
@@ -115,12 +141,28 @@
 				isMobile: false,
 				mediaQuery: null,
 				dragging: false,
+				dragPending: false,
+				dragStartX: 0,
 				dragStartY: 0,
 				dragOffset: 0,
 				dragMoved: false,
+				dragScroller: null,
+				// Имена событий начатого жеста: набор выбирается в момент нажатия и
+				// нужен, чтобы снять ровно те слушатели, что были поставлены.
+				dragEvents: null,
 			}
 		},
 		computed: {
+			// События указателя Apple понимает только с 13-й версии, а ниже остаются
+			// касания и мышь. Набор выбирается один раз: если вешать все три сразу,
+			// на современных устройствах одно нажатие начинало бы жест трижды.
+			dragListeners() {
+				if ( typeof window !== 'undefined' && window.PointerEvent )
+					return { pointerdown: this.onDragStart };
+
+				return { touchstart: this.onDragStart, mousedown: this.onDragStart };
+			},
+
 			sheetStyle() {
 				// Fixed height keeps the sheet stable while its content changes;
 				// otherwise the sheet grows with content between minHeight and 90dvh.
@@ -200,6 +242,7 @@
 			// снимает возврат назад — историю в этом случае трогать уже нельзя.
 			dismiss() {
 				if (!this.isVisible) return;
+				this.resetDrag();
 				this.isVisible = false;
 				this.$emit('close');
 			},
@@ -219,36 +262,146 @@
 				}
 				if (this.closeOnHandle) this.close();
 			},
+			// Продолжение и завершение жеста приходят тем же набором событий, каким он
+			// начат: на устройствах без событий указателя это касания либо мышь.
+			dragEventsFor(type) {
+				if (type === 'pointerdown') return ['pointermove', 'pointerup', 'pointercancel'];
+				if (type === 'touchstart')  return ['touchmove', 'touchend', 'touchcancel'];
+
+				return ['mousemove', 'mouseup', null];
+			},
+			// Координата нажатия: у касания она лежит в списке точек, у остальных — на
+			// самом событии.
+			dragPoint(e) {
+				return e.touches ? e.touches[0] : e;
+			},
 			onDragStart(e) {
-				if (!this.closeOnSwipe) return;
+				if (!this.closeOnSwipe || this.dragging) return;
+
+				const point = this.dragPoint(e);
+				if (!point) return;
+
+				this.dragEvents = this.dragEventsFor(e.type);
 				this.dragging = true;
 				this.dragMoved = false;
-				this.dragStartY = e.clientY;
+				this.dragStartY = point.clientY;
 				this.dragOffset = 0;
-				window.addEventListener('pointermove', this.onDragMove, { passive: true });
-				window.addEventListener('pointerup', this.onDragEnd);
-				window.addEventListener('pointercancel', this.onDragEnd);
+
+				window.addEventListener(this.dragEvents[0], this.onDragMove, { passive: true });
+				window.addEventListener(this.dragEvents[1], this.onDragEnd);
+				if (this.dragEvents[2])
+					window.addEventListener(this.dragEvents[2], this.onDragEnd);
 			},
 			onDragMove(e) {
+				const point = this.dragPoint(e);
+				if (!point) return;
+
 				// Тянуть можно только вниз: вверх лист не растягивается.
-				this.dragOffset = Math.max(0, e.clientY - this.dragStartY);
+				this.dragOffset = Math.max(0, point.clientY - this.dragStartY);
 				if (this.dragOffset > 4) this.dragMoved = true;
 			},
 			onDragEnd() {
-				const should_close = this.dragOffset > this.swipeThreshold;
-				this.dragging = false;
-				this.dragOffset = 0;
 				this.detachDragListeners();
+				this.finishDrag();
+			},
+			// Жест по содержимому перехватывается не сразу: сначала нужно убедиться,
+			// что палец ведёт строго вниз, а прокручиваемая область под ним уже в
+			// самом верху — иначе это обычная прокрутка, а не закрытие.
+			onContentTouchStart(e) {
+				if (!this.closeOnSwipe || this.dragging) return;
+				if (e.touches.length !== 1) return;
+
+				this.dragScroller = this.findScroller(e.target);
+				if (this.dragScroller && this.dragScroller.scrollTop > 0) return;
+
+				const touch = e.touches[0];
+				this.dragPending = true;
+				this.dragMoved = false;
+				this.dragStartX = touch.clientX;
+				this.dragStartY = touch.clientY;
+				this.dragOffset = 0;
+			},
+			onContentTouchMove(e) {
+				if (!this.dragPending && !this.dragging) return;
+
+				if (e.touches.length !== 1) {
+					this.resetDrag();
+					return;
+				}
+
+				const touch = e.touches[0];
+				const dy = touch.clientY - this.dragStartY;
+				const dx = Math.abs(touch.clientX - this.dragStartX);
+
+				if (this.dragPending) {
+					if (Math.abs(dy) < DRAG_ACTIVATION_PX && dx < DRAG_ACTIVATION_PX)
+						return;
+
+					// Вверх, вбок или из уже прокрученного содержимого лист не тянут.
+					if (dy <= 0 || dx > dy || (this.dragScroller && this.dragScroller.scrollTop > 0)) {
+						this.resetDrag();
+						return;
+					}
+
+					this.dragPending = false;
+					this.dragging = true;
+				}
+
+				this.dragOffset = Math.max(0, dy);
+				this.dragMoved = this.dragOffset > 4;
+				// Лист уже идёт за пальцем — параллельная прокрутка содержимого его дёргает.
+				if (e.cancelable) e.preventDefault();
+			},
+			onContentTouchEnd() {
+				if (!this.dragging) {
+					this.resetDrag();
+					return;
+				}
+
+				this.finishDrag();
+			},
+			finishDrag() {
+				const should_close = this.dragOffset > this.swipeThreshold;
+				this.resetDrag();
 				// Ручное смещение снимается отдельным кадром: пока оно висит инлайном
 				// вместе с отключённым сглаживанием, выезд вниз не проигрывается и лист
 				// просто исчезает.
 				if (should_close)
 					this.$nextTick(() => this.close());
 			},
+			// Признак завершённого жеста здесь не сбрасывается: по нему клик после
+			// перетаскивания отличается от намеренного нажатия.
+			resetDrag() {
+				this.dragging = false;
+				this.dragPending = false;
+				this.dragOffset = 0;
+				this.dragScroller = null;
+			},
+			// Ближайшая прокручиваемая область под пальцем: пока она не в самом верху,
+			// движение вниз принадлежит ей, а не листу.
+			findScroller(node) {
+				const root = this.$refs.sheet;
+				let el = node;
+
+				while (el && el !== root && el.nodeType === 1) {
+					const overflow = window.getComputedStyle(el).overflowY;
+					if ((overflow === 'auto' || overflow === 'scroll') && el.scrollHeight > el.clientHeight)
+						return el;
+
+					el = el.parentNode;
+				}
+
+				return null;
+			},
 			detachDragListeners() {
-				window.removeEventListener('pointermove', this.onDragMove);
-				window.removeEventListener('pointerup', this.onDragEnd);
-				window.removeEventListener('pointercancel', this.onDragEnd);
+				if (!this.dragEvents) return;
+
+				window.removeEventListener(this.dragEvents[0], this.onDragMove);
+				window.removeEventListener(this.dragEvents[1], this.onDragEnd);
+				if (this.dragEvents[2])
+					window.removeEventListener(this.dragEvents[2], this.onDragEnd);
+
+				this.dragEvents = null;
 			},
 			onMediaChange(e) {
 				// BottomSheet.onMediaChange

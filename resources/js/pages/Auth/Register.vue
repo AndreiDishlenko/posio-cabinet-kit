@@ -15,6 +15,12 @@
 					<input id="register-email" ref="email" type="email" autocomplete="email" v-model="form_data.email" class="form-control md:form-control-lg"/>
 					<p v-if="form_data_errors.email" class="form-error" >{{ form_data_errors.email }}</p>
 				</div>
+				<!-- Телефон переехал в форму создания компании (после регистрации) -->
+				<!-- <div class="label-group">
+					<label class="form-label" for="register-phone">{{ $t('Phone')}}</label>
+					<input id="register-phone" ref="phone" type="tel" autocomplete="tel" placeholder="+380501234567" v-model="form_data.phone" class="form-control md:form-control-lg"/>
+					<p v-if="form_data_errors.phone" class="form-error" >{{ form_data_errors.phone }}</p>
+				</div> -->
 				<div class="label-group">
 					<label class="form-label" for="register-password">{{ $t('Password')}}</label>
 					<PasswordInput id="register-password" ref="password" autocomplete="new-password" v-model="form_data.password" v-model:visible="password_visible" class="form-control md:form-control-lg" aria-describedby="register-password-hint"/>
@@ -64,6 +70,7 @@
                     // Без нижней границы длины: реальные короткие имена (Ян, Лев) — не ошибка.
                     name:                   'required',
                     email:                  'required|email',
+                    // phone:                  'phone', // поле перенесено в форму создания компании
                     password:               'required|password',
                     password_confirmation:  'required|confirmed:password'
                 },

@@ -241,7 +241,7 @@
       "mode": "manual",
       "source": "resources/js/Elements/Dropdown.vue",
       "target": "resources/js/Elements/Dropdown.vue",
-      "notes": "Package keeps a slightly older/simpler open() implementation. Diff before syncing dropdown positioning changes."
+      "notes": "Package keeps its open() guard: updatePosition() returns false for a detached anchor and the menu stays closed. Upstream backClose (pushOverlay) is merged after that guard, so a refused open leaves no history entry. Merge upstream changes three-way, never copy."
     },
     {
       "id": "elements-table",
@@ -276,7 +276,7 @@
       "mode": "manual",
       "source": "resources/_admin/js/layouts/CabinetLayout.vue",
       "target": "resources/_admin/js/layouts/CabinetLayout.vue",
-      "notes": "Package's own _admin-section layout (used by Permissions/UsersAdmin pages), distinct from the generalized top-level copy tracked as layout-cabinet-layout. ProductTour/SpotlightHints/FirstReceiptCongrats blocks, tour state and onTourFinished are carried verbatim and gated by the shared `onboarding` prop (config cabinet_onboarding, all off in the package). The menu layer / cabinetShellPresence rework and the FirstStepsChecklist dock are not ported."
+      "notes": "Package's own _admin-section layout. ProductTour/SpotlightHints/FirstReceiptCongrats blocks are carried verbatim and gated by the shared `onboarding` prop (config cabinet_onboarding, all off in the package). Since upstream 2.6.35 the side menu lives outside the page (CabinetMenuLayer + cabinetShellPresence, rendered next to the page in createApp.js); the page keeps a --cabinet-menu-width spacer. The dock layer (FirstStepsChecklist + AI helper) is Posio-only and not ported. Package difference: the Head title falls back when currentPage is missing."
     },
     {
       "id": "admin-side-menu",
@@ -318,7 +318,7 @@
       "mode": "copy",
       "source": "resources/js/posio/system/AxiosApiClientClass.js",
       "target": "resources/js/posio/system/AxiosApiClientClass.js",
-      "notes": "Verbatim copy. Returns the {statusCode, error, message, errors, data} envelope the card/table mixins read — a plain fetch wrapper that throws on 4xx cannot replace it."
+      "notes": "Verbatim copy. Returns the {statusCode, error, message, errors, data} envelope the card/table mixins read — a plain fetch wrapper that throws on 4xx cannot replace it. Imports deviceLog from @/js/DeviceLog — in the package that module is a console-only stub (see package-device-log)."
     },
     {
       "id": "system-toast",
@@ -339,7 +339,7 @@
       "mode": "copy",
       "source": "resources/js/posio/system/DictionariesClass.js",
       "target": "resources/js/posio/system/DictionariesClass.js",
-      "notes": "Verbatim copy. The endpoint belongs to the host: createApp.js resolves the first route name of its dictionariesRoute option and passes null (with a console warning) when none is registered."
+      "notes": "Verbatim copy. The endpoint belongs to the host: createApp.js resolves the first route name of its dictionariesRoute option and passes null (with a console warning) when none is registered. Imports deviceLog from @/js/DeviceLog (package stub)."
     },
     {
       "id": "system-console",
@@ -1048,6 +1048,123 @@
       "source": "app/Http/Middleware/SetLocale.php",
       "target": "src/Http/Middleware/SetLocale.php",
       "notes": "Namespace; registered as the cabinet-kit.set-locale alias."
+    },
+    {
+      "id": "layout-cabinet-shell-presence",
+      "mode": "copy",
+      "source": "resources/_admin/js/layouts/cabinetShellPresence.js",
+      "target": "resources/_admin/js/layouts/cabinetShellPresence.js",
+      "notes": "Counter of mounted cabinet pages the out-of-page layers read; tour_active is kept verbatim though only the Posio dock reads it."
+    },
+    {
+      "id": "layout-cabinet-menu-layer",
+      "mode": "copy",
+      "source": "resources/_admin/js/layouts/CabinetMenuLayer.vue",
+      "target": "resources/_admin/js/layouts/CabinetMenuLayer.vue",
+      "notes": "Side menu mounted once next to the page (createApp.js renders [App, CabinetMenuLayer])."
+    },
+    {
+      "id": "elements-currency-value",
+      "mode": "copy",
+      "source": "resources/js/Elements/CurrencyValue.vue",
+      "target": "resources/js/Elements/CurrencyValue.vue",
+      "notes": "Money with currency sign; upstream moved it here from _admin/js/components/ui (the old path is a package wrapper, see package-currency-value-legacy)."
+    },
+    {
+      "id": "currency-format",
+      "mode": "copy",
+      "source": "resources/js/currencyFormat.js",
+      "target": "resources/js/currencyFormat.js",
+      "notes": "CLDR money formatting shared by CurrencyValue and CurrencyInput."
+    },
+    {
+      "id": "table-empty-state",
+      "mode": "copy",
+      "source": "resources/js/Elements/Table/TableEmptyState.vue",
+      "target": "resources/js/Elements/Table/TableEmptyState.vue",
+      "notes": "Empty/filtered/error state of the table body."
+    },
+    {
+      "id": "table-size-prop",
+      "mode": "copy",
+      "source": "resources/js/Elements/Table/sizeProp.js",
+      "target": "resources/js/Elements/Table/sizeProp.js",
+      "notes": "Size prop tokens -> table-*/row-* classes with breakpoint prefixes."
+    },
+    {
+      "id": "mobile-viewport-mixin",
+      "mode": "copy",
+      "source": "resources/js/_mobileViewportMixin.js",
+      "target": "resources/js/_mobileViewportMixin.js",
+      "notes": "is_mobile flag at the lt-md threshold."
+    },
+    {
+      "id": "forms-number-stepper",
+      "mode": "copy",
+      "source": "resources/js/Elements/Forms/NumberStepper.vue",
+      "target": "resources/js/Elements/Forms/NumberStepper.vue",
+      "notes": "Generic numeric stepper."
+    },
+    {
+      "id": "forms-toggle-field",
+      "mode": "copy",
+      "source": "resources/js/Elements/Forms/ToggleField.vue",
+      "target": "resources/js/Elements/Forms/ToggleField.vue",
+      "notes": "Labelled Toggler row."
+    },
+    {
+      "id": "elements-scroll-area",
+      "mode": "copy",
+      "source": "resources/js/Elements/ScrollArea.vue",
+      "target": "resources/js/Elements/ScrollArea.vue",
+      "notes": "Generic scroll container."
+    },
+    {
+      "id": "elements-pull-reveal-panel",
+      "mode": "copy",
+      "source": "resources/js/Elements/PullRevealPanel.vue",
+      "target": "resources/js/Elements/PullRevealPanel.vue",
+      "notes": "Pull-to-reveal panel; logic in pullReveal.js."
+    },
+    {
+      "id": "pull-reveal",
+      "mode": "copy",
+      "source": "resources/js/pullReveal.js",
+      "target": "resources/js/pullReveal.js",
+      "notes": "Gesture logic of PullRevealPanel."
+    },
+    {
+      "id": "pattern-empty-state-cta",
+      "mode": "copy",
+      "source": "resources/_admin/js/components/patterns/EmptyStateCta.vue",
+      "target": "resources/_admin/js/components/patterns/EmptyStateCta.vue",
+      "notes": "Empty-state block with a call to action."
+    },
+    {
+      "id": "page-users-admin",
+      "mode": "manual",
+      "source": "resources/_admin/js/pages/UsersAdmin.vue",
+      "target": "resources/_admin/js/pages/UsersAdmin.vue",
+      "notes": "Upstream page with package route names: route_prefix cabinet-kit.users, cabinet-kit.users.approve, cabinet-kit.users.verifyemail. Backend is the package's Admin/UsersController (account_names built in PHP, not with MySQL group_concat, so the SQLite host tests run)."
+    },
+    {
+      "id": "php-sitemap-lastmod",
+      "mode": "manual",
+      "source": "app/Services/SitemapLastModService.php",
+      "target": "src/Services/SitemapLastModService.php",
+      "notes": "Namespace + the page directory, content directories and build manifests come from seo.sitemap_lastmod instead of Posio constants; empty pages_dir = lastmod follows the meta only. Migration: database/migrations/2026_09_25_000001_add_content_fingerprint_seo_meta_table.php (guarded by hasColumn)."
+    },
+    {
+      "id": "package-device-log",
+      "mode": "package_only",
+      "target": "resources/js/DeviceLog.js",
+      "notes": "Console-only stub of upstream resources/js/DeviceLog.js (the POS device log with IndexedDB stores). Exports deviceLog() so the verbatim api client and dictionaries keep working; the package has no device log to register."
+    },
+    {
+      "id": "package-currency-value-legacy",
+      "mode": "package_only",
+      "target": "resources/_admin/js/components/ui/CurrencyValue.vue",
+      "notes": "Upstream deleted this path; hosts may still import it. Wrapper over Elements/CurrencyValue.vue with tone=accent to keep the old look."
     }
   ]
 }

@@ -50,7 +50,13 @@ export default {
                     }
                 };
 
-                input.element.setAttribute('autocomplete', 'new-password')
+                // Заглушка от автозаполнения ставится только там, где поле само
+                // не объявило своё назначение: в формах документов подстановка
+                // сохранённых данных мешает, а в форме регистрации имя и почта
+                // обязаны подставляться.
+                if ( !input.element.hasAttribute('autocomplete') )
+                    input.element.setAttribute('autocomplete', 'new-password')
+
                 input.element.addEventListener('change', changeHandler)
                 input.element.addEventListener('keydown', keydownHandler);
 
@@ -229,4 +235,4 @@ export default {
                 this.$refs[target_field].focus();
         },
     }
-};
+};

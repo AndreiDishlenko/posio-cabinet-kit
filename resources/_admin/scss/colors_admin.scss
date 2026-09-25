@@ -57,6 +57,10 @@ html.light {
 	--form-control-border-color-focus:  #F2F4F5;
 	--placeholder-color:                   #b8bbc1;
 
+	// Безрамкове поле на власній підкладці — світліше за фон блоку, який його тримає.
+	--form-control-plain-background:           #ffffff;
+	--form-control-plain-border-color-focus:   #d7dbe2;
+
 	// Поле поиска-«пилюля» — залитое, как поиск товара на кассе.
 	--search-input-background:     #F2F4F5;
 
@@ -66,11 +70,16 @@ html.light {
 	--button-hover-background:         #e4e6ea;
 	--button-disabled-background:      #e8e9ec;
 
+	// Отметка выбранного пункта без акцентного цвета: серая заливка на своей подложке.
+	--neutral-button-background:       #e1e3e7;
+	--neutral-button-hover-background: #d6d9de;
+	--neutral-button-text-color:       #1c1c1c;
+
 	--primary-button-text:       		#ffffff;
-	--primary-button-background:       #3367D7;
-	--primary-button-hover-background: #2c4fd1;
-	--primary-button-background-25:    rgba(57, 97, 233, 0.25);
-	--primary-button-background-40:    rgba(57, 97, 233, 0.40);
+	--primary-button-background:       #005cb2;
+	--primary-button-hover-background: #004f99;
+	--primary-button-background-25:    rgba(0, 92, 178, 0.25);
+	--primary-button-background-40:    rgba(0, 92, 178, 0.40);
 
 	--fab-primary-bg:        #3961E9;
 	--fab-primary-bg-hover:  #4C81F5;
@@ -128,6 +137,7 @@ html.light {
 	--success-tint-40: rgba(44, 138, 79, .40);
 
 	--warning-tint-15: rgba(194, 103, 28, .15);
+	--yellow-tint-15:  rgba(184, 129, 11, .15);
 	--info-tint-15:    rgba(57, 97, 233, .15);
 
 	--error-tint-15:   rgba(192, 57, 43, .15);
@@ -192,9 +202,12 @@ html.dark {
 	// --yellow-color: #F9B318;
 	// --green-color: green;
 
-	// --success-color: green;
+	// Приглушённый, как и красный: чистый green на тёмном фоне почти не читается.
+	--success-color: #7fdca0;
+	// Зелёный текст («успех», прихід) по факту красится этим токеном — держим его в тон.
+	--green-color:   #7fdca0;
     // --warning-color: #fd7e14;
-	--error-color: #c26361;
+	--error-color: #d4726f;
 
     --selection-color: #1a1a1a;
 
@@ -213,10 +226,13 @@ html.dark {
 
     --button-background: #2c2c2c; //#434344;
     --button-hover-background: rgb(53, 53, 53);
-    --primary-button-background: #3358cc;
-    --primary-button-hover-background: #2c4cb0;
-    --primary-button-background-25: rgba(51, 88, 204, 0.25);
-    --primary-button-background-40: rgba(51, 88, 204, 0.40);
+    --neutral-button-background: #37383b;
+    --neutral-button-hover-background: #414247;
+    --neutral-button-text-color: #ffffff;
+    --primary-button-background: #005cb2;
+    --primary-button-hover-background: #004f99;
+    --primary-button-background-25: rgba(0, 92, 178, 0.25);
+    --primary-button-background-40: rgba(0, 92, 178, 0.40);
     --button-disabled-background: #737374; //#333333;
     --button-text-color: var(--text-color);
 
@@ -248,6 +264,7 @@ html.dark {
 	--success-tint-40: rgba(0, 128, 0, .40);
 
 	--warning-tint-15: rgba(253, 126, 20, .15);
+	--yellow-tint-15:  rgba(184, 129, 11, .25);
 	--info-tint-15:    rgba(109, 141, 251, .15);
 
 	--error-tint-15:   rgba(194, 99, 97, .15);
@@ -294,6 +311,44 @@ html.dark {
     .form-control {
         --dp-background-color: #212121!important;
     }
+}
+
+/* ── AI-помощник — поверхности окна ──────────────────────────────────────
+   Окно всплывает поверх страницы, поэтому его корпус светлее фона страницы:
+   на общем фоне тёмной темы граница окна иначе не читается. Лента разговора
+   утоплена относительно корпуса, реплики и карточки — приподняты над лентой. */
+html.light {
+	--aihelper-panel-bg:  #ffffff;
+	--aihelper-feed-bg:   #f3f5f8;
+	--aihelper-raised-bg: #ffffff;
+	--aihelper-hover-bg:  #eaeef6;
+	--aihelper-border:    #e0e3e9;
+	--aihelper-shadow:    0 18px 50px rgba(0, 0, 0, .18);
+}
+
+html.dark {
+	--aihelper-panel-bg:  #2b2b2b;
+	--aihelper-feed-bg:   #232323;
+	--aihelper-raised-bg: #353535;
+	--aihelper-hover-bg:  #3f3f3f;
+	--aihelper-border:    #3d3d3d;
+	--aihelper-shadow:    0 18px 50px rgba(0, 0, 0, .55);
+}
+
+/* Подкладка плавающей кнопки помощника — цвета самого маскота: мятное свечение
+   его «лица» поверх тёмно-зелёного корпуса экрана. Кремово-белая голова читается
+   на них в обеих темах, поэтому подкладка одна, разводится только тень. */
+html.light,
+html.dark {
+	--aihelper-fab-bg: linear-gradient(150deg, #7ef0c2 0%, #34c98d 52%, #12332b 100%);
+}
+
+html.light {
+	--aihelper-fab-shadow: 0 6px 18px rgba(18, 51, 43, .28);
+}
+
+html.dark {
+	--aihelper-fab-shadow: 0 6px 18px rgba(0, 0, 0, .5);
 }
 
 /* ── Gemini-style side menu — цвета ──────────────────────────────────────

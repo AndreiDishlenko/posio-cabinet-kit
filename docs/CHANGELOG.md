@@ -1,5 +1,67 @@
 # Changelog
 
+## Unreleased — Sync with posio.cabinet 2.6.35
+
+**Security**
+- Email confirmation now requires being signed in to that very account. A guest
+  opening the link is sent to sign-in (`verification-sign-in-required`, the
+  address pre-filled) and the link reopens after sign-in to finish the job; a
+  link opened while another user is signed in confirms nothing and shows
+  `EmailVerificationOutcome` with `email-verification-sign-in-required` —
+  "Sign in as …" signs out and returns to the same link after sign-in. Before,
+  a forwarded letter or a link opened in someone else's browser confirmed the
+  account.
+
+**Added**
+- Users page: search by e-mail, name or company, role filter, "Without company"
+  toggle, a Companies column, an "Email verified" dot and a manual "Confirm"
+  button (`cabinet-kit.users.verifyemail`) for when the letter never arrived —
+  it grants the default system role exactly like the link does.
+- The side menu lives outside the page (`CabinetMenuLayer` +
+  `cabinetShellPresence`): navigating no longer rebuilds it, so it keeps its
+  scroll position and opened sections. `CabinetLayout` keeps a spacer of
+  `--cabinet-menu-width` in the flow. Hosts change nothing.
+- `CabinetLayout` / `CabinetHeader` prop `header_title` for pages without a menu
+  entry; the header title is the page's only `h1`; shell buttons are real
+  `<button>`s with accessible names.
+- Table: empty state explaining why the list is empty (no records / filters /
+  load error) with a matching action, `size` prop (`"md"`, `"lt-sm:xs sm:md"`).
+- Generic elements from the source project: `Elements/CurrencyValue.vue` (CLDR
+  money format via `currencyFormat.js`: sign side, code/short/full-name forms,
+  account currency by default), `Forms/NumberStepper`, `Forms/ToggleField`,
+  `ScrollArea`, `PullRevealPanel` (+ `pullReveal.js`), `_mobileViewportMixin`,
+  pattern `EmptyStateCta`; `.neutral-button`; `Toggler` size `toggler-sm`;
+  `Dropdown` prop `backClose`; `$H.Dt.toDate()`; validation rules
+  `min_value` / `max_value`.
+- SEO: sitemap `lastmod` follows a content fingerprint (meta + page files from
+  the build, `seo.sitemap_lastmod`) instead of the generation time — migration
+  adds `seo_meta.content_fingerprint` / `content_updated_at`; the SEO table shows
+  the date. `sitemap:generate` names public pages without an SEO record.
+
+**Changed**
+- A public localized page (`name.<locale>`) without an SEO record is indexed;
+  a record or `SeoService::override(['index' => …])` still decides.
+- `sitemap:generate` takes `x-default` from `SeoService::languageSelectorUrl()`,
+  the same URL the page's own meta declares.
+- Reference role grants follow the source project: Manager keeps
+  `manage-members` only, Administrator gets `manage-account`. Existing
+  installations are not touched — the roles sync only adds what is missing.
+- `@/_admin/js/components/ui/CurrencyValue.vue` is now a thin wrapper over
+  `@/js/Elements/CurrencyValue.vue` that keeps the accent currency sign.
+- API client: a browser "offline" confirmed by a failed attempt short-circuits
+  requests for 30 s (a false flag is ignored for the session once the server
+  answers), `removeCustomHeader()`, the offline flag reaches the page directly
+  through the emitter. Dictionaries survive a full local storage.
+- Shared SCSS and table/filter/bottom-sheet/floating-dock components re-synced
+  with the source project.
+
+**Build**
+- `@/js/DeviceLog` is a package stub: shared code logs through `deviceLog()`,
+  which writes to the console (the device log itself belongs to the POS app).
+- `tools/Sync-CabinetKitFromPosio.ps1 -RecordBaseline` under Windows PowerShell
+  garbled the Cyrillic notes of `upstream-sync-state.json` and wrote it with a
+  BOM: the file is now read and written as UTF-8 without BOM.
+
 ## Unreleased — Page tools in the header, rounded search field
 
 **Added**

@@ -26,7 +26,9 @@ function Get-SyncState {
         return $null
     }
 
-    return Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json
+    # Без явной кодировки Windows PowerShell читает UTF-8 без BOM как ANSI, и
+    # кириллица заметок переписывается обратно уже испорченной.
+    return Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json
 }
 
 function Get-UpstreamLog {
@@ -118,7 +120,7 @@ if (-not (Test-Path -LiteralPath $Manifest -PathType Leaf)) {
     throw "Manifest not found: $Manifest"
 }
 
-$manifestData = Get-Content -LiteralPath $Manifest -Raw | ConvertFrom-Json
+$manifestData = Get-Content -LiteralPath $Manifest -Raw -Encoding UTF8 | ConvertFrom-Json
 $sourceRootFull = [System.IO.Path]::GetFullPath($SourceRoot)
 $packageRootFull = [System.IO.Path]::GetFullPath($PackageRoot)
 
@@ -178,7 +180,9 @@ if ($RecordBaseline) {
         $syncState.history = @($previous) + @($syncState.history | Where-Object { $_ })
     }
 
-    $syncState | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $StateFile -Encoding UTF8
+    # UTF-8 без BOM: с BOM файл не разбирают JSON-парсеры PHP и Node.
+    $json = $syncState | ConvertTo-Json -Depth 6
+    [System.IO.File]::WriteAllText($StateFile, $json, (New-Object System.Text.UTF8Encoding $false))
     Write-Host "Baseline recorded: $version ($($parts[1]))"
     return
 }

@@ -1,11 +1,11 @@
 <template>
 
-    <div class="table-tools-panel flex items-center space-x-3 pb-2 !ps-0 mt-1 overflow-x-auto no-scrollbar min-h-max">
+    <div class="table-tools-panel flex items-center space-x-2 md:space-x-3 pb-2 !px-0 overflow-x-auto no-scrollbar min-h-max">
 
 		<!-- CTA Button. Типове місце — на початку панелі; settings.ctabutton.align='end'
 		     переносить блок у правий край (порядком, а не окремою розміткою). -->
 		<div v-if="add_button || settings.ctabutton?.type === 'button' || (settings.ctabutton?.type === 'SelectButton' && ctabuttonActions.length)"
-			class="cta-buttons flex items-center gap-3"
+			class="cta-buttons flex items-center gap-2 md:gap-3"
 			:class="{ 'order-last': settings.ctabutton?.align === 'end' }">
 
 			<button v-if="add_button" class="t-panel-item button button-sm md:button-md primary-button !space-x-0"
@@ -13,7 +13,7 @@
 				@click="$emit('addRow')"
 				>
 				<Icon v-if="add_button.icon" class="icon icon-md" :icon="add_button.icon" />
-				<span>{{ $t(add_button.name || 'Add') }}</span>
+				<span :class="{ 'lt-md:hidden': icons_only_mobile && !!add_button.icon }">{{ $t(add_button.name || 'Add') }}</span>
 			</button>
 
 			<button v-if="settings.ctabutton?.type === 'button'"
@@ -22,7 +22,7 @@
 				@click="onCtaButtonClick"
 				>
 				<Icon v-if="settings.ctabutton.icon" class="icon" :icon="settings.ctabutton.icon" />
-				<span>{{ $t(settings.ctabutton.name) }}</span>
+				<span :class="{ 'lt-md:hidden': icons_only_mobile && !!settings.ctabutton.icon }">{{ $t(settings.ctabutton.name) }}</span>
 			</button>
 
 			<SelectableButton
@@ -30,6 +30,7 @@
 				:actions="ctabuttonActions"
 				:label="settings.ctabutton.label"
 				:plain="!!settings.ctabutton.plain"
+				:class="{ 'icon-only-mobile': icons_only_mobile && !!settings.ctabutton.icon }"
 				:button_class="settings.ctabutton.button_class || ''"
 				:font_size="settings.ctabutton.font_size || ''"
 				:size="'md'"
@@ -66,7 +67,7 @@
 				:size="item.size || 'md'"
 				:disabled="item.disabled"
 				:custom-class="item.class"
-				:hide-label-mobile="!!item.hide_label_mobile"
+				:hide-label-mobile="(icons_only_mobile && !!item.icon) || !!item.hide_label_mobile"
 				@change="(value, e) => { if (item.action) item.action(value, e) }"
 				/>
 
@@ -95,20 +96,22 @@
 				@click="(e) => { panelItemClick(item, e) }"
 				>
 					<Icon v-if="item.icon" class="icon" :icon="item.icon" />
-					<span v-if="item.prefix" class="me-1">{{ $t(item.prefix) }}</span>
-					<span v-if="item.name" :class="{ 'lt-md:hidden': !!item.hide_label_mobile }">{{ $t(item.name) }}</span>
+					<span v-if="item.prefix" class="me-1" :class="{ 'lt-md:hidden': icons_only_mobile && !!item.icon }">{{ $t(item.prefix) }}</span>
+					<span v-if="item.name" :class="{ 'lt-md:hidden': (icons_only_mobile && !!item.icon) || !!item.hide_label_mobile }">{{ $t(item.name) }}</span>
 					<span v-if="item.currency" class="ms-1 lt-md:hidden">{{ item.currency }}</span>
 			</div>
 
 		</template>
 
-		<div class="grow flex items-center">
+		<!-- Порожній розширювач не має додавати свій відступ: інакше перед правими
+		     фільтрами на телефоні проміжок подвійний. -->
+		<div class="grow flex items-center" :class="{ '!ms-0': !$slots.tools }">
 			<slot name="tools" />
 		</div>
 
 		<!-- End Filters -->
-		<div v-if="customToolsList.length || (settings.filters?.deleted && !show_rowbar)"
-			class="end-filters flex items-center gap-3">
+		<div v-if="customToolsList.length"
+			class="end-filters flex items-center gap-2 md:gap-3">
 
 			<template v-for="(item, idx) in customToolsList" :key="'c-'+idx">
 
@@ -119,7 +122,7 @@
 					:size="item.size || 'md'"
 					:disabled="item.disabled"
 					:custom-class="item.class"
-					:hide-label-mobile="!!item.hide_label_mobile"
+					:hide-label-mobile="(icons_only_mobile && !!item.icon) || !!item.hide_label_mobile"
 					@change="(value, e) => { if (item.action) item.action(value, e) }"
 					/>
 
@@ -148,19 +151,12 @@
 					@click="(e) => { panelItemClick(item, e) }"
 					>
 						<Icon v-if="item.icon" class="icon" :icon="item.icon" />
-						<span v-if="item.prefix" class="me-1 lt-sm:hidden">{{ $t(item.prefix) }}</span>
-						<span v-if="item.name" :class="{ 'lt-md:hidden': !!item.hide_label_mobile }">{{ $t(item.name) }}</span>
+						<span v-if="item.prefix" class="me-1 lt-sm:hidden" :class="{ 'lt-md:hidden': icons_only_mobile && !!item.icon }">{{ $t(item.prefix) }}</span>
+						<span v-if="item.name" :class="{ 'lt-md:hidden': (icons_only_mobile && !!item.icon) || !!item.hide_label_mobile }">{{ $t(item.name) }}</span>
 						<span v-if="item.currency" class="ms-1 lt-md:hidden">{{ item.currency }}</span>
 				</div>
 
 			</template>
-
-			<!-- Show Deleted toggle — only when the rowbar column is hidden; otherwise it
-			     lives in the rowbar header (see TableHeader). -->
-			<ShowDeletedToggle v-if="settings.filters?.deleted && !show_rowbar"
-				v-model="panel_data.showDeleted"
-				class="t-panel-item"
-				/>
 
 		</div>
 
@@ -189,10 +185,9 @@
     import CheckboxButton    from '../Forms/CheckboxButton.vue'
     import Checkbox          from '../Forms/Checkbox.vue'
     import SearchableInputRounded from '@/js/Elements/Forms/SearchableInputRounded.vue'
-    import ShowDeletedToggle from '@/js/Elements/Table/ShowDeletedToggle.vue'
 
     export default {
-        components: { Icon, SelectableButton, CheckboxButton, Checkbox, SearchableInputRounded, ShowDeletedToggle },
+        components: { Icon, SelectableButton, CheckboxButton, Checkbox, SearchableInputRounded },
         props: {
             settings: {
                 type: Object,
@@ -206,12 +201,6 @@
                 type: Object,
                 default: {}
             },
-            // Whether the host table renders the rowbar column. When true, the
-            // "Show deleted" toggle lives in the rowbar header, not in this panel.
-            show_rowbar: {
-                type: Boolean,
-                default: false
-            },
             // Вузький екран: контроли панелі лишаються компактними, на десктопі — на розмір більші.
             is_mobile: {
                 type: Boolean,
@@ -219,6 +208,10 @@
             },
         },
 		computed: {
+			// Режим таблиці: на телефоні контроли з іконкою показують лише її, без підпису.
+			icons_only_mobile() {
+				return !!this.settings.icons_only_mobile;
+			},
 			// Кнопка додавання: булеве значення дає типовий вигляд (підпис «Add», без іконки),
 			// обʼєкт дозволяє задати власну іконку, підпис і класи.
 			add_button() {
@@ -234,11 +227,13 @@
 					name: item.title ?? item.name,
 				}))
 			},
+			// Елемент можна тимчасово прибрати з панелі — наприклад, коли на телефоні
+			// його дія живе в меню сторінки.
 			panelItemsList() {
-				return Object.values(this.settings.panelitems ?? {});
+				return Object.values(this.settings.panelitems ?? {}).filter(item => !item.hidden);
 			},
 			customToolsList() {
-				return Object.values(this.settings.custom_tools ?? {});
+				return Object.values(this.settings.custom_tools ?? {}).filter(item => !item.hidden);
 			},
 		},
 		methods: {
@@ -258,7 +253,7 @@
 
 <style lang="scss" scoped>
 	.table-tools-panel {
-		background-color: var(--background-color, var(--table-body-background));
+		background-color: var(--table-surface, var(--background-color));
 
 		// Стала висота ряду незалежно від набору контролів: інакше сусідні таблиці
 		// на одній сторінці отримують шапки на різних рівнях — та, де стоїть поле
@@ -275,6 +270,10 @@
 	// і на початку панелі, де вона більше не стоїть.
 	.table-tools-panel > .cta-buttons.order-last {
 		margin-left: 0.75rem;
+
+		@media (max-width: 767px) {
+			margin-left: 0.5rem;
+		}
 	}
 
 	.table-tools-panel > .cta-buttons.order-last + * {
@@ -294,7 +293,8 @@
         }
     }
 
-	:deep(.export-selectable .action-name) {
+	:deep(.export-selectable .action-name),
+	:deep(.icon-only-mobile .action-name) {
 		@apply lt-md:hidden;
 	}
 

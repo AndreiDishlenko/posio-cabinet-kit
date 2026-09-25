@@ -58,6 +58,8 @@
 </template>
 
 <script>
+    import { pushOverlay, popOverlay } from '@/js/overlayHistory';
+
     export default {
         props: {
             defaultState: {
@@ -155,6 +157,13 @@
             area_zindex: {
                 type: [Number, String],
                 default: ''
+            },
+            // Закрытие кнопкой/жестом «назад»: меню получает свою запись в
+            // истории. По умолчанию выключено — списки выбора внутри форм
+            // открываются десятками, и запись на каждый из них истории не нужна.
+            backClose: {
+                type: Boolean,
+                default: false
             }
             // disableDefaultAction: {
             //     type: Boolean,
@@ -238,6 +247,8 @@
             dropdownStyle() {
                 const viewportWidth = window.innerWidth
                 const viewportHeight = window.innerHeight
+                // Видимая ширина без полосы прокрутки — предел для списка, прижатого к левому краю.
+                const visibleWidth = document.documentElement.clientWidth
 
                 let x_position = {};
                 const edge_margin = 5;
@@ -245,8 +256,8 @@
                 if (this.computedAlign == "left") {
                     // Check right edge
                     let adjustedLeft = this.area_left
-                    if (adjustedLeft + this.area_width > viewportWidth - edge_margin)
-                        adjustedLeft = viewportWidth - this.area_width - edge_margin
+                    if (adjustedLeft + this.area_width > visibleWidth - edge_margin)
+                        adjustedLeft = visibleWidth - this.area_width - edge_margin
                     // Предохранитель: якір близько до лівого краю екрана — не дати піти в мінус.
                     if (adjustedLeft < edge_margin)
                         adjustedLeft = edge_margin
@@ -312,7 +323,8 @@
 			
         },
         beforeUnmount() {
-            this.$emitter.off('close_dropdowns'); 
+            popOverlay(this);
+            this.$emitter.off('close_dropdowns');
             document.removeEventListener('mousedown', this.handleClickOutside);
             document.removeEventListener('scroll', this.handleClickOutside);
 			this.removeScrollListeners();
@@ -341,6 +353,9 @@
                     return false;
                 }
 
+                if ( this.backClose )
+                    pushOverlay(this, this.close);
+
                 this.$nextTick(() => {
                     document.addEventListener('mousedown', this.handleClickOutside);
                     document.addEventListener('scroll', this.handleClickOutside);
@@ -361,7 +376,10 @@
                 });
             },
             close() {
-                // console.log('Dropdown.close')   
+                // console.log('Dropdown.close')
+                if ( this.backClose )
+                    popOverlay(this);
+
                 this.isMenuOpen=false;
                 this.$nextTick(() => {                    
                     document.removeEventListener('mousedown', this.handleClickOutside);
@@ -458,7 +476,9 @@
 
                 this.area_top = rect.bottom + window.scrollY
                 this.area_button_top = rect.top + window.scrollY
-                this.area_left = rect.left + window.scrollX + scrollbar_width
+                // Поправка на полосу прокрутки нужна только правому краю: он отсчитывается
+                // от ширины окна вместе с полосой. Левый край с ней съезжал на её ширину.
+                this.area_left = rect.left + window.scrollX
                 this.area_right = rect.right + window.scrollX + scrollbar_width + 1
                 this.area_width = rect.width
 
@@ -496,7 +516,8 @@
             // only the anchor button's width.
             resolveAlign() {
                 const edge_margin = 10;
-                const viewportWidth = window.innerWidth;
+                // Левый край якоря считается без полосы прокрутки — сравниваем с видимой шириной.
+                const viewportWidth = document.documentElement.clientWidth;
 
                 if ( this.align === 'left' ) {
                     const overflowsRight = (this.area_left + this.area_width) > (viewportWidth - edge_margin);

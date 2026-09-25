@@ -7,13 +7,23 @@
 </template>
 
 <script>
-	import { joinDock, leaveDock, setDockHeight, dockOffsetOf } from '@/js/floatingDock';
+	import { joinDock, leaveDock, setDockHeight, dockOffsetOf, openDockWidget, closeDockWidget, openedDockWidget } from '@/js/floatingDock';
+
+	// Ознака розкритого віджета не залежить від місця в черзі: у куті власного
+	// контейнера елемент до черги не входить, але витісняти сусідів має так само.
+	let last_widget_id = 0;
+
+	// Скільки стежити за переїздом елемента на нове місце. Має перекривати
+	// тривалість переходу нижнього відступу зі стилів нижче: доки елемент їде,
+	// його положення ще не остаточне.
+	const MOVE_TRACK_MS = 300;
 
 	// Обгортка будь-якого плаваючого елемента в нижньому правому куті екрана.
 	// Стандартний спосіб виводити FAB і CTA: замість власного position:fixed
 	// елемент стає в спільну чергу й отримує місце над тими, що вже видимі.
 	export default {
 		name: 'FloatingDock',
+		emits: ['collapse', 'move'],
 		props: {
 			// Елемент живе в куті свого контейнера, а не екрана (напр. таблиця з
 			// власною прокруткою тіла). Черга при цьому не потрібна: кут у кожного
@@ -22,10 +32,24 @@
 				type: Boolean,
 				default: false,
 			},
+			// Вага в стовпчику: менша — ближче до краю екрана. Задає стале місце
+			// елемента незалежно від того, хто зʼявився раніше (кнопка списку
+			// виринає на прокрутці, коли решта кута вже стоїть).
+			weight: {
+				type: Number,
+				default: 0,
+			},
+			// Всередині розкрите вікно (панель помічника, список кроків, меню дій).
+			// Розкритий у куті лишається один: решта отримує запит на згортання.
+			expanded: {
+				type: Boolean,
+				default: false,
+			},
 		},
 		data() {
 			return {
 				dock_id: 0,
+				widget_id: ++last_widget_id,
 			};
 		},
 		computed: {
@@ -40,12 +64,39 @@
 					'--dock-offset': this.offset + 'px',
 				};
 			},
+			opened_widget() {
+				return openedDockWidget();
+			},
+		},
+		watch: {
+			// Сусід згорнувся або зник — місце змінилось. Вміст, вирівняний по кутовому
+			// елементу (вікно помічника стоїть рівно над своєю кнопкою), мусить знати
+			// про переїзд, інакше лишиться там, де було звільнене місце.
+			offset() {
+				this.trackMove();
+			},
+			expanded(open) {
+				if ( open )
+					openDockWidget(this.widget_id);
+				else
+					closeDockWidget(this.widget_id);
+			},
+			// Розкрився хтось інший — просимо власника згорнутися. Гасити вміст
+			// звідси не можна: у кожного віджета своє прощання (запамʼятати вибір,
+			// прибрати слухачів).
+			opened_widget(id) {
+				if ( this.expanded && id !== this.widget_id )
+					this.$emit('collapse');
+			},
 		},
 		mounted() {
+			if ( this.expanded )
+				openDockWidget(this.widget_id);
+
 			if ( this.local )
 				return;
 
-			this.dock_id = joinDock();
+			this.dock_id = joinDock(this.weight);
 			this.syncHeight();
 
 			// Висота елемента змінюється разом із його вмістом (згорнутий список
@@ -58,10 +109,33 @@
 		beforeUnmount() {
 			this.resize_observer?.disconnect();
 
+			if ( this.move_frame )
+				cancelAnimationFrame(this.move_frame);
+
+			closeDockWidget(this.widget_id);
+
 			if ( this.dock_id )
 				leaveDock(this.dock_id);
 		},
 		methods: {
+			// Переїзд плавний, тож кінцеве положення відоме тільки в кінці — а разовий
+			// замір у момент відкриття дав би старе місце. Тому сповіщаємо щокадру,
+			// поки елемент їде: вміст переїжджає разом з ним, без стрибка в кінці.
+			trackMove() {
+				this.move_until = Date.now() + MOVE_TRACK_MS;
+
+				if ( this.move_frame )
+					return;
+
+				const step = () => {
+					this.$emit('move');
+
+					this.move_frame = Date.now() < this.move_until ? requestAnimationFrame(step) : 0;
+				};
+
+				this.move_frame = requestAnimationFrame(step);
+			},
+
 			syncHeight() {
 				if ( !this.dock_id )
 					return;

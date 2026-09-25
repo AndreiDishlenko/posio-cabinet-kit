@@ -124,6 +124,30 @@
         transform: translate(15px);            
     }
 
+    // Размер задаётся классом на родителе: сам переключатель о нём не знает.
+    .toggler-sm {
+        .toggler-wrapper {
+            height: 32px!important;
+        }
+
+        .toggler {
+            height: 20px!important;
+            min-height: 20px!important;
+            max-height: 20px!important;
+
+            width: 36px!important;
+        }
+
+        .thumb {
+            width: 14px!important;
+            height: 14px!important;
+        }
+
+        .state_on .thumb {
+            transform: translate(16px)!important;
+        }
+    }
+
     .toggler-lg {
         .toggler {
             height: 32px!important;
@@ -149,4 +173,4 @@
 
 
 
-</style>
+</style>
