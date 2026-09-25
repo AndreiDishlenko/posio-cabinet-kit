@@ -88,6 +88,8 @@ Route::middleware(['web', UseCabinetKitRootView::class, ApplyCabinetKitLocale::c
 
             Route::middleware('auth')->group(function () {
                 Route::post('logout', [LoginController::class, 'logout'])->name('logout');
+                Route::post('email/verify/switch-account', [VerificationController::class, 'switchAccount'])
+                    ->name('verification.switch-account');
 
                 Route::get('email/verify', [VerificationController::class, 'notice'])->name('verification.notice');
                 Route::post('email/verification-notification', [VerificationController::class, 'send'])

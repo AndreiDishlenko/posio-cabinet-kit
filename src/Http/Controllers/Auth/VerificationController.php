@@ -91,8 +91,24 @@ class VerificationController extends Controller
         return $url.(str_contains($url, '?') ? '&' : '?').'verified=1';
     }
 
+    // Почту подтвердили под чужой сессией и выбрали войти подтверждённой — выходим и
+    // открываем вход с уже подставленной подтверждённой почтой.
+    public function switchAccount(Request $request)
+    {
+        $verified_email = (string) $request->session()->pull('verification_switch_email', '');
+
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('login')->with('email', $verified_email);
+    }
+
     protected function outcome(string $outcome, $verified_user)
     {
+        // Почта из сессии, а не из запроса: смена аккаунта не должна подставлять на вход произвольный адрес.
+        session()->put('verification_switch_email', (string) $verified_user->email);
+
         return Inertia::render('pages/Auth/EmailVerificationOutcome', [
             'outcome' => $outcome,
             'verified_email' => (string) $verified_user->email,

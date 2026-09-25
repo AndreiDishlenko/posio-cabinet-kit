@@ -17,6 +17,8 @@ class LoginController extends Controller
         // a finished password reset, an abandoned social sign-in.
         return Inertia::render('pages/Auth/Login', [
             'status' => session('status'),
+            // Почта, под которой предлагают войти (например после смены аккаунта при подтверждении).
+            'email' => session('email'),
         ]);
     }
 

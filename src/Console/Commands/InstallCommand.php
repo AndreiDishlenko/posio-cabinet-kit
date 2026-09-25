@@ -25,7 +25,7 @@ class InstallCommand extends Command
     protected const BUNDLED_ROUTE_NAMES = [
         'login', 'register', 'logout',
         'password.request', 'password.email', 'password.reset', 'password.store', 'password.update',
-        'verification.notice', 'verification.verify', 'verification.send',
+        'verification.notice', 'verification.verify', 'verification.send', 'verification.switch-account',
     ];
 
     public function handle(): int

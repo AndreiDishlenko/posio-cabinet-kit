@@ -103,6 +103,11 @@
   address changed leads to sign-in with `verification-link-invalid`; a damaged
   signature (GET or a mail scanner's HEAD) leads to sign-in with
   `verification-link-broken` instead of a bare 403.
+- "Sign in as" on `pages/Auth/EmailVerificationOutcome` opens sign-in with the
+  confirmed address already in the email field: it posts to the new
+  `verification.switch-account` route (signs out, flashes `email`), and
+  `pages/Auth/Login` now receives the flashed `email`. The address is taken
+  from the session, not from the request.
 
 **Build**
 - Settings tabs load lazily: `settingsTabs.js` exports `settingsTabLoader(file)`,

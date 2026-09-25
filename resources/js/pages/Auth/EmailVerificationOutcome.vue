@@ -13,8 +13,8 @@
 				<a :href="home_url" class="w-full button primary-button button-lg text-md">
 					{{ $t('Continue as {email}', { email: current_email }) }}
 				</a>
-				<!-- Выход ведёт на страницу входа — там входят под подтверждённой почтой. -->
-				<Link as="button" method="post" :href="route('logout')" class="w-full button outline-button button-lg text-md">
+				<!-- Выход ведёт на страницу входа с уже подставленной подтверждённой почтой. -->
+				<Link as="button" method="post" :href="route('verification.switch-account')" class="w-full button outline-button button-lg text-md">
 					{{ $t('Sign in as {email}', { email: verified_email }) }}
 				</Link>
 			</div>
