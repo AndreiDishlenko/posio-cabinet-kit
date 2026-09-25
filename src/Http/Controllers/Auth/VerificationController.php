@@ -12,6 +12,9 @@ use Posio\CabinetKit\Support\CabinetRedirects;
 
 class VerificationController extends Controller
 {
+    // Секунды между повторными отправками письма подтверждения почты.
+    const RESEND_COOLDOWN = 120;
+
     public function __construct(
         protected RegistrationApprovalService $approvals,
     ) {}
@@ -24,7 +27,26 @@ class VerificationController extends Controller
 
         return Inertia::render('pages/Auth/VerifyEmail', [
             'status' => session('status'),
+            'resend_cooldown' => static::resendCooldown($request),
         ]);
+    }
+
+    // Пауза перед повторной отправкой письма — только после реальной отправки; при простом входе
+    // неподтверждённого пользователя письмо можно запросить сразу.
+    public static function rememberSent(Request $request): void
+    {
+        $request->session()->put('verification_sent_at', now()->timestamp);
+    }
+
+    protected static function resendCooldown(Request $request): int
+    {
+        $sent_at = (int) $request->session()->get('verification_sent_at', 0);
+
+        if (! $sent_at) {
+            return 0;
+        }
+
+        return max(0, static::RESEND_COOLDOWN - (now()->timestamp - $sent_at));
     }
 
     public function verify(string $id, string $hash)
@@ -52,7 +74,10 @@ class VerificationController extends Controller
 
             return Auth::id() === $user->getKey()
                 ? redirect($this->withVerifiedMark(CabinetRedirects::intended('home')))
-                : redirect()->route('login')->with('status', 'email-already-verified');
+                : redirect()->route('login')->with([
+                    'status' => 'email-already-verified',
+                    'email' => (string) $user->email,
+                ]);
         }
 
         // Роль в АККАУНТЕ не назначается до создания/вступления в аккаунт (per-account,
@@ -72,7 +97,11 @@ class VerificationController extends Controller
         // ведём в кабинет; иначе (другое устройство) — на страницу входа.
         return Auth::id() === $user->getKey()
             ? redirect(CabinetRedirects::url('after_verify'))
-            : redirect()->route('login')->with('status', $this->approvals->isPending($user) ? 'registration-pending-approval' : 'email-verified');
+            : redirect()->route('login')->with([
+                'status' => $this->approvals->isPending($user) ? 'registration-pending-approval' : 'email-verified',
+                // Вход по ссылке из письма — под адресом получателя, а не под сохранённым браузером.
+                'email' => (string) $user->email,
+            ]);
     }
 
     public function send(Request $request)
@@ -82,6 +111,7 @@ class VerificationController extends Controller
         }
 
         $request->user()->sendEmailVerificationNotification();
+        static::rememberSent($request);
 
         return back()->with('status', 'verification-link-sent');
     }

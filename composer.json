@@ -19,7 +19,8 @@
     "autoload": {
         "psr-4": {
             "Posio\\CabinetKit\\": "src/",
-            "Posio\\CabinetKit\\Database\\Seeders\\": "database/seeders/"
+            "Posio\\CabinetKit\\Database\\Seeders\\": "database/seeders/",
+            "Posio\\CabinetKit\\Tests\\": "tests/"
         },
         "files": [
             "src/helpers.php"

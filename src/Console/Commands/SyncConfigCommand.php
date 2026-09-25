@@ -12,6 +12,7 @@ use Posio\CabinetKit\Support\FrontendDependencies;
 use Posio\CabinetKit\Support\HostComposerJson;
 use Posio\CabinetKit\Support\HostConfigDrift;
 use Posio\CabinetKit\Support\HostDocs;
+use Posio\CabinetKit\Support\HostPhpunitConfig;
 use Posio\CabinetKit\Support\HostScripts;
 use Posio\CabinetKit\Support\HostTailwindConfig;
 use Posio\CabinetKit\Support\HostUpdateLaunchers;
@@ -142,6 +143,25 @@ class SyncConfigCommand extends Command
             $this->info('Patched '.HostScripts::CHECKS.': the CabinetKit tests now run before every release.');
         } elseif ($wired === null) {
             $this->warn('Could not add the CabinetKit tests to '.HostScripts::CHECKS.' — add "php artisan '.HostScripts::TEST_COMMAND.'" to it manually.');
+        }
+
+        $this->syncPhpunitSuite();
+    }
+
+    // Без набора в конфиге PHPUnit тесты пакета не видны ни обозревателю тестов редактора, ни `php artisan test`.
+    protected function syncPhpunitSuite(): void
+    {
+        try {
+            $added = HostPhpunitConfig::addSuite();
+        } catch (\Throwable $e) {
+            $this->warn('The CabinetKit test suite was not added to phpunit.xml: '.$e->getMessage());
+            return;
+        }
+
+        if ($added === true) {
+            $this->info('Patched phpunit.xml with the '.HostPhpunitConfig::SUITE_NAME.' test suite: the package tests now show up in the editor test explorer and in php artisan test.');
+        } elseif ($added === null) {
+            $this->warn('Could not patch phpunit.xml — add <testsuite name="'.HostPhpunitConfig::SUITE_NAME.'"><directory>'.HostPhpunitConfig::TESTS_DIRECTORY.'</directory></testsuite> to its <testsuites> manually.');
         }
     }
 

@@ -120,6 +120,10 @@
                 setTimeout(() => {
                     if (this.$refs.password)
                         this.$refs.password.clear();
+
+                    // Вход по ссылке из письма — адрес получателя важнее сохранённого браузером логина.
+                    if (this.email)
+                        this.form_data.email = this.email;
                 }, 200);
             });
 

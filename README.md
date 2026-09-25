@@ -151,6 +151,11 @@ A database other than in-memory SQLite must have `test` in its name — it is
 wiped and migrated from scratch. The command refuses to run with cached config
 (`php artisan config:clear`), and needs PHPUnit from the dev dependencies.
 
+`cabinet-kit:sync-config` also adds a `CabinetKit` suite
+(`vendor/posio/cabinet-kit/tests/Host`) to the project's `phpunit.xml`, so the
+same tests show up in the editor's test explorer and run with
+`php artisan test`, under that file's test environment.
+
 If the database already contains users, the command asks whether to delete
 them (with their accounts, memberships and role assignments) before seeding.
 The default answer is **no** — say yes only on a database you are willing to

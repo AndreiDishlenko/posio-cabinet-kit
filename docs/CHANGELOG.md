@@ -27,6 +27,13 @@
   in-memory SQLite database by default (`--db-connection` / `--db-database` for
   another one; its name must contain a `test` marker, it is wiped). Refuses to
   run with cached config. PHPUnit comes from the host's dev dependencies.
+- The same tests in the host's editor test explorer and in `php artisan test`:
+  `cabinet-kit:install` / `cabinet-kit:sync-config` add a `CabinetKit` test
+  suite (`vendor/posio/cabinet-kit/tests/Host`) to the host's `phpunit.xml`
+  (or `.dist`, backup in `.bak`), and the package autoloads
+  `Posio\CabinetKit\Tests\` so the host's own bootstrap finds the test base
+  class. They run under the host's `phpunit.xml` env; the base class still
+  refuses any database but in-memory SQLite or one named with `test`.
 - Project scripts, created by `cabinet-kit:install` and `cabinet-kit:sync-config`
   only when missing: `deploy` (git pull, migrate, re-cache, queue restart,
   sitemap, `npm run buildssr`/`build`, site check, `--rollback`), `cc` / `cc.bat`
@@ -108,6 +115,15 @@
   `verification.switch-account` route (signs out, flashes `email`), and
   `pages/Auth/Login` now receives the flashed `email`. The address is taken
   from the session, not from the request.
+- `pages/Auth/VerifyEmail` no longer starts the resend countdown on every
+  visit. The countdown runs only after an email was actually sent
+  (registration or resend): the time is kept in the session and the page gets
+  the remaining seconds as `resend_cooldown`. An unverified user who just
+  signed in can request the email at once, and a reload continues the
+  countdown instead of restarting it.
+- A confirmation link opened signed out leads to sign-in with the link's
+  address in the email field, not the one the browser remembered; the address
+  is also restored after browser autofill.
 
 **Build**
 - Settings tabs load lazily: `settingsTabs.js` exports `settingsTabLoader(file)`,

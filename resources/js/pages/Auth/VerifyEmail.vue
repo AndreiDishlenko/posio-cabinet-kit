@@ -18,7 +18,7 @@
                 class="w-full button button-lg text-md"
                 :class="[
                     $inprogress.value && 'spinner',
-                    (status === 'verification-link-sent' || cooldownRemaining > 0) ? 'disabled' : ''
+                    cooldownRemaining > 0 ? 'disabled' : ''
                 ]"
                 @click.stop.prevent="resendVerification"
                 >
@@ -54,10 +54,15 @@
                 type: String,
                 default: ''
             },
+            // Остаток паузы после последней отправки письма; 0 — письмо можно запросить сразу.
+            resend_cooldown: {
+                type: Number,
+                default: 0
+            },
         },
         data: function() {
             return {
-                cooldownRemaining: 120,
+                cooldownRemaining: 0,
                 cooldownTimer: null,
             }
         },
@@ -69,15 +74,18 @@
             }
         },
         mounted() {
-            this.startCooldown();
+            this.startCooldown(this.resend_cooldown);
         },
         beforeUnmount() {
             clearInterval(this.cooldownTimer);
         },
         methods: {
-            startCooldown() {
+            startCooldown(seconds) {
                 clearInterval(this.cooldownTimer);
-                this.cooldownRemaining = 120;
+                this.cooldownRemaining = seconds;
+                if (seconds <= 0)
+                    return;
+
                 this.cooldownTimer = setInterval(() => {
                     this.cooldownRemaining--;
                     if (this.cooldownRemaining <= 0) {
@@ -89,6 +97,7 @@
             resendVerification() {
                 // this.form_data.locale = this.$i18n.locale;
                 router.post( route('verification.send'), {}, {
+                    onSuccess: () => this.startCooldown(this.resend_cooldown),
                     onError: (errors) => {
                         if (errors.error)
                             this.$toast.error(errors.error);
@@ -96,7 +105,6 @@
                     preserveScroll: true,
                     preserveState: true,
                 });
-                this.startCooldown();
             }
         }
     }

@@ -51,6 +51,7 @@ class RegisterController extends Controller
         // Сессия нужна экрану подтверждения почты; кабинет до одобрения регистрации закрыт отдельно.
         Auth::login($user);
         $request->session()->regenerate();
+        VerificationController::rememberSent($request);
 
         // Почта, введённая руками, ничем не подтверждена — подтверждение обязательно и настройкой не отключается.
         return redirect()->route('verification.notice');
