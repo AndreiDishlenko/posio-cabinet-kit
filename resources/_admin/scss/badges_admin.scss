@@ -22,7 +22,7 @@
 	.badge-success {
 		background-color: var(--success-tint-25) !important;
 		background-color: color-mix(in srgb, var(--success-color) 25%, transparent) !important;
-		color: #22c55e !important; //var(--success-color) !important;
+		color: var(--green-color) !important;
 		border-color: var(--success-tint-40) !important;
 		border-color: color-mix(in srgb, var(--success-color) 40%, transparent) !important;
 

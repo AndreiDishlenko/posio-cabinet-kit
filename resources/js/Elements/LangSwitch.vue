@@ -91,7 +91,9 @@
 		.lang-switch-item {
 			padding: 0.125rem 0.375rem;
 			border-radius: 0.25rem;
-			font-size: 0.875rem;
+			// Размер из шкалы части сервиса: в кабинете она мельче, и фиксированное
+			// значение выбивалось из остальных надписей шапки.
+			font-size: var(--text-sm);
 			font-weight: 500;
 			letter-spacing: normal;
 			line-height: 1.25rem;
@@ -101,7 +103,7 @@
 	.lang-switch-item {
 		padding: var(--lang-switch-item-padding, 0.125rem 0.375rem);
 		border-radius: var(--lang-switch-item-radius, 0.25rem);
-		font-size: var(--lang-switch-font-size, 0.875rem);
+		font-size: var(--lang-switch-font-size, var(--text-sm));
 		font-weight: var(--lang-switch-font-weight, 500);
 		letter-spacing: var(--lang-switch-letter-spacing, normal);
 		line-height: var(--lang-switch-line-height, 1.25rem);

@@ -105,6 +105,12 @@ class VerificationController extends Controller
             return redirect(CabinetRedirects::intended('home'));
         }
 
+        // Пауза держится и на сервере: повторный запрос в обход кнопки письмо не отправит,
+        // экран лишь получит остаток паузы заново.
+        if (static::resendCooldown($request) > 0) {
+            return back();
+        }
+
         $request->user()->sendEmailVerificationNotification();
         static::rememberSent($request);
 

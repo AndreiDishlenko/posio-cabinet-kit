@@ -38,14 +38,17 @@
 
 		methods: {
 			async dismiss() {
-				const key = this.hint?.key;
+				const hint = this.hint;
 
-				if ( !key )
+				if ( !hint?.key )
 					return;
 
-				this.dismissed.push(key);
+				this.dismissed.push(hint.key);
 
-				await this.$apiClient.post(route('cabinet.api.user.hintseen'), { hint: key });
+				if ( hint.finish_event )
+					this.$emitter.emit(hint.finish_event);
+
+				await this.$apiClient.post(route('cabinet.api.user.hintseen'), { hint: hint.key });
 			},
 		},
 	}

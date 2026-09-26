@@ -244,17 +244,19 @@
 		border-color: var(--form-control-border-color);
 	}
 
+	// Галочка в долях рамки — по центру при любом размере прапорця. Видима частина
+	// повернутої «Г» лежить нижче її центру, тому підйом більший за половину висоти.
 	input[type="checkbox"]:checked::after {
 		content: '';
 		position: absolute;
 
-		top: 3px;
-		left:5px;
-		width: 4px;
-		height:6px;
+		top: 50%;
+		left: 50%;
+		width: 30%;
+		height: 50%;
 		border: solid white; /* ← цвет галочки */
 		border-width: 0 2px 2px 0;
-		transform: rotate(45deg);
+		transform: translate(-50%, -71%) rotate(45deg);
 	}
 
 	// [type='checkbox']:checked {

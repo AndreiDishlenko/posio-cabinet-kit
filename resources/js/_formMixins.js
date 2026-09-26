@@ -133,6 +133,27 @@ export default {
             if ( refs[dom_el_id] && refs[dom_el_id].focus && typeof refs[dom_el_id].focus == 'function')
                 refs[dom_el_id].focus();
 
+            // Текст ошибки появляется только после перерисовки формы.
+            this.$nextTick(() => this.scrollToFieldError(refs[dom_el_id]));
+        },
+
+        // Фокус показывает лишь сам ввод, а подпись ошибки под ним может остаться
+        // за краем прокрутки — поэтому в поле зрения выводится весь блок поля.
+        scrollToFieldError(field) {
+            let target = field instanceof HTMLElement ? field : field?.$el;
+
+            // Поле без ссылки — ориентируемся на первую выведенную ошибку формы.
+            if ( !(target instanceof HTMLElement) ) {
+                const root = this.$refs.form instanceof HTMLElement ? this.$refs.form : this.$el;
+                target = root instanceof HTMLElement ? root.querySelector('.form-error') : null;
+            }
+
+            // Поле на скрытой вкладке прокручивать некуда.
+            if ( !target || !target.getClientRects().length )
+                return;
+
+            const field_block = target.closest('.label-group') || target.parentElement || target;
+            field_block.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         },
 
         async validateField(item_name) {

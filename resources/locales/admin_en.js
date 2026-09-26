@@ -144,12 +144,19 @@ export default {
     "email-cond-account_invite"           : "Sent to the invitee when an account member invites them.",
     "email-cond-account_request"          : "Sent to the account owner when someone requests access to their account.",
 
+    "external-cashbox-webhook-hint"       : "Checkbox will send every fiscalized receipt to Posio right away. If Posio has not accepted events for a day, Checkbox turns sending off by itself — then press “Connect Checkbox” again and load the missed receipts for the day in the cashbox journal.",
+    "cash-inout-without-account"          : "Cash deposits/withdrawals without an account in cashbox settings",
+    "product-import-stock-hint"           : "New products have no receipts from suppliers yet: sales will take the stock below zero and the cost will be zero until you add a purchase or set the cost.",
+    "external-cashbox-cashier-hint"       : "We recommend creating a separate Checkbox cashier for Posio: a cashier can have no more than three active sessions, and Posio signing in as a working cashier may end their session at the register.",
     "license-silent-type-note"            : "A temporary license sends no warnings: the end date is known upfront, so the cashboxes are switched off the next morning after it and the owner only gets a note about what exactly was switched off.",
 
     // License expiry and renewal (Settings → Licenses tab)
     "license-notice-soon"                 : "License {number} is valid until {expire}. Unless it is renewed, {count} cashbox(es) will be switched off on {deactivate}.",
     "license-notice-expired"              : "License {number} expired on {expire}. On {deactivate}, early in the morning before the shift opens, {count} cashbox(es) will be switched off.",
     "license-notice-deactivated"          : "{count} cashbox(es) were switched off over a lapsed license. Your data is intact — renewing the license brings them back.",
+    // Cashbox journal notice: the selected cashbox is about to be or already switched off
+    "cashbox-license-notice-expired"      : "License {number} expired on {expire}. On {deactivate}, early in the morning before the shift opens, this cashbox will be switched off.",
+    "cashbox-license-notice-deactivated"  : "This cashbox was switched off over lapsed license {number}, which expired on {expire}. Your documents are intact — once the license is renewed, the cashbox can be activated again.",
     "license-request-note"                : "A manager will contact you to agree on the number of cash registers, the term and the price.",
     "chosen-plan-note"                    : "You have chosen the «{plan}» plan, a manager will contact you after registration.",
     "license-request-sent"                : "Request sent — a manager will contact you shortly.",

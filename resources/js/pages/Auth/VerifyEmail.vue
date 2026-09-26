@@ -99,9 +99,14 @@
                 }, 1000);
             },
             resendVerification() {
+                if (this.cooldownRemaining > 0 || this.$inprogress.value)
+                    return;
+
                 // this.form_data.locale = this.$i18n.locale;
                 router.post( route('verification.send'), {}, {
-                    onSuccess: () => this.startCooldown(this.resend_cooldown),
+                    // Паузу берём из ответа: пропсы компонента обновятся только к следующей перерисовке,
+                    // и старое нулевое значение не запустило бы таймер после отправки.
+                    onSuccess: (page) => this.startCooldown(page.props.resend_cooldown || 0),
                     onError: (errors) => {
                         if (errors.error)
                             this.$toast.error(errors.error);

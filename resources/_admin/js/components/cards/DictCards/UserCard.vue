@@ -1,5 +1,6 @@
 <template>
 	<CardTemplate
+		:class="{ 'user-card-extended': extra_tabs.length }"
 		title="User card"
 		:form_data="form_data"
 		:is_changed="is_changed"
@@ -102,6 +103,30 @@
 </script>
 
 <style lang="scss" scoped>
+
+	// Разделы хоста несут списки (лицензии, подключения): карточка шире и постоянной
+	// высоты, чтобы длинный список прокручивался внутри раздела, а шапка, вкладки и
+	// форма под списком оставались на месте.
+	.card.user-card-extended {
+		height: 44rem;
+		max-height: 95vh;
+		max-height: 95dvh;
+	}
+
+	@media (min-width: 1024px) {
+		.card.user-card-extended {
+			width: 56rem;
+			min-width: 56rem;
+		}
+	}
+
+	@media (max-width: 767px) {
+		.card.user-card-extended {
+			height: 97.5vh;
+			height: 97.5dvh;
+			max-height: none;
+		}
+	}
 
 	.form-label {
 		width: 140px;

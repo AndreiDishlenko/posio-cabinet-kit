@@ -1,5 +1,52 @@
 # Changelog
 
+## Unreleased — Language switch follows the font scale
+
+**Fixed**
+- `LangSwitch` set its codes to a fixed `0.875rem` (14px), so in the cabinet
+  header, where the font scale is smaller, the language pill looked larger than
+  the page title and other header labels. The codes now take `--text-sm` again,
+  as before the switch was extracted in 0.4.10; `--lang-switch-font-size` still
+  overrides it for the plain variant.
+
+## Unreleased — Checkbox tick centred at every size
+
+**Fixed**
+- The checked tick of `[type='checkbox']` was positioned in pixels for the
+  default 16px box, so on `xs`/`sm`/`lg`/`xl` checkboxes it drifted off centre.
+  It is now sized and placed as a share of the box.
+
+## Unreleased — A card on a card always stands out
+
+**Fixed**
+- A `.card`, `.compact-card` or `.card-shape` placed inside another one (a block
+  in a modal card, e.g. the cashbox integration tab) took the same fill and
+  merged with it. The nested surface now swaps `--card-background` and
+  `--card-border-color` for `--card-card-background`, so tables and anything
+  else painted from the card tokens follow it; an explicit fill on the block
+  still wins. A third level of nesting keeps the second level's fill.
+
+## Unreleased — Borderless blocks on a card
+
+**Added**
+- `.card-card` in the cabinet styles: a block standing on a card or a modal
+  (summary tile, nested form) — the lighter fill `--card-card-background`,
+  rounded corners and padding, no border and no layout of its own. Blocks
+  directly on the page use `.compact-card`.
+- `--card-card-background` for the light cabinet theme (it was defined only
+  for the dark one, so the fill fell through to transparent).
+
+## Unreleased — Spotlight hint opens what it points at
+
+**Fixed**
+- The one-off "Your learning assistant" hint shown to a new owner now expands
+  the first-steps checklist on "Got it". The dimmed overlay blocks clicks on the
+  highlighted pill, so dismissing the hint left the checklist collapsed.
+
+**Added**
+- Optional `finish_event` in spotlight hint descriptors: a global event emitted
+  when the hint is dismissed.
+
 ## Unreleased — Page preload in the host's root view
 
 **Added**

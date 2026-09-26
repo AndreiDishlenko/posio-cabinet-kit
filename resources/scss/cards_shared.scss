@@ -50,6 +50,17 @@
 		--table-border-color:      var(--card-table-border-color);
 	}
 
+	// Карточка на карточке (блок в модалке-карточке) всегда отличается заливкой:
+	// при общей подложке блок сливается с фоном. Подменяются токены, а не сама заливка —
+	// за вложенной поверхностью следует всё, что от неё красится (таблицы, углы шапок),
+	// а явная заливка конкретного блока не перебивается.
+	.card .card, .card .compact-card, .card .card-shape,
+	.compact-card .card, .compact-card .compact-card, .compact-card .card-shape,
+	.card-shape .card, .card-shape .compact-card, .card-shape .card-shape {
+		--card-background:   var(--card-card-background);
+		--card-border-color: var(--card-card-background);
+	}
+
 	.card-paddings {
 		@apply
 			p-7

@@ -44,3 +44,8 @@
 .status-indicator.tax-error {
 	background-color: #EF4444;
 }
+
+// Документ, прийнятий із зовнішнього джерела не повністю (напр. товарів немає в номенклатурі)
+.status-indicator.sync-error {
+	background-color: #DB2777;
+}

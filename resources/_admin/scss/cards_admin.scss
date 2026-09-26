@@ -50,6 +50,15 @@
 	}
 }
 
+// Блок на подложке карточки или модалки (сводка, плитка, вложенная форма): отличается
+// от неё только заливкой, без обводки. Задаёт одну поверхность — раскладку блок держит сам.
+.card-card {
+	background-color: var(--card-card-background);
+	@apply
+		rounded-lg
+		p-4;
+}
+
 // Add-new card variant — dashed border, centered content
 .compact-card--add {
 	align-items: center;
