@@ -50,7 +50,7 @@ class RegistrationApprovalService
 
         // Без адресатов ссылку одобрения получить некому — пользователь застрянет в ожидании.
         if ($recipients->isEmpty()) {
-            Log::error('CabinetKit registration approval: no recipients (no emails configured and nobody holds '.self::APPROVER_PERMISSION.')', ['user_id' => $user->getKey()]);
+            $this->log()->error('CabinetKit registration approval: no recipients (no emails configured and nobody holds '.self::APPROVER_PERMISSION.')', ['user_id' => $user->getKey()]);
 
             return;
         }
@@ -60,9 +60,9 @@ class RegistrationApprovalService
         foreach ($recipients as $recipient) {
             // Письмо одного администратора не должно сорвать регистрацию и письма остальным.
             try {
-                $recipient->notify((new RegistrationApprovalRequest($user, $url))->locale($this->localeOf($recipient)));
+                $recipient->notify($this->notification('request', RegistrationApprovalRequest::class, $user, $url)->locale($this->localeOf($recipient)));
             } catch (\Throwable $e) {
-                Log::error('CabinetKit registration approval request failed: '.get_class($e).': '.$e->getMessage(), ['recipient' => $recipient->email ?? $recipient->routes['mail'] ?? null]);
+                $this->log()->error('CabinetKit registration approval request failed: '.get_class($e).': '.$e->getMessage(), ['recipient' => $recipient->email ?? $recipient->routes['mail'] ?? null]);
             }
         }
     }
@@ -107,9 +107,9 @@ class RegistrationApprovalService
         ])->save();
 
         try {
-            $user->notify((new RegistrationApproved)->locale($this->localeOf($user)));
+            $user->notify($this->notification('approved', RegistrationApproved::class)->locale($this->localeOf($user)));
         } catch (\Throwable $e) {
-            Log::error('CabinetKit registration approved notice failed: '.get_class($e).': '.$e->getMessage(), ['user_id' => $user->getKey()]);
+            $this->log()->error('CabinetKit registration approved notice failed: '.get_class($e).': '.$e->getMessage(), ['user_id' => $user->getKey()]);
         }
     }
 
@@ -161,6 +161,21 @@ class RegistrationApprovalService
             ->get()
             ->filter(fn ($user) => $user->canSystem(self::APPROVER_PERMISSION))
             ->values();
+    }
+
+    // Хост со своими шаблонами писем подставляет свои классы с тем же конструктором.
+    protected function notification(string $kind, string $default, ...$arguments)
+    {
+        $class = config("cabinet-kit.registration_approval.notifications.{$kind}") ?: $default;
+
+        return new $class(...$arguments);
+    }
+
+    protected function log()
+    {
+        $channel = config('cabinet-kit.registration_approval.log_channel');
+
+        return $channel ? Log::channel($channel) : Log::getFacadeRoot();
     }
 
     protected function localeOf($user): string

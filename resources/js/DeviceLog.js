@@ -1,6 +1,6 @@
-// Журнал устройства в исходном проекте ведёт касса: записи общего кода (клиент
-// запросов, словари) уходят туда, пока журнал заведён. В кабинете журнала нет,
-// поэтому здесь только его точка входа — запись всегда уходит в консоль.
+// Журнал устройства ведёт хост (например, касса): записи общего кода (клиент
+// запросов, словари) уходят в журнал, который хост зарегистрировал под именем
+// контура. Пока журнала нет — запись уходит в консоль.
 const console_sink = {
 	msg  : (...args) => ( console.msg ?? console.log  ).call(console, ...args),
 	warn : (...args) => ( console.wrn ?? console.warn ).call(console, ...args),
@@ -8,6 +8,13 @@ const console_sink = {
 	debug: () => {},
 };
 
-export function deviceLog() {
-	return console_sink;
+const device_logs = {};
+
+// Логер обязан отвечать на msg / warn / error / debug.
+export function registerDeviceLog(name, logger) {
+	device_logs[name] = logger;
+}
+
+export function deviceLog(name) {
+	return device_logs[name] ?? console_sink;
 }

@@ -500,8 +500,8 @@
     {
       "id": "vue-seo-meta",
       "mode": "copy",
-      "source": "resources/js/сomponents/SeoMeta.vue",
-      "target": "resources/js/сomponents/SeoMeta.vue",
+      "source": "resources/js/Components/SeoMeta.vue",
+      "target": "resources/js/components/SeoMeta.vue",
       "notes": "Head component rendering meta/OG/Twitter/JSON-LD from the seo prop."
     },
     {

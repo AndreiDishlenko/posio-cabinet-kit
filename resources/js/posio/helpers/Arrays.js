@@ -9,6 +9,16 @@ export const Arrays = {
         return result;
     },
 
+    // Remove associative element from [] array
+    removeFromArray: function(array, key, value) {
+        for (var index in this.msgHandlers) {
+            if (this.msgHandlers[index].msg_id == msg_id) {
+                this.msgHandlers.splice(index, 1);
+                break;
+            }
+        }
+    },
+
     // parse [] array into strings, including array from 1 value
     parseSimpleArray: function (array) {
         if (!array)

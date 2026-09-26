@@ -10,24 +10,37 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
+use Posio\CabinetKit\Http\Controllers\Concerns\RefusesApiRequests;
 use Posio\CabinetKit\Services\RegistrationApprovalService;
+use Posio\CabinetKit\Support\CabinetKitRoles;
 use Spatie\Permission\Models\Role;
 
 class UsersController extends Controller
 {
+    use RefusesApiRequests;
+
     public function index(Request $request)
     {
+        $actor = $request->user();
+
+        // Права, по которым страница открывает свои части; хост добавляет права своих
+        // вкладок карточки пользователя.
+        $permissions = [
+            'users' => $actor->canSystem('sysper-users'),
+            'roles' => $actor->canSystem('sysper-roles'),
+        ];
+        foreach ((array) config('cabinet-kit.users_admin.permission_flags', []) as $flag => $permission) {
+            $permissions[$flag] = $actor->canSystem($permission);
+        }
+
         return Inertia::render('pages/UsersAdmin', [
             'users' => $this->users($request),
             'roles' => Role::query()
                 ->where('is_system', 1)
-                ->whereIn('name', ['System administrator', 'System user'])
+                ->whereIn('name', $this->assignableSystemRoles())
                 ->orderBy('name')
                 ->get(['id', 'name']),
-            'permissions' => [
-                'users' => $request->user()->canSystem('sysper-users'),
-                'roles' => $request->user()->canSystem('sysper-roles'),
-            ],
+            'permissions' => $permissions,
         ]);
     }
 
@@ -46,8 +59,32 @@ class UsersController extends Controller
 
         $target = $userModel::query()->findOrFail($validated['id']);
 
-        if ($target->isSystem() && ! $request->user()->isSystem()) {
-            abort(422, 'Root account changes denied.');
+        if ($target->isSystem()
+            && (config('cabinet-kit.users_admin.root_immutable', false) || ! $request->user()->isSystem())) {
+            return $this->refuse(422, 'Root account changes denied.');
+        }
+
+        // Роль проверяется до записи полей: отказ в смене роли не должен оставлять
+        // сохранённой половину карточки.
+        $role = null;
+        if ($request->filled('role_id')) {
+            $role = Role::query()->where('is_system', 1)->find($validated['role_id']);
+            if (! $role) {
+                return $this->refuse(422, 'Only system roles can be assigned here.');
+            }
+
+            // Форма карточки всегда несёт роль: делегат без права на роли сохраняет
+            // остальные поля, пока роль не меняется.
+            if ($target->hasSystemRole($role->name)) {
+                $role = null;
+            } elseif (! $request->user()->canSystem('sysper-roles')) {
+                return $this->refuse(403, 'Unauthorized action.');
+            } elseif ($target->isSystem()) {
+                // Встроенный системный пользователь всегда остаётся суперадминистратором.
+                return $this->refuse(422, 'Root account role changes denied.');
+            } elseif ($role->name === CabinetKitRoles::SUPER_ADMIN_ROLE) {
+                return $this->refuse(422, 'The super administrator role cannot be assigned.');
+            }
         }
 
         $updates = ['name' => $validated['name']];
@@ -60,25 +97,11 @@ class UsersController extends Controller
 
         $target->forceFill($updates)->save();
 
-        if ($request->filled('role_id')) {
-            if (! $request->user()->canSystem('sysper-roles')) {
-                abort(403);
-            }
-
-            // Встроенный системный пользователь всегда остаётся суперадминистратором.
-            if ($target->isSystem()) {
-                abort(422, 'Root account role changes denied.');
-            }
-
-            $role = Role::query()->where('is_system', 1)->findOrFail($validated['role_id']);
-            if ($role->name === 'SAdmin') {
-                abort(422, 'The super administrator role cannot be assigned.');
-            }
-
+        if ($role) {
             $target->setSystemRole($role->name);
         }
 
-        return response()->json($this->userPayload($target));
+        return response()->json(['status' => 'ok'] + $this->userPayload($target));
     }
 
     // Допуск в кабинет из таблицы «Users» — та же операция, что и по ссылке из письма
@@ -92,10 +115,13 @@ class UsersController extends Controller
             'id' => ['required', 'integer'],
         ]);
 
-        $target = $userModel::query()->findOrFail($validated['id']);
+        $target = $userModel::query()->find($validated['id']);
+        if (! $target) {
+            return $this->refuse(404, 'User not found.');
+        }
 
         if ($target->approved_at !== null) {
-            abort(422, 'Registration is already approved.');
+            return $this->refuse(422, 'Registration is already approved.');
         }
 
         $approvals->approve($target, $request->user());
@@ -116,10 +142,13 @@ class UsersController extends Controller
             'id' => ['required', 'integer'],
         ]);
 
-        $target = $userModel::query()->findOrFail($validated['id']);
+        $target = $userModel::query()->find($validated['id']);
+        if (! $target) {
+            return $this->refuse(404, 'User not found.');
+        }
 
         if ($target->hasVerifiedEmail()) {
-            abort(422, 'E-mail is already verified.');
+            return $this->refuse(422, 'E-mail is already verified.');
         }
 
         if ($target->markEmailAsVerified()) {
@@ -130,12 +159,24 @@ class UsersController extends Controller
         // Системная роль появилась только что — строке списка нужно её показать.
         return response()->json([
             'status'  => 'ok',
-            'role_id' => $target->fresh()->roles->first()?->id,
+            'role_id' => $this->systemRole($target)?->id,
         ]);
+    }
+
+    // Системные роли, которые страница выдаёт: суперадминистратор закреплён за
+    // встроенным пользователем.
+    protected function assignableSystemRoles(): array
+    {
+        return array_values(array_diff(CabinetKitRoles::SYSTEM_ROLES, [CabinetKitRoles::SUPER_ADMIN_ROLE]));
     }
 
     protected function users(Request $request)
     {
+        // Хост со своими полями строки списка отдаёт список сам.
+        if ($source = config('cabinet-kit.users_admin.list')) {
+            return app($source)($request);
+        }
+
         $usersTable = config('cabinet-kit.users_table', 'users');
         $systemTeamId = (int) config('cabinet-kit.system_team_id', 0);
         $roleTable = config('permission.table_names.model_has_roles', 'model_has_roles');
@@ -216,16 +257,35 @@ class UsersController extends Controller
             ->all();
     }
 
+    // Роль пользователя в системном контексте: связь ролей модели читает контекст
+    // текущего аккаунта и вернула бы аккаунтную роль.
+    protected function systemRole($user): ?object
+    {
+        $roleTable = config('permission.table_names.model_has_roles', 'model_has_roles');
+        $rolesTable = config('permission.table_names.roles', 'roles');
+        $teamKey = config('permission.column_names.team_foreign_key', 'team_id');
+        $morphKey = config('permission.column_names.model_morph_key', 'model_id');
+
+        return DB::table($roleTable)
+            ->join($rolesTable, "{$rolesTable}.id", '=', "{$roleTable}.role_id")
+            ->where("{$roleTable}.{$morphKey}", $user->getKey())
+            ->where("{$roleTable}.model_type", $user->getMorphClass())
+            ->where("{$roleTable}.{$teamKey}", (int) config('cabinet-kit.system_team_id', 0))
+            ->first(["{$rolesTable}.id", "{$rolesTable}.name"]);
+    }
+
     protected function userPayload($user): array
     {
+        $role = $this->systemRole($user);
+
         return [
             'id' => $user->getKey(),
             'name' => $user->name,
             'email' => $user->email,
             'phone' => $user->phone ?? null,
             'registered' => optional($user->created_at)->format('d.m.Y'),
-            'role_id' => $user->roles->first()?->id,
-            'role_name' => $user->roles->first()?->name,
+            'role_id' => $role?->id,
+            'role_name' => $role?->name,
         ];
     }
 }

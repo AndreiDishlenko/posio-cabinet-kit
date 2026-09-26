@@ -20,10 +20,23 @@ export default function cabinetKit(options = {}) {
         ...createAliases(packageDir, root),
     ];
 
+    const packageDirs = withRealPaths([packageDir]);
+    const hostAnchor = path.join(root, 'package.json');
+
     return {
         name: 'cabinet-kit',
-        resolveId(id) {
-            return id === MODULES_ID ? RESOLVED_MODULES_ID : null;
+        resolveId(id, importer, options) {
+            if (id === MODULES_ID) return RESOLVED_MODULES_ID;
+
+            // Пакет, подключённый junction'ом, отдаёт файлы по настоящему пути вне
+            // проекта: зависимости (vue, dayjs) от них не находятся — у пакета своих
+            // node_modules нет. Недонайденное ищется от корня проекта, как у пакета,
+            // установленного в vendor.
+            if (! isBareImport(id) || ! importer || isInside(importer, root) || ! isInsideAny(importer, packageDirs)) {
+                return null;
+            }
+
+            return this.resolve(id, hostAnchor, { skipSelf: true, ...options });
         },
         load(id) {
             return id === RESOLVED_MODULES_ID ? modulePagesSource(modules, root) : null;
@@ -204,6 +217,10 @@ function sharedAlias(find, packageDir, sharedPath, root) {
                 .then((resolved) => resolved ?? { id: target });
         },
     };
+}
+
+function isBareImport(id) {
+    return /^[\w@]/.test(id) && ! id.includes(':') && ! id.startsWith('@/');
 }
 
 function isInsideAny(filePath, directories) {

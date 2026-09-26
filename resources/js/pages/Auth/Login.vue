@@ -45,7 +45,7 @@
 			<!-- Forgot / Register links -->
             <div class="card-footer-text sm:px-4 text-secondary">
                 <Link as="button" :href="route('password.request')" class="hover:underline ">{{ $t('Forgot password?')}}</Link>
-                <Link v-if="$page.props.registration_open" as="button" :href="route('register')" class="hover:underline ">{{ $t('Sign up')}}</Link>
+                <Link v-if="$page.props.registration_open ?? true" as="button" :href="route('register')" class="hover:underline ">{{ $t('Sign up')}}</Link>
             </div>
 
 			<!-- Login with Google / Apple -->

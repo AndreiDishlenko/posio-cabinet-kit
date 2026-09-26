@@ -26,7 +26,7 @@
                 <span v-else>{{ $t('Resend Verification Email')}}</span>
             </button>
             <div class="card-footer-text !justify-center">
-                <Link as="button" method="post" :href="route('logout')">
+                <Link as="button" :method="logout_method" :href="route('logout')">
                     {{ $t('Logout')}}
                 </Link>
             </div>
@@ -41,6 +41,7 @@
     import sharedMixins     from '@/js/_sharedMixins.js'
     
     import AuthLayout      from '../../layouts/AuthLayout.vue';
+    import { kitLogoutMethod } from '../../kitRoutes.js';
 
     export default {
         mixins: [sharedMixins],
@@ -67,6 +68,9 @@
             }
         },
         computed: {
+            logout_method() {
+                return kitLogoutMethod(this.$page);
+            },
             cooldownFormatted() {
                 const m = Math.floor(this.cooldownRemaining / 60);
                 const s = this.cooldownRemaining % 60;

@@ -157,4 +157,24 @@ export default (() => {
             : true;
     });
 
+    // Код контрагента: ЄДРПОУ юрособи (8 цифр) или ИНН физлица (10), с запасом на короткие коды.
+    defineRule('edrpou', value => {
+        if (isEmpty(value))
+            return true;
+
+        return /^\d{6,10}$/.test(String(value).trim())
+            ? true
+            : '* ' + $t('must be 6–10 digits');
+    });
+
+    // Украинский IBAN: UA + 2 контрольные + 25 = 29 символов. Обязательность — отдельным required.
+    defineRule('iban', value => {
+        if (isEmpty(value))
+            return true;
+
+        return /^UA\d{27}$/i.test(String(value).replace(/\s/g, ''))
+            ? true
+            : '* ' + $t('must be a valid Ukrainian IBAN (UA + 27 digits)');
+    });
+
 })();

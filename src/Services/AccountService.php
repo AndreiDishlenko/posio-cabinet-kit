@@ -2,8 +2,9 @@
 
 namespace Posio\CabinetKit\Services;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use Posio\CabinetKit\Models\Account;
+use Posio\CabinetKit\Repositories\AccountRepository;
 use Spatie\Permission\PermissionRegistrar;
 
 class AccountService
@@ -14,9 +15,9 @@ class AccountService
         app(PermissionRegistrar::class)->setPermissionsTeamId($accountId);
     }
 
-    public function createAccount(string $name, $owner): Account
+    public function createAccount(string $name, $owner): Model
     {
-        $account = Account::create([
+        $account = AccountRepository::accountModel()::create([
             'owner_id' => $owner->getKey(),
             'name' => $name,
         ]);
@@ -27,7 +28,7 @@ class AccountService
         return $account;
     }
 
-    public function inviteMember($user, Account $account, ?string $role = null): void
+    public function inviteMember($user, Model $account, ?string $role = null): void
     {
         if ($user->getKey() === $account->owner_id) {
             abort(422, 'The account owner is already a member of this account.');
@@ -48,7 +49,7 @@ class AccountService
         $user->assignRole($role);
     }
 
-    public function setMemberRole($member, Account $account, string $role): void
+    public function setMemberRole($member, Model $account, string $role): void
     {
         if ($member->getKey() === $account->owner_id) {
             abort(422, 'The account owner role cannot be changed.');
@@ -62,7 +63,7 @@ class AccountService
         $member->syncRoles([$role]);
     }
 
-    public function removeMember($member, Account $account): void
+    public function removeMember($member, Model $account): void
     {
         if ($member->getKey() === $account->owner_id) {
             abort(422, 'The account owner cannot be removed.');

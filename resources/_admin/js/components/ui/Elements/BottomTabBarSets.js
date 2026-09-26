@@ -13,9 +13,12 @@ const sets = {
 
 export default sets;
 
-export function resolveTabSet(configCode, role) {
-	const configBlock = sets[configCode] ?? {};
-	const defaultBlock = sets.default;
+// Порядок выбора: роль в конфигурации → роль в общем блоке → набор конфигурации →
+// общий набор. Наборы хоста заменяют наборы пакета целиком.
+export function resolveTabSet(configCode, role, hostSets = null) {
+	const source = hostSets ?? sets;
+	const configBlock = source[configCode] ?? {};
+	const defaultBlock = source.default ?? {};
 
 	return configBlock[role]
 		?? defaultBlock[role]

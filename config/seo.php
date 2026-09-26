@@ -116,4 +116,9 @@ return [
 		'manifests'    => ['build/manifest.json'],
 	],
 
+	// x-default в карте сайта для страницы с записями на каждом языке сайта: false —
+	// версия на языке x-default (английская или первая), true — страница выбора
+	// языка, как объявляет мета самой страницы.
+	'sitemap_x_default_selector' => false,
+
 ];

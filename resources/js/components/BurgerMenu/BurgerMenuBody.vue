@@ -34,7 +34,7 @@
 				icon="solar:logout-outline"
 				:label="$t('Logout')"
 				:href="route('logout')"
-				method="post"
+				:method="logout_method"
 				@click="$emit('close-silently')"
 			/>
 			<BurgerMenuItem
@@ -63,6 +63,7 @@
 	import Avatar            from '@/js/Elements/Avatar.vue';
 	import BurgerMenuItem    from '@/js/components/BurgerMenu/BurgerMenuItem.vue';
 	import BurgerMenuDivider from '@/js/components/BurgerMenu/BurgerMenuDivider.vue';
+	import { kitLogoutMethod } from '@/js/kitRoutes.js';
 
 	export default {
 		name: 'BurgerMenuBody',
@@ -78,6 +79,11 @@
 			},
 		},
 		emits: ['close', 'close-silently'],
+		computed: {
+			logout_method() {
+				return kitLogoutMethod(this.$page);
+			},
+		},
 	}
 </script>
 

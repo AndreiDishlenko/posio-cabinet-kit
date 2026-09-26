@@ -89,6 +89,7 @@
 	import { Icon }      from '@iconify/vue';
 
 	import sharedMixins  from '@/js/_sharedMixins';
+	import { kitRouteName } from '@/js/kitRoutes.js';
 
 	export default {
 		name: 'PermissionsMatrixTable',
@@ -175,7 +176,7 @@
 					local.permission_ids = local.permission_ids.filter(id => id !== permission.id);
 
 				const result = await this.$apiClient.post(
-					route('cabinet-kit.permissions.toggle'),
+					route(kitRouteName(this.$page, 'cabinet-kit.permissions.toggle')),
 					{ role_id: role.id, permission_id: permission.id, granted }
 				);
 
@@ -209,7 +210,7 @@
 					return;
 
 				const result = await this.$apiClient.post(
-					route('cabinet-kit.permissions.store'),
+					route(kitRouteName(this.$page, 'cabinet-kit.permissions.store')),
 					{ name }
 				);
 
@@ -246,7 +247,7 @@
 					return this.cancelEdit();
 
 				const result = await this.$apiClient.post(
-					route('cabinet-kit.permissions.rename.post'),
+					route(kitRouteName(this.$page, 'cabinet-kit.permissions.rename.post')),
 					{ id: permission.id, name }
 				);
 

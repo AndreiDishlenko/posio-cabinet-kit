@@ -2,9 +2,9 @@
 
 namespace Posio\CabinetKit\Traits;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Posio\CabinetKit\Models\Account;
 use Posio\CabinetKit\Repositories\AccountRepository;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -15,14 +15,14 @@ use Spatie\Permission\PermissionRegistrar;
  */
 trait HasAccount
 {
-    protected ?Account $current_account = null;
+    protected ?Model $current_account = null;
 
-    public function ownAccount(): ?Account
+    public function ownAccount(): ?Model
     {
         return app(AccountRepository::class)->ownAccount($this);
     }
 
-    public function currentAccount(): ?Account
+    public function currentAccount(): ?Model
     {
         if ($this->current_account) {
             return $this->current_account;
@@ -82,7 +82,7 @@ trait HasAccount
         return app(AccountRepository::class)->userAccounts($this);
     }
 
-    public function setCurrentAccount(Account $account): Account
+    public function setCurrentAccount(Model $account): Model
     {
         $this->setSetting('current_account', $account->id);
         $this->current_account = $account;

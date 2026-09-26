@@ -26,7 +26,11 @@ class RequireRegistrationApproval
         $request->session()->regenerateToken();
 
         if ($request->expectsJson() && ! $request->header('X-Inertia')) {
-            return response()->json(['message' => __('cabinet-kit::auth.pending_approval')], 401);
+            // Клиент API хоста уводит на вход по адресу из ответа — если хост его ждёт.
+            return response()->json(array_filter([
+                'message' => __('cabinet-kit::auth.pending_approval'),
+                'redirect' => config('cabinet-kit.registration_approval.json_redirect', false) ? route('login') : null,
+            ]), 401);
         }
 
         return redirect()->route('login')->with('status', 'registration-pending-approval');

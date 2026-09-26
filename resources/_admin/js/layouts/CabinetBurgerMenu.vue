@@ -54,7 +54,7 @@
 			<BurgerMenuItem
 				icon="proicons:settings"
 				:label="$t('Settings')"
-				:href="route('cabinet-kit.settings')"
+				:href="route(kitRoute('cabinet-kit.settings'))"
 				@click="closeSilently"
 			/>
 
@@ -74,6 +74,7 @@
 	import BurgerMenu   	from '@/js/components/BurgerMenu/BurgerMenu.vue';
 	import BurgerMenuItem    from '@/js/components/BurgerMenu/BurgerMenuItem.vue';
 	import BurgerMenuDivider from '@/js/components/BurgerMenu/BurgerMenuDivider.vue';
+	import { kitRouteName }  from '@/js/kitRoutes.js';
 
 	export default {
 		components: { Link, Icon, Selectable, BurgerMenu, BurgerMenuItem, BurgerMenuDivider },
@@ -137,6 +138,9 @@
 			this.$emitter.off('close_burger_menu', this.closePanel);
 		},
 		methods: {
+			kitRoute(name) {
+				return kitRouteName(this.$page, name);
+			},
 			// Открытие панели пользователя и левого меню взаимоисключающи.
 			onPanelOpen() {
 				this.registered_items = this.pageMenuRegistry ? this.pageMenuRegistry.collect() : [];
@@ -169,7 +173,7 @@
 					return t.id==val }
 				)[0].name;
 
-				router.post( route('cabinet-kit.account.set'), { account_id: val }, {
+				router.post( route(this.kitRoute('cabinet-kit.account.set')), { account_id: val }, {
 					onError: async (errors) => {
 						// console.warn('errors', errors);
 						// Переключения не произошло — поле возвращается к активному аккаунту.

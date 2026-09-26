@@ -86,13 +86,23 @@
             canonical: {
                 type: String,
                 default: null
+            },
+            // Не дописывать бренд к заголовку, в котором он уже есть.
+            dedupeBrand: {
+                type: Boolean,
+                default: false
             }
         },
         computed: {
             title() {
-                return this.$t(
+                const page_title = this.$t(
                     this.$page.props.seo?.meta_data?.title ? this.$page.props.seo.meta_data.title : this.page_name
-                ) + ' | ' + this.siteName;
+                );
+
+                if ( this.dedupeBrand && page_title.toLowerCase().includes(this.siteName.toLowerCase()) )
+                    return page_title;
+
+                return page_title + ' | ' + this.siteName;
             },
             description() {
                 return this.$page.props.seo?.meta_data?.description ? this.$page.props.seo.meta_data.description : ''

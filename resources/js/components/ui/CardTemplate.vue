@@ -63,6 +63,6 @@
 		margin-top: 1.25rem;
 		display: flex;
 		justify-content: flex-end;
-		gap: .5rem;
+		@include flex-gap(.5rem);
 	}
 </style>

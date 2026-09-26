@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Translation\FileLoader;
 use Inertia\Inertia;
 use Opcodes\LogViewer\Facades\LogViewer;
 use Posio\CabinetKit\Console\Commands\DoctorCommand;
@@ -48,6 +49,7 @@ class CabinetKitServiceProvider extends ServiceProvider
 
         $this->bridgeLegacyRedirects();
         $this->mountLogViewer();
+        $this->registerAppTranslations();
 
         $this->app->singleton(CabinetKit::class);
         // Переопределения меты от контроллера живут ровно один запрос.
@@ -75,13 +77,22 @@ class CabinetKitServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
-        $this->loadRoutesFrom(__DIR__.'/../routes/cabinet.php');
+        if ($this->integrates('load_migrations')) {
+            $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        }
+
+        if ($this->integrates('load_routes')) {
+            $this->loadRoutesFrom(__DIR__.'/../routes/cabinet.php');
+        }
+
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'cabinet-kit');
         // Переводы пакета — запасной слой: одноимённые файлы и ключи хоста
         // (lang/vendor/cabinet-kit/… и lang/{локаль}.json) читаются поверх.
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'cabinet-kit');
-        $this->loadJsonTranslationsFrom(__DIR__.'/../lang');
+
+        if ($this->integrates('json_translations')) {
+            $this->loadJsonTranslationsFrom(__DIR__.'/../lang');
+        }
 
         $this->registerInertiaPagePaths();
         AuthMail::register();
@@ -90,6 +101,7 @@ class CabinetKitServiceProvider extends ServiceProvider
         $this->registerLogViewerAuth();
         $this->registerSiteSettings();
         $this->registerSeoSharing();
+        $this->registerFrontendRoutes();
         $this->registerRolesSync();
 
         // Aliased so a host can hold its own route groups behind the same gate —
@@ -141,13 +153,27 @@ class CabinetKitServiceProvider extends ServiceProvider
                 DoctorCommand::class,
                 InstallCommand::class,
                 SyncConfigCommand::class,
-                ImportSiteBrand::class,
                 TestCommand::class,
             ]);
+
+            if ($this->integrates('site_commands')) {
+                $this->commands([ImportSiteBrand::class]);
+            }
         }
 
         // Вне консольной ветки: кнопка раздела SEO вызывает команду из веб-запроса.
-        $this->commands([GenerateSitemap::class]);
+        if ($this->integrates('site_commands')) {
+            $this->commands([GenerateSitemap::class]);
+        }
+    }
+
+    /**
+     * Хост, у которого кабинет был до пакета, выключает то, что пакет иначе
+     * делает со всем приложением. Отсутствующий ключ — прежнее поведение.
+     */
+    protected function integrates(string $switch): bool
+    {
+        return (bool) config("cabinet-kit.host_integration.{$switch}", true);
     }
 
     /**
@@ -195,7 +221,7 @@ class CabinetKitServiceProvider extends ServiceProvider
      */
     protected function registerRolesSync(): void
     {
-        if (! $this->app->runningInConsole()) {
+        if (! $this->app->runningInConsole() || ! $this->integrates('sync_roles')) {
             return;
         }
 
@@ -206,6 +232,37 @@ class CabinetKitServiceProvider extends ServiceProvider
 
             CabinetKitRoles::sync();
         });
+    }
+
+    /**
+     * Оболочка кабинета зовёт маршруты по именам пакета. Хост со своими именами
+     * передаёт карту подмены и свои данные оболочки; без переопределений проп
+     * не отдаётся вовсе — фронт пакета тогда берёт те же значения по умолчанию.
+     */
+    protected function registerFrontendRoutes(): void
+    {
+        $defaults = [
+            'routes' => [],
+            'logout_method' => 'post',
+            'switch_account_method' => 'post',
+            'home_route' => null,
+            'auth_logo' => '/brand-assets/logo_dark_theme.svg',
+            'tab_bar_sets' => null,
+        ];
+
+        $frontend = [];
+
+        foreach ($defaults as $key => $default) {
+            $frontend[$key] = config('cabinet-kit.frontend.'.$key, $default);
+        }
+
+        $frontend['routes'] = (array) $frontend['routes'];
+
+        if ($frontend === $defaults) {
+            return;
+        }
+
+        Inertia::share('cabinet_kit_frontend', $frontend);
     }
 
     /**
@@ -257,6 +314,41 @@ class CabinetKitServiceProvider extends ServiceProvider
                 config(["cabinet-kit-redirects.{$key}" => $target]);
             }
         }
+    }
+
+    /**
+     * Группы переводов пакета (auth, passwords, validation, pagination, emails, mail)
+     * как переводы самого приложения — для хоста, который не держит своих копий.
+     * Слой встаёт между переводами фреймворка и приложения: одноимённый файл и ключ
+     * хоста по-прежнему выигрывают.
+     */
+    protected function registerAppTranslations(): void
+    {
+        if (! config('cabinet-kit.app_translations', false)) {
+            return;
+        }
+
+        $this->app->extend('translation.loader', function ($loader, $app) {
+            if (! $loader instanceof FileLoader) {
+                return $loader;
+            }
+
+            $paths = $loader->paths();
+            $hostPosition = array_search($app->langPath(), $paths, true);
+            array_splice($paths, $hostPosition === false ? count($paths) : $hostPosition, 0, [__DIR__.'/../lang']);
+
+            $layered = new FileLoader($app['files'], $paths);
+
+            foreach ($loader->jsonPaths() as $path) {
+                $layered->addJsonPath($path);
+            }
+
+            foreach ($loader->namespaces() as $namespace => $hint) {
+                $layered->addNamespace($namespace, $hint);
+            }
+
+            return $layered;
+        });
     }
 
     /**
@@ -312,6 +404,10 @@ class CabinetKitServiceProvider extends ServiceProvider
      */
     protected function registerCabinetRedirects(): void
     {
+        if (! $this->integrates('exception_redirects')) {
+            return;
+        }
+
         $handler = $this->app->make(ExceptionHandler::class);
 
         if (! method_exists($handler, 'renderable')) {
@@ -352,6 +448,11 @@ class CabinetKitServiceProvider extends ServiceProvider
             Event::listen(function (\SocialiteProviders\Manager\SocialiteWasCalled $event) {
                 $event->extendSocialite('apple', \SocialiteProviders\Apple\Provider::class);
             });
+        }
+
+        // Хост со своими пропсами входа отдаёт их сам.
+        if (! $this->integrates('share_auth_props')) {
+            return;
         }
 
         // Страницы входа прячут ссылку на регистрацию, когда она закрыта.

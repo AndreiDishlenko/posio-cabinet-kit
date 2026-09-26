@@ -31,7 +31,7 @@
                 :in_data="currentRow"
                 :roles="roles"
                 :perms="permissions"
-                route_prefix="cabinet-kit.users"
+                :route_prefix="users_route_prefix"
                 @close="closeTableModal()"
                 />
         </ModalForm>
@@ -49,6 +49,7 @@
     import Selectable       from '@/js/Elements/Forms/Selectable.vue';
 
     import UserCard         from '@/_admin/js/components/cards/DictCards/UserCard.vue'
+    import { kitRouteName } from '@/js/kitRoutes.js';
 
     export default {
         mixins: [sharedMixins, tableformMixins],
@@ -68,6 +69,10 @@
             },
         },
 		computed: {
+			// Карточка пишет в «префикс.update»; у хоста префикс может быть своим.
+			users_route_prefix() {
+				return kitRouteName(this.$page, 'cabinet-kit.users');
+			},
 			dynamic_selects() {
 				return {
 					"role_id":  this.roles
@@ -172,7 +177,7 @@
 				if ( !confirmed )
 					return;
 
-				const result = await this.$apiClient.post(route('cabinet-kit.users.approve'), { id: row.id });
+				const result = await this.$apiClient.post(route(kitRouteName(this.$page, 'cabinet-kit.users.approve')), { id: row.id });
 				if ( result.error )
 					return this.$toast.error(result.error);
 
@@ -187,7 +192,7 @@
 				if ( !confirmed )
 					return;
 
-				const result = await this.$apiClient.post(route('cabinet-kit.users.verifyemail'), { id: row.id });
+				const result = await this.$apiClient.post(route(kitRouteName(this.$page, 'cabinet-kit.users.verifyemail')), { id: row.id });
 				if ( result.error )
 					return this.$toast.error(result.error);
 

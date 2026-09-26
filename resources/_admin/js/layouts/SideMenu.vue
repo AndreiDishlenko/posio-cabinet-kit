@@ -157,12 +157,12 @@
                         </Link>
 
                         <!-- Выход — не таб настроек, поэтому отделён и без предзагрузки.
-                             Метод POST: маршрут logout в этом пакете принимает только его. -->
+                             Метод — от хоста: встроенный маршрут logout принимает только POST. -->
                         <div class="gm-footer-menu-divider"></div>
 
                         <Link class="gm-footer-menu-item gm-footer-menu-logout"
                             :href="route('logout')"
-                            method="post"
+                            :method="logout_method"
                             >
                             <Icon icon="solar:logout-outline" class="gm-footer-menu-icon"/>
                             <span>{{ $t('Logout') }}</span>
@@ -185,6 +185,7 @@
 
     import Avatar           from '@/js/Elements/Avatar.vue';
     import Dropdown         from '@/js/Elements/Dropdown.vue';
+    import { kitRouteName, kitLogoutMethod } from '@/js/kitRoutes.js';
 
     import { buildSettingsTabs } from '@/_admin/js/pages/Settings/settingsTabs.js';
 
@@ -219,6 +220,9 @@
             }
         },
         computed: {
+            logout_method() {
+                return kitLogoutMethod(this.$page);
+            },
             // Отключённое меню стоит на экране-шлюзе: предзагрузка его ссылок вернула бы
             // редирект на тот же шлюз, и после выхода из него клик по пункту отдал бы
             // закэшированный шлюз вместо раздела.
@@ -391,7 +395,7 @@
             // storage-key группы табов на странице ('settings'), см. Tabs.vue →
             // applyQueryTab(). Ziggy кладёт неизвестный маршруту параметр в query.
             settingsHref(tabId) {
-                return route('cabinet-kit.settings', { settings: tabId });
+                return route(kitRouteName(this.$page, 'cabinet-kit.settings'), { settings: tabId });
             },
 
             // ── Группы-дропдауны ───────────────────────────────────────────

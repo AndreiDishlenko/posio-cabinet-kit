@@ -18,7 +18,27 @@
 // Ленивый glob: меню в боковой панели нужен только перечень имеющихся файлов, а
 // страница настроек грузит отсюда же сами табы — у каждого свой чанк. Жёсткий
 // импорт таба где-либо ещё склеит его с основным бандлом.
-const present_tab_files = import.meta.glob('./CabinetSettings*Tab.vue');
+const present_tab_files = { ...import.meta.glob('./CabinetSettings*Tab.vue') };
+
+// Табы хоста лежат в его проекте и подключаются здесь, в точке входа кабинета до
+// первого показа меню:
+//
+//     registerSettingsTabs(import.meta.glob('./pages/Settings/CabinetSettings*Tab.vue'));
+//
+// Файл хоста с тем же именем, что у пакета, заменяет пакетный. Описания табов, которых
+// нет в каталоге, добавляются в его конец; с тем же id — заменяют запись на её месте.
+export function registerSettingsTabs(files = {}, tabs = []) {
+	for (const [file_path, loader] of Object.entries(files))
+		present_tab_files[`./${file_path.split('/').pop()}`] = loader;
+
+	for (const tab of tabs) {
+		const index = SETTINGS_TABS.findIndex(item => item.id === tab.id);
+		if (index === -1)
+			SETTINGS_TABS.push(tab);
+		else
+			SETTINGS_TABS[index] = tab;
+	}
+}
 
 // Загрузчик компонента таба по имени файла; нет файла — нет загрузчика.
 export function settingsTabLoader(file) {

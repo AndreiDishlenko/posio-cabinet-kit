@@ -2,22 +2,35 @@
 
 namespace Posio\CabinetKit\Repositories;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Posio\CabinetKit\Models\Account;
 
 class AccountRepository
 {
-    public function ownAccount($user): ?Account
+    /** A host that had its own accounts table before the package keeps its own model. */
+    public static function accountModel(): string
     {
-        return Account::query()->where('owner_id', $user->getKey())->first();
+        return config('cabinet-kit.account_model') ?: Account::class;
+    }
+
+    protected function accounts(): Builder
+    {
+        return static::accountModel()::query();
+    }
+
+    public function ownAccount($user): ?Model
+    {
+        return $this->accounts()->where('owner_id', $user->getKey())->first();
     }
 
     /** Every account the user owns or has been invited into. */
     public function userAccounts($user): Collection
     {
-        $owned = Account::query()->where('owner_id', $user->getKey())->get();
+        $owned = $this->accounts()->where('owner_id', $user->getKey())->get();
 
-        $guest = Account::query()
+        $guest = $this->accounts()
             ->join('user_has_accounts', 'user_has_accounts.account_id', '=', 'accounts.id')
             ->where('user_has_accounts.user_id', $user->getKey())
             ->select('accounts.*')
@@ -26,8 +39,8 @@ class AccountRepository
         return $owned->merge($guest)->unique('id')->values();
     }
 
-    public function findAccount(int $id): ?Account
+    public function findAccount(int $id): ?Model
     {
-        return Account::find($id);
+        return $this->accounts()->find($id);
     }
 }

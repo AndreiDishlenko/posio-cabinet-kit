@@ -558,6 +558,111 @@ A module needs `posio/cabinet-kit ^0.4`. Its own install command raises a lower
 `^0.x` constraint with `HostComposerJson::raiseCaretConstraint('posio/cabinet-kit', '^0.4')`.
 Updates go through `updcab`, which updates every `posio/*` package at once.
 
+## Adopting the package in a project with its own cabinet
+
+A project whose cabinet predates the package (the package was extracted from
+it) already has the schema, roles, routes, error pages and console commands.
+It uses the package as a library of shared code and turns off everything the
+provider would otherwise do to the whole application:
+
+```php
+// config/cabinet-kit.php of such a host
+'account_model' => \App\Models\Account::class,
+'host_integration' => [
+    'load_migrations'     => false, // its schema is already there
+    'load_routes'         => false, // its routes keep their URLs and names
+    'sync_roles'          => false, // its roles are its own data
+    'exception_redirects' => false, // it registers the same handlers itself
+    'share_auth_props'    => false, // its Inertia middleware shares them
+    'json_translations'   => false, // or true, with app_translations below
+    'site_commands'       => false, // it has its own sitemap:generate
+],
+// Its lang/ files equal the package's: take them from the package instead.
+'app_translations' => true,
+// Behavior of the cabinet the package was extracted from, where it differs:
+'registration_approval' => [
+    'notifications' => [
+        'request'  => \App\Notifications\RegistrationApprovalRequest::class,
+        'approved' => \App\Notifications\RegistrationApproved::class,
+    ],
+    'log_channel'   => 'cabinet',
+    'json_redirect' => true,   // its API client follows `redirect` on 401
+],
+'password_reset' => [
+    'report_unknown_email'    => true,
+    'check_token_before_form' => true,
+],
+'frontend' => [
+    'routes' => [
+        'cabinet-kit.settings'                => 'cabinet.settings',
+        'cabinet-kit.account.set'             => 'cabinet.account.set',
+        'cabinet-kit.permissions.toggle'      => 'admin.role.togglepermission',
+        'cabinet-kit.permissions.store'       => 'admin.permission.store',
+        'cabinet-kit.permissions.rename.post' => 'admin.permission.update',
+    ],
+    'logout_method' => 'get',
+    'switch_account_method' => 'get',  // its route answers GET
+    'home_route'   => 'home',          // auth pages' logo links to the site
+    'auth_logo'    => '/images/logo.png',
+    'tab_bar_sets' => [                // configuration → role → route names
+        'default' => ['default' => ['cabinet.dashboard', 'cabinet.settings']],
+    ],
+],
+// Sign-out lands on the public site's login — another app, full page load.
+'logout' => ['full_reload' => true],
+// Users page: its own row fields, a right for its own card sections, the
+// built-in super administrator locked for everyone.
+'users_admin' => [
+    'list'             => \App\Services\Admin\PlatformUsersList::class,
+    'permission_flags' => ['accounts' => 'sysper-accounts'],
+    'root_immutable'   => true,
+],
+'auth_mail'  => ['enabled' => false],
+'site'       => ['views' => [], 'share_prop' => false],
+'seo'        => ['share_prop' => false],
+```
+
+With routes off, the host's routes point at package controllers only where the
+two behave the same; the rest keeps its own controllers. Package pages rendered
+from the host's routes are found by the resolver as usual.
+
+Frontend extension points for such a host — call them in the entry point before
+the app is created:
+
+```js
+import { extendI18n }           from '@cabinet-kit/i18n.config.js';
+import { registerDeviceLog }    from '@cabinet-kit/DeviceLog.js';
+import { registerUserCardTabs } from '@/_admin/js/userCardTabs.js';
+import { registerSettingsTabs } from '@/_admin/js/pages/Settings/settingsTabs.js';
+
+// Its own dictionaries: under the cabinet's (the cabinet wins on a shared key)
+// or over them; its languages; module-level $t translates.
+extendI18n({
+    baseMessages: { uk: siteUk, en: siteEn },
+    messages:     { uk: chatUk },
+    supportedLocales: ['uk', 'en', 'ru'],
+    browserLocaleAliases: { ru: 'uk' },
+    translateModuleT: true,
+});
+
+// Shared code (API client, dictionaries) logs into the host's device log.
+registerDeviceLog('sync', myLogger); // msg / warn / error / debug
+
+// Extra sections of the user card. The component gets user, perms,
+// active (the section is open) and shared (per-user store of all sections).
+registerUserCardTabs([
+    { id: 'licenses', label: 'Licenses', component: LicensesTab, permission: 'accounts' },
+]);
+
+// Settings tabs of the host live in the host. A file named like a package tab
+// (CabinetSettingsUserProfileTab.vue) replaces it; a tab missing from the
+// catalog needs its entry: { id, label, file, account_wide? }.
+registerSettingsTabs(
+    import.meta.glob('./pages/Settings/CabinetSettings*Tab.vue'),
+    [{ id: 'billing', label: 'Billing', file: 'CabinetSettingsBillingTab.vue', account_wide: true }],
+);
+```
+
 ## Known gaps (intentionally out of scope)
 
 - Additional social login providers, 2FA and magic links are not bundled;

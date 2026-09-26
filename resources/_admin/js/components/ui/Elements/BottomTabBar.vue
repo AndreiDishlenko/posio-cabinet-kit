@@ -55,6 +55,7 @@
     import { Icon } from '@iconify/vue';
 
     import { resolveTabSet, MAX_TAB_BAR_ITEMS } from '@/_admin/js/components/ui/Elements/BottomTabBarSets.js';
+    import { kitFrontendOption } from '@/js/kitRoutes.js';
 
     export default {
         name: 'BottomTabBar',
@@ -71,7 +72,7 @@
                 // console.log('BottomTabBar.items', this.$page.props.account?.configuration, this.$page.props.user?.role);
                 const configCode = this.$page.props.account?.configuration;
                 const role       = this.$page.props.user?.role;
-                const routeNames = resolveTabSet(configCode, role);
+                const routeNames = resolveTabSet(configCode, role, kitFrontendOption(this.$page, 'tab_bar_sets')) ?? [];
 
 				// console.log('resolveTabSet', configCode, routeNames)
 				// console.log('2', this.flatMenuItems)

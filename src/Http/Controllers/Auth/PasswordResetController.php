@@ -2,8 +2,11 @@
 
 namespace Posio\CabinetKit\Http\Controllers\Auth;
 
+use Carbon\Carbon;
+use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Password;
@@ -26,11 +29,25 @@ class PasswordResetController extends Controller
 
         $status = Password::sendResetLink($request->only('email'));
 
+        // По умолчанию ответ одинаков для любой почты — так по форме не выяснить, кто
+        // зарегистрирован. Хост, которому важнее подсказать опечатку, включает ошибку поля.
+        if ($status !== Password::RESET_LINK_SENT && config('cabinet-kit.password_reset.report_unknown_email', false)) {
+            return back()->withErrors(['email' => $this->statusMessage($status)]);
+        }
+
         return back()->with('status', $this->statusMessage($status));
     }
 
     public function reset(Request $request, string $token)
     {
+        // Протухшую ссылку лучше объяснить сразу, чем после заполнения формы.
+        if (config('cabinet-kit.password_reset.check_token_before_form', false)
+            && ! $this->tokenIsValid((string) $request->query('email', ''), $token)) {
+            return Inertia::render('pages/Auth/ResetPassword', [
+                'is_expired' => true,
+            ]);
+        }
+
         return Inertia::render('pages/Auth/ResetPassword', [
             'token' => $token,
             'email' => $request->query('email', ''),
@@ -52,6 +69,8 @@ class PasswordResetController extends Controller
                     'password' => Hash::make($password),
                     'remember_token' => Str::random(60),
                 ])->save();
+
+                event(new PasswordReset($user));
             },
         );
 
@@ -61,7 +80,25 @@ class PasswordResetController extends Controller
             ]);
         }
 
-        return redirect()->route('login')->with('status', $this->statusMessage($status));
+        // Почта уезжает на форму входа, чтобы не набирать её второй раз.
+        return redirect()->route('login')->with([
+            'status' => $this->statusMessage($status),
+            'email' => $validated['email'],
+        ]);
+    }
+
+    protected function tokenIsValid(string $email, string $token): bool
+    {
+        $table = config('auth.passwords.'.config('auth.defaults.passwords', 'users').'.table', 'password_reset_tokens');
+        $record = DB::table($table)->where('email', $email)->first();
+
+        if (! $record || ! Hash::check($token, $record->token)) {
+            return false;
+        }
+
+        $expire = (int) config('auth.passwords.'.config('auth.defaults.passwords', 'users').'.expire', 60);
+
+        return ! Carbon::parse($record->created_at)->addMinutes($expire)->isPast();
     }
 
     // Хост без собственных сообщений сброса пароля на текущем языке получает перевод пакета.

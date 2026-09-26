@@ -5,15 +5,19 @@ namespace Posio\CabinetKit\Http\Controllers\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Inertia\Inertia;
+use Posio\CabinetKit\Http\Controllers\Concerns\RefusesApiRequests;
+use Posio\CabinetKit\Support\CabinetKitRoles;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class PermissionsController extends Controller
 {
+    use RefusesApiRequests;
+
     public function system(Request $request)
     {
-        return Inertia::render('pages/Permissions', $this->matrix(true, 'SAdmin'));
+        return Inertia::render('pages/Permissions', $this->matrix(true, CabinetKitRoles::SUPER_ADMIN_ROLE));
     }
 
     public function account(Request $request)
@@ -30,12 +34,12 @@ class PermissionsController extends Controller
         ]);
 
         $role = Role::findOrFail($validated['role_id']);
-        if (in_array($role->name, ['SAdmin', config('cabinet-kit.roles.owner_role')], true)) {
-            abort(422, 'This role can not be modified.');
+        if (in_array($role->name, [CabinetKitRoles::SUPER_ADMIN_ROLE, config('cabinet-kit.roles.owner_role')], true)) {
+            return $this->refuse(422, 'This role can not be modified.');
         }
 
         if ($role->is_system && ! $request->user()->isSystem()) {
-            abort(403, 'System roles can be modified by the super administrator only.');
+            return $this->refuse(403, 'System roles can be modified by the super administrator only.');
         }
 
         $permission = Permission::findOrFail($validated['permission_id']);
@@ -46,13 +50,13 @@ class PermissionsController extends Controller
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        return response()->json(['ok' => true]);
+        return response()->json(['ok' => true, 'status' => 'ok']);
     }
 
     public function store(Request $request)
     {
         if (! $request->user()->isSystem()) {
-            abort(403);
+            return $this->refuse(403, 'Only the super administrator can add permissions.');
         }
 
         $validated = $request->validate([
@@ -66,20 +70,22 @@ class PermissionsController extends Controller
             'is_system' => $validated['is_system'] ?? true,
         ]);
 
-        Role::query()->where('name', 'SAdmin')->first()?->givePermissionTo($permission);
+        $superAdmin = Role::query()->where('name', CabinetKitRoles::SUPER_ADMIN_ROLE)->first();
+        $superAdmin?->givePermissionTo($permission);
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         return response()->json([
+            'status' => 'ok',
             'permission' => $permission,
-            'super_admin_role_id' => (int) (Role::query()->where('name', 'SAdmin')->value('id') ?? 0),
+            'super_admin_role_id' => (int) ($superAdmin?->id ?? 0),
         ]);
     }
 
     public function rename(Request $request)
     {
         if (! $request->user()->isSystem()) {
-            abort(403);
+            return $this->refuse(403, 'Only the super administrator can rename permissions.');
         }
 
         $validated = $request->validate([
@@ -91,6 +97,7 @@ class PermissionsController extends Controller
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         return response()->json([
+            'status' => 'ok',
             'permission' => Permission::query()->find($validated['id']),
         ]);
     }

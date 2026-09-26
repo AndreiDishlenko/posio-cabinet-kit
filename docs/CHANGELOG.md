@@ -1,5 +1,109 @@
 # Changelog
 
+## Unreleased — Adopting the package in an existing cabinet
+
+Everything below is off by default or keeps the previous behavior: existing
+hosts change nothing. See `EXTENDING.md` → "Adopting the package in a project
+with its own cabinet".
+
+**Added**
+- `host_integration` switches in `config/cabinet-kit.php`: `load_migrations`,
+  `load_routes`, `sync_roles`, `exception_redirects`, `share_auth_props`,
+  `json_translations`, `site_commands`. Each one turns off a single thing the
+  provider does to the whole application; all default to `true`.
+- `account_model`: the package queries and creates accounts through the
+  configured model (`AccountRepository::accountModel()`). The account type
+  hints of `HasAccount`, `AccountRepository` and `AccountService` are now
+  Eloquent `Model`.
+- `frontend.routes` / `frontend.logout_method`: a host with its own route names
+  maps the package's names onto them for the side menu, the burger menu and the
+  permission matrix (`resources/js/kitRoutes.js`); the `cabinet_kit_frontend`
+  prop is shared only when either value differs from the default.
+- More `frontend.*` keys, shared in the same prop: `switch_account_method`
+  ("Sign in as …" after an email confirmation; `get` renders a full-page link),
+  `home_route` (the auth pages' logo links to that page; `null` — no link, as
+  before), `auth_logo` (auth pages' logo when site settings have none),
+  `tab_bar_sets` (mobile bottom tab bar sets; `null` — the package's own).
+  The users page reaches its API through the `frontend.routes` map
+  (`cabinet-kit.users` is the card's route prefix); `VerifyEmail` signs out
+  with `frontend.logout_method`.
+- `extendI18n()` (`i18n.config.js`): the host adds its dictionaries under or
+  over the cabinet's (`baseMessages` / `messages`, shallow merge), its
+  `supportedLocales`, browser language aliases for `detectBrowserLocale()`
+  and `translateModuleT` — the module-level `$t` then translates (default:
+  returns the key, as before). `i18n.global.tNumbered()` / `tArray()`.
+- `registerDeviceLog(name, logger)` (`DeviceLog.js`): shared code (API client,
+  dictionaries) writes to the host's device log of that channel; without one it
+  still goes to the console.
+- `registerUserCardTabs()` (`_admin/js/userCardTabs.js`): host sections of the
+  user card (`{ id, label, component, permission }`). Without them the card is
+  the same single form.
+- `$H` helper groups from the source project: `G`, `Str`, `Num`, `Sys`,
+  `Validate`, `Html`, `Vue` (and lowercase aliases), `Ar.removeFromArray()`.
+- Validation rules `edrpou`, `iban`; uk text for the `string` rule message.
+- `SeoMeta` prop `dedupeBrand` (default `false`): the brand is not appended to
+  a title that already contains it.
+- `registerSettingsTabs(files, tabs)` (`_admin/js/pages/Settings/settingsTabs.js`):
+  the host's settings tabs live in the host and are connected here (a lazy
+  glob of its tab files); a host file with the same name as a package tab
+  replaces it, `tabs` adds or replaces catalog entries by `id`. Without it the
+  settings page and menu show the package's own tabs, as before.
+- `Login`: the sign-up link shows when `registration_open` is not shared at all
+  (a host that shares its own auth props); a shared `false` still hides it.
+
+- Sign-in throttling: after `login.max_attempts` failed attempts in a row
+  (default 5, per email and IP) the login form answers "too many attempts" for
+  `login.decay_seconds` (60) and fires `Lockout`. `0` turns it off. This is the
+  one change every host gets by default — before, attempts were unlimited.
+- `password_reset.report_unknown_email` (default `false`): an unknown email is
+  reported as an error of the email field instead of the neutral status.
+  `password_reset.check_token_before_form` (default `false`): an expired or
+  unknown reset link renders `ResetPassword` with `is_expired` right away.
+  A finished reset now flashes `email` to the login page and fires
+  `PasswordReset`.
+- `registration_approval.notifications.request` / `.approved`: the letter
+  classes of registration approval (same constructor arguments);
+  `registration_approval.log_channel`: channel for failed sends;
+  `registration_approval.json_redirect` (default `false`): the 401 a pending
+  user gets on a data request carries `redirect` → the login page.
+- `seo.sitemap_x_default_selector` (default `false`): a page with SEO records in
+  every site language gets the language selector as `x-default` in the sitemap,
+  as its own meta declares.
+- `app_translations` (default `false`): the package's translation groups (auth,
+  passwords, validation, pagination, emails, mail) become application
+  translations under the host's `lang/` — a host with identical copies can drop
+  them.
+- `logout.full_reload` (default `false`): sign-out answers with a full page load
+  (`Inertia::location`) — for an `after_logout` address outside the cabinet app.
+- `users_admin.list` (default `null`): an invokable class `(Request) => iterable`
+  that returns the rows of the Users page instead of the package's query;
+  `users_admin.permission_flags` (default `[]`): extra `permissions` flags of the
+  page, flag => system permission (host sections of the user card);
+  `users_admin.root_immutable` (default `false`): nobody edits the built-in
+  super administrator through the users API, the super administrator included.
+- Users and permissions API: a refusal carries its text in `error` as well as
+  `message` with the same status code (the cabinet API client toasts `error`;
+  before, it showed a generic "Validation error (422)"); successful answers
+  also carry `status: 'ok'`. Previous fields stay.
+
+**Fixed**
+- Saving the user card without changing the role no longer needs `sysper-roles`:
+  the form always sends the role, so a user manager without the roles right got
+  403 on every save.
+- The users API reports the user's system role; before, `role_id` / `role_name`
+  came from the current account's context and could be the account role.
+- A role change is checked before the other fields are saved: a refused role no
+  longer leaves half of the card saved.
+- `NewToast` / `NewToastItem`: the second style block was a copy of the first,
+  so toasts had no enter/leave animation and no card layout.
+- The event bus drops every handler of an event on `off(type)` without a
+  handler, as `mitt` does. Components carried over from the source project
+  (`Dropdown`) rely on it; before, handlers piled up on every remount.
+- `ModalForm`, `CardTemplate`: fallbacks for the Safari 12 baseline (sides
+  instead of `inset`, static `vh` before `dvh`, flex-gap mixin).
+- Sync manifest: the `vue-seo-meta` entry had a Cyrillic letter in its path and
+  was never audited.
+
 ## Unreleased — Sync with posio.cabinet 2.6.35
 
 **Security**

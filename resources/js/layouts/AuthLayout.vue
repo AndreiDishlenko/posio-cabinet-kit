@@ -9,9 +9,10 @@
         <div class="grow flex flex-col relative z-10">
 
             <div class="grow flex items-center justify-center min-h-[70px]">
-                <!-- <a :href="route('home', { locale: $i18n.locale })"> -->
+                <Link v-if="home_route" :href="$locRoute(home_route)">
                     <img :src="brand_logo" :alt="brand_name" class="h-[50px] max-w-[200px] w-auto object-contain opacity-50" />
-                <!-- </a> -->
+                </Link>
+                <img v-else :src="brand_logo" :alt="brand_name" class="h-[50px] max-w-[200px] w-auto object-contain opacity-50" />
             </div>
 
             <div class="flex justify-center">
@@ -50,6 +51,8 @@
 	import { Link } from '@inertiajs/vue3';
 	import { Head } from '@inertiajs/vue3';
 
+	import { kitFrontendOption } from '../kitRoutes.js';
+
 	// import ParticlesBackground from '../Components/ParticlesBackground.vue';
     // import ThemeSelector    from '@/js/Custom/_ThemeSelector.vue';
 
@@ -66,6 +69,10 @@
             },
         },
         computed: {
+            // Кабинет без публичного сайта может не иметь главной страницы — тогда логотип без ссылки.
+            home_route() {
+                return kitFrontendOption(this.$page, 'home_route');
+            },
             // Вход и регистрация — порог кабинета, поэтому знак тот же, что в развёрнутом боковом меню.
             brand() {
                 return this.$page.props.site && this.$page.props.site.cabinet
@@ -73,7 +80,7 @@
                     : {};
             },
             brand_logo() {
-                return this.brand.logo_dark || '/brand-assets/logo_dark_theme.svg';
+                return this.brand.logo_dark || kitFrontendOption(this.$page, 'auth_logo', '/brand-assets/logo_dark_theme.svg');
             },
             brand_name() {
                 return this.$page.props.site && this.$page.props.site.name

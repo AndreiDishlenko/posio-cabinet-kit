@@ -11,6 +11,12 @@ return [
     // host project already has one.
     'user_settings_column' => 'settings',
 
+    // Account model the package queries and creates accounts through. A host
+    // that had its own `accounts` table before the package points this at its
+    // own model; the profile helpers of the bundled account screens (info,
+    // fillProfile) then have to come from that model as well.
+    'account_model' => \Posio\CabinetKit\Models\Account::class,
+
     // Route prefix + name prefix for every CabinetKit route (routes/cabinet.php).
     // The bundled auth routes (login/register/logout/password reset/email
     // verification) live under the same URL prefix but keep Laravel's own
@@ -35,6 +41,52 @@ return [
     // Set to false when the host application already owns these route names.
     'auth_routes' => true,
 
+    // Adopting the package in a project that already runs a cabinet of its own
+    // (its own schema, roles, routes, error pages and console commands). Each
+    // switch turns off one thing the package otherwise does to the whole
+    // application; left on, a fresh install behaves as before.
+    'host_integration' => [
+        // Bundled migrations: tables, system users and menu rows.
+        'load_migrations' => true,
+        // routes/cabinet.php, including the auth routes.
+        'load_routes' => true,
+        // Roles and permissions reconciled with the package after every migrate.
+        'sync_roles' => true,
+        // 403 → profile page, broken verification link → sign-in page.
+        'exception_redirects' => true,
+        // Inertia props `registration_open` and `social_auth`.
+        'share_auth_props' => true,
+        // Package lang/*.json as a fallback layer under the host's own keys.
+        'json_translations' => true,
+        // sitemap:generate and site:import-brand. Off when the host registers
+        // commands under the same names: the later registration would win.
+        'site_commands' => true,
+    ],
+
+    // How the bundled cabinet shell (side menu, burger menu, permission
+    // matrix) reaches routes. A host that keeps its own names for these
+    // screens maps the package's route names onto its own; its logout route
+    // may also answer GET, while the bundled one accepts POST only. Shared
+    // to the frontend as the `cabinet_kit_frontend` prop only when changed.
+    'frontend' => [
+        'routes' => [
+            // 'cabinet-kit.settings' => 'cabinet.settings',
+        ],
+        'logout_method' => 'post',
+        // "Sign in as …" after an email confirmation opened under another
+        // user: the bundled route accepts POST only.
+        'switch_account_method' => 'post',
+        // Route name of the public home page; the logo of the auth pages links
+        // to it through the localized route helper. null — the logo is no link.
+        'home_route' => null,
+        // Logo of the auth pages when the site settings have none.
+        'auth_logo' => '/brand-assets/logo_dark_theme.svg',
+        // Mobile bottom tab bar: account configuration code → role → route
+        // names (`default` on both levels is the fallback). null — the
+        // package's own set.
+        'tab_bar_sets' => null,
+    ],
+
     // Самостоятельная регистрация (форма регистрации и первый вход через Google/Apple):
     //   closed   — закрыта: кабинет — админка обслуживания сайта, пользователей заводит
     //              администратор; вход уже заведённых не затрагивается;
@@ -42,6 +94,42 @@ return [
     //              с правом sysper-users (адресаты письма — cabinet_onboarding);
     //   open     — открыта без одобрения.
     'registration' => env('CABINET_REGISTRATION', 'closed'),
+
+    // Одобрение регистрации: классы писем администратору и новичку (хост со своими
+    // шаблонами подставляет свои, конструктор тот же) и канал журнала для сбоев
+    // рассылки (пусто — канал по умолчанию).
+    'registration_approval' => [
+        'notifications' => [
+            'request' => \Posio\CabinetKit\Notifications\RegistrationApprovalRequest::class,
+            'approved' => \Posio\CabinetKit\Notifications\RegistrationApproved::class,
+        ],
+        'log_channel' => null,
+        // Отказ запросу данных, пока регистрацию не одобрили, несёт адрес входа
+        // (поле redirect) — для клиента API, который по нему уводит на вход.
+        'json_redirect' => false,
+    ],
+
+    // Попыток входа подряд по одной почте с одного адреса до паузы на decay_seconds;
+    // 0 снимает ограничение.
+    'login' => [
+        'max_attempts' => 5,
+        'decay_seconds' => 60,
+    ],
+
+    // Сброс пароля. report_unknown_email — неизвестная почта подсвечивается ошибкой
+    // поля (по умолчанию ответ одинаков для любой почты, чтобы по форме нельзя было
+    // выяснить, кто зарегистрирован); check_token_before_form — протухшая ссылка
+    // объясняется сразу, а не после заполнения формы.
+    'password_reset' => [
+        'report_unknown_email' => false,
+        'check_token_before_form' => false,
+    ],
+
+    // Выход. full_reload — после выхода страница загружается заново целиком (адрес из
+    // after_logout может вести в другое приложение хоста), а не переходом внутри кабинета.
+    'logout' => [
+        'full_reload' => false,
+    ],
 
     // Social sign-in through Laravel Socialite (requires laravel/socialite, plus
     // socialiteproviders/apple for Apple). Set a provider's `enabled` flag to
@@ -95,6 +183,12 @@ return [
             ],
         ],
     ],
+
+    // Группы переводов пакета (auth, passwords, validation, pagination, emails,
+    // mail) — переводами самого приложения, под файлами lang/ хоста: хост, у которого
+    // они совпадают с пакетными, может не держать своих копий. JSON-словари того же
+    // назначения включает host_integration.json_translations.
+    'app_translations' => false,
 
     // Email confirmation and password reset letters, built from the package's
     // templates in the visitor's language instead of Laravel's stock English
@@ -152,6 +246,18 @@ return [
         'owner_role' => 'Account owner',
         'default_member_role' => 'Administrator',
         'assignable_roles' => ['Administrator', 'Manager', 'User'],
+    ],
+
+    // Страница «Users» и её API.
+    //   list             — класс-вызываемое `(Request) => iterable`, отдающее строки
+    //                      списка вместо запроса пакета (хост со своими полями строки);
+    //   permission_flags — дополнительные признаки прав страницы: флаг => системное право
+    //                      (вкладки карточки пользователя хоста);
+    //   root_immutable   — встроенного суперадминистратора не правит никто, в том числе он сам.
+    'users_admin' => [
+        'list' => null,
+        'permission_flags' => [],
+        'root_immutable' => false,
     ],
 
     // Where the bundled log viewer (opcodesio/log-viewer) is mounted. CabinetKit

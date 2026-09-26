@@ -194,9 +194,13 @@ class GenerateSitemap extends Command
 				$cluster_locales[] = $alternate_locale;
 			}
 
-			// x-default → English version if present in cluster, otherwise first available locale
+			// x-default → English version if present in cluster, otherwise first available locale.
+			// Сайт с выбором языка ведёт на него, но только со страницы, что есть на всех языках
+			// сайта: иначе выбор приведёт посетителя на язык, где её нет.
 			$default_locale = $this->xDefaultLocale($cluster_locales);
-			if ( $default_locale === $locale ) {
+			if ( config('seo.sitemap_x_default_selector', false) && !array_diff(config('general.locales') ?? [], $cluster_locales) ) {
+				$x_default_url = app(SeoService::class)->languageSelectorUrl($seo_item['route_name']);
+			} elseif ( $default_locale === $locale ) {
 				$x_default_url = $url_with_locale;
 			} else {
 				$default_item = collect($localized_seo_items)->firstWhere('locale', $default_locale);
