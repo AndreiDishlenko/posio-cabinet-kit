@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased — Page preload in the host's root view
+
+**Added**
+- `Support\InertiaPageEntry::path($component, $roots)`: the file of the current
+  Inertia page for the host's root view `@vite(...)`, looked up in the given page
+  folders in the client resolver's order and keyed the way the build manifest
+  has it (a package linked as a directory is keyed by its real path). A host
+  whose root view preloaded `resources/…/{component}.vue` got 500 in production
+  on every package page. See `EXTENDING.md` → "Adopting the package in a
+  project with its own cabinet".
+
 ## Unreleased — Adopting the package in an existing cabinet
 
 Everything below is off by default or keeps the previous behavior: existing

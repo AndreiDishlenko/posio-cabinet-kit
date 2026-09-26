@@ -626,6 +626,25 @@ With routes off, the host's routes point at package controllers only where the
 two behave the same; the rest keeps its own controllers. Package pages rendered
 from the host's routes are found by the resolver as usual.
 
+If the host's root view preloads the current page (`@vite([..., "resources/…/{$page['component']}.vue"])`),
+that path breaks on package pages: the built manifest has no such file, and
+every package page answers 500 in production (the dev server does not check the
+manifest, so it only shows up after a build). List the page folders in the
+order the client resolver checks them instead:
+
+```blade
+@vite(array_filter([
+    'resources/_main/js/main.js',
+    \Posio\CabinetKit\Support\InertiaPageEntry::path($page['component'], [
+        'resources/_main/js/Pages',
+        'vendor/posio/cabinet-kit/resources/js/pages',
+        'vendor/posio/cabinet-kit/resources/js',
+    ]),
+]))
+```
+
+A page missing from the build is not preloaded; the browser still loads it.
+
 Frontend extension points for such a host — call them in the entry point before
 the app is created:
 
