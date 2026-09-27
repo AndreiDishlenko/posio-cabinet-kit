@@ -74,10 +74,16 @@ class HostViteConfig
         }
 
         $updated = preg_replace_callback('/input\s*:\s*\[([^\]]*)\]/s', function (array $matches) use ($entry): string {
-            $inner = rtrim($matches[1]);
-            $comma = trim($inner) === '' || str_ends_with(trim($inner), ',') ? '' : ',';
+            $inner = $matches[1];
 
-            return "input: [{$inner}{$comma} '{$entry}']";
+            if (! str_contains($inner, "\n")) {
+                $inner = rtrim($inner);
+                $comma = trim($inner) === '' || str_ends_with(trim($inner), ',') ? '' : ',';
+
+                return "input: [{$inner}{$comma} '{$entry}']";
+            }
+
+            return 'input: ['.self::appendToMultilineList($inner, $entry).']';
         }, $contents, 1, $count);
 
         if ($count > 0) {
@@ -87,5 +93,45 @@ class HostViteConfig
         $updated = preg_replace("/input\s*:\s*(['\"])([^'\"]+)\\1/", "input: ['$2', '{$entry}']", $contents, 1, $count);
 
         return $count > 0 ? $updated : null;
+    }
+
+    /**
+     * A multi-line list often ends in commented-out entries. Appending to the
+     * end of that text put the new entry and the closing bracket inside the
+     * comment and left the config unparseable, so the entry goes on a line of
+     * its own and the separating comma follows the last real item.
+     */
+    private static function appendToMultilineList(string $inner, string $entry): string
+    {
+        $body = rtrim($inner);
+        $closingIndent = substr($inner, strlen($body));
+        $lines = preg_split('/\R/', $body);
+        $indent = '';
+
+        for ($i = count($lines) - 1; $i >= 0; $i--) {
+            preg_match('#^(.*?)(\s*//.*)?$#', $lines[$i], $parts);
+            $code = rtrim($parts[1]);
+
+            if (trim($code) === '') {
+                continue;
+            }
+
+            if ($indent === '') {
+                preg_match('/^\s*/', $lines[$i], $lead);
+                $indent = $lead[0];
+            }
+
+            if (! str_ends_with($code, ',')) {
+                $lines[$i] = $code.','.($parts[2] ?? '');
+            }
+            break;
+        }
+
+        if ($indent === '') {
+            preg_match('/^\s*/', end($lines), $lead);
+            $indent = $lead[0];
+        }
+
+        return implode("\n", $lines)."\n{$indent}'{$entry}',".($closingIndent === '' ? "\n" : $closingIndent);
     }
 }

@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased — sync-config no longer breaks a vite.config ending in a comment
+
+**Fixed**
+- When the laravel-vite-plugin `input` list ended in a commented-out entry,
+  `cabinet-kit:sync-config` appended the cabinet entry and the closing `]` to
+  that comment line, so the config no longer parsed and `npm run build` failed
+  with `Expected "]" but found ":"`. A multi-line list now gets the entry on a
+  line of its own, and the separating comma goes after the last real item.
+
 ## Unreleased — Language switch follows the font scale
 
 **Fixed**
