@@ -54,6 +54,26 @@ for arg in "$@"; do
 	esac
 done
 
+# A preprod shares the production database, cache and queue: this run would
+# migrate that database, flush the shared cache and rewrite tracked files, so the
+# next ./deploy --preprod stops on them. Same preprod sign as ./deploy uses.
+app_url=""
+if [ -f .env ]; then
+	app_url=$(sed -n 's/^[[:space:]]*APP_URL[[:space:]]*=[[:space:]]*//p' .env | tail -n 1 | tr -d "\"' \r")
+fi
+
+case "$app_url" in
+	*preprod*)
+		echo "./updcab is not for a preprod (APP_URL=$app_url): it shares the production database." >&2
+		echo "The package version comes from composer.lock in git: run ./updcab on a" >&2
+		echo "developer machine, commit the lock, then ./deploy --preprod here." >&2
+		if [ -f updcab-preprod ]; then
+			echo "To try a fresh release without a commit: ./updcab-preprod, then ./build." >&2
+		fi
+		exit 1
+		;;
+esac
+
 # The site runs on the PHP its control panel selected, but the shell of the same
 # account often still starts a years-old default — and then the very first step
 # resolves dependencies for the wrong version and buries the cause in a wall of

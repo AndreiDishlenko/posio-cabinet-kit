@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased — cabinet-kit:test prints which tests failed, not their traces
+
+**Changed**
+- `php artisan cabinet-kit:test` prints a summary: the failing tests
+  (`Class::method`) grouped under their reason, one line per reason, so a
+  broken migration shared by every test shows once. `--full` gives the complete
+  PHPUnit output with stack traces. When PHPUnit stops before running tests,
+  its own output is shown.
+
 ## Unreleased — production deploy installs the package version from the lock
 
 **Changed**
@@ -8,6 +17,10 @@
   (`./deploy --rollback` too, so the old code gets its own packages back).
   Earlier it only warned that the lock changed and suggested `./updcab` — a
   developer-machine tool that rewrites tracked files on the server.
+- `./updcab` refuses to run on a preprod (`APP_URL` contains `preprod`, the
+  same sign `./deploy` uses): there it would migrate the shared production
+  database, flush the shared cache and rewrite tracked files. It points to
+  `./updcab-preprod` when the project has one.
 - The package version reaches servers one way: `./updcab` locally, commit
   `composer.lock` with the files `sync-config` patched, then `./deploy`.
 

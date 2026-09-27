@@ -166,6 +166,7 @@ step to an existing `scripts/pre-push-checks.sh` and keeps it there.
 ```bash
 php artisan cabinet-kit:test                         # all tests
 php artisan cabinet-kit:test --filter=Registration   # a subset
+php artisan cabinet-kit:test --full                  # complete PHPUnit output with traces
 php artisan cabinet-kit:test --db-connection=mysql --db-database=myapp_test
 ```
 
