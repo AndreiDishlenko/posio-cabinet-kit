@@ -309,7 +309,9 @@ MD);
         }
 
         foreach (HostScripts::scaffold() as $name) {
-            $this->info("Created {$name} — a starting point, adapt it to this project's server.");
+            $this->info(HostScripts::isManaged($name)
+                ? "Created {$name} — managed by the package, refreshed on every update."
+                : "Created {$name} — belongs to this project, the package never touches it again.");
         }
 
         if (HostScripts::wireTestsIntoReleaseChecks() === null) {

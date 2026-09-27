@@ -44,9 +44,20 @@ class HostUpdateLaunchers
      */
     public static function refreshManaged(): array
     {
+        return self::refreshFiles(self::LAUNCHERS);
+    }
+
+    /**
+     * Общий механизм подмены для всех файлов пакета с меткой обслуживания.
+     *
+     * @param  array<string, string>  $files  путь в проекте => стаб
+     * @return string[] имена обновлённых (или подготовленных к подмене) файлов
+     */
+    public static function refreshFiles(array $files): array
+    {
         $refreshed = [];
 
-        foreach (self::LAUNCHERS as $name => $stub) {
+        foreach ($files as $name => $stub) {
             $path = base_path($name);
             $source = self::stubPath($stub);
 
@@ -74,7 +85,9 @@ class HostUpdateLaunchers
                 File::put($target, $fresh);
             } else {
                 File::put($path.'.new', $fresh);
-                @chmod($path.'.new', 0755);
+                if (self::isShellScript($name)) {
+                    @chmod($path.'.new', 0755);
+                }
                 File::move($path.'.new', $path);
             }
 
@@ -156,12 +169,21 @@ class HostUpdateLaunchers
         File::ensureDirectoryExists(dirname($path));
         File::put($path, self::withPlatformLineEndings($name, File::get($source)));
 
-        if (! str_ends_with($name, '.bat')) {
+        if (self::isShellScript($name)) {
             @chmod($path, 0755);
             self::markExecutableInGit($name);
         }
 
         return true;
+    }
+
+    // Бит исполнения — только скриптам оболочки: у модуля node или файла настроек
+    // он появился бы в git сменой прав, и сервер видел бы файл изменённым.
+    public static function isShellScript(string $name): bool
+    {
+        $base = basename($name);
+
+        return ! str_contains($base, '.') || str_ends_with($base, '.sh');
     }
 
     public static function stubPath(string $stub): string

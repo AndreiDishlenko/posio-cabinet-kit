@@ -8,3 +8,7 @@ stubs/cc.stub text eol=lf
 stubs/pre-push-checks.sh.stub text eol=lf
 stubs/cc.bat.stub text eol=crlf
 stubs/release.bat.stub text eol=crlf
+stubs/build.stub text eol=lf
+stubs/build.bat.stub text eol=crlf
+stubs/kit-build.mjs.stub text eol=lf
+stubs/host-scripts.conf.stub text eol=lf

@@ -997,43 +997,63 @@
     },
     {
       "id": "host-script-release",
-      "mode": "copy",
-      "source": "release.bat",
+      "mode": "package_only",
       "target": "stubs/release.bat.stub",
-      "notes": "Self-contained release script, verbatim. Runs scripts/pre-push-checks.sh before committing."
+      "notes": "Release script. Package-owned since the scripts became managed: one version for every host, refreshed on each update. Changes are made here, never upstream in a host; host specifics come from scripts/host-scripts.conf."
     },
     {
       "id": "host-script-cc-bat",
-      "mode": "copy",
-      "source": "cc.bat",
+      "mode": "package_only",
       "target": "stubs/cc.bat.stub",
-      "notes": "Verbatim."
+      "notes": "Cache reset for Windows. Package-owned since the scripts became managed: one version for every host, refreshed on each update. Changes are made here, never upstream in a host; host specifics come from scripts/host-scripts.conf."
     },
     {
       "id": "host-script-deploy",
-      "mode": "manual",
-      "source": "deploy",
+      "mode": "package_only",
       "target": "stubs/deploy.stub",
-      "notes": "Generalized: no server-specific NVM path or SSR process name (npm run buildssr when the host has it), PHP_BIN override, sitemap, site check."
-    },
-    {
-      "id": "host-script-checks",
-      "mode": "manual",
-      "source": "scripts/pre-push-checks.sh",
-      "target": "stubs/pre-push-checks.sh.stub",
-      "notes": "Generic set: cabinet-kit:test, php artisan test, build. Source's legacy-syntax and Vitest steps are product-specific."
+      "notes": "Production and preprod deploy, generalized from posio.cabinet's deploy. Package-owned since the scripts became managed: one version for every host, refreshed on each update. Changes are made here, never upstream in a host; host specifics come from scripts/host-scripts.conf."
     },
     {
       "id": "host-script-cc",
       "mode": "package_only",
       "target": "stubs/cc.stub",
-      "notes": "Taken from the elo host: the source's cc hard-codes one server; this one resolves PHP 8.2+ on CloudLinux/cPanel and honours PHP_BIN."
+      "notes": "Cache reset over ssh. Package-owned since the scripts became managed: one version for every host, refreshed on each update. Changes are made here, never upstream in a host; host specifics come from scripts/host-scripts.conf."
+    },
+    {
+      "id": "host-script-build",
+      "mode": "package_only",
+      "target": "stubs/build.stub",
+      "notes": "Build launcher: finds node through nvm, runs scripts/kit-build.mjs. Package-owned since the scripts became managed: one version for every host, refreshed on each update. Changes are made here, never upstream in a host; host specifics come from scripts/host-scripts.conf."
+    },
+    {
+      "id": "host-script-build-bat",
+      "mode": "package_only",
+      "target": "stubs/build.bat.stub",
+      "notes": "Build launcher for Windows. Package-owned since the scripts became managed: one version for every host, refreshed on each update. Changes are made here, never upstream in a host; host specifics come from scripts/host-scripts.conf."
+    },
+    {
+      "id": "host-script-kit-build",
+      "mode": "package_only",
+      "target": "stubs/kit-build.mjs.stub",
+      "notes": "Build engine, generalized from posio.cabinet's scripts/build-project.mjs. Package-owned since the scripts became managed: one version for every host, refreshed on each update. Changes are made here, never upstream in a host; host specifics come from scripts/host-scripts.conf."
+    },
+    {
+      "id": "host-script-checks",
+      "mode": "package_only",
+      "target": "stubs/pre-push-checks.sh.stub",
+      "notes": "Project-owned after creation: generic set (cabinet-kit:test, php artisan test, ./build). Upstream's legacy-syntax and Vitest steps are product-specific."
+    },
+    {
+      "id": "host-scripts-conf",
+      "mode": "package_only",
+      "target": "stubs/host-scripts.conf.stub",
+      "notes": "Project-owned after creation: the host's settings for the managed scripts."
     },
     {
       "id": "host-scripts-scaffold",
       "mode": "package_only",
       "target": "src/Support/HostScripts.php",
-      "notes": "Creates deploy/cc/cc.bat/release.bat/scripts/pre-push-checks.sh when missing, upgrades a release.bat that cannot run checks, adds the cabinet-kit:test step to existing checks."
+      "notes": "Creates the managed scripts and the project-owned files when missing, refreshes the managed ones, adopts pre-managed copies (kept as .bak), adds the cabinet-kit:test step to existing checks."
     },
     {
       "id": "php-locale-service",

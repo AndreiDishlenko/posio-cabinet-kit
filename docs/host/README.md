@@ -45,6 +45,11 @@ Vite — nothing is copied into the project.
    `php artisan cabinet-kit:test` runs the package's sign-in and registration
    tests against this project on an in-memory database. `./release` runs them
    through `scripts/pre-push-checks.sh` — do not remove that step.
+7. **Never edit `deploy`, `build`, `build.bat`, `scripts/kit-build.mjs`, `cc`,
+   `cc.bat` or `release.bat` in this project.** They belong to the package
+   (`managed-by: posio/cabinet-kit`) and are overwritten on every update. A
+   change they need goes into the package's `stubs/`, centrally for every
+   project; this project's specifics go into `scripts/host-scripts.conf`.
 
 ## What the package puts on the host's plate
 

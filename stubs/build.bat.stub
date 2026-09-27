@@ -1,0 +1,17 @@
+@echo off
+rem ---------------------------------------------------------------------------
+rem  managed-by: posio/cabinet-kit
+rem
+rem  ВНИМАНИЕ: файл принадлежит пакету posio/cabinet-kit и перезаписывается при
+rem  каждом обновлении кабинета (updcab.bat -^> php artisan cabinet-kit:sync-config).
+rem  Правка здесь пропадёт на ближайшем обновлении. Любые изменения вносятся только
+rem  в пакет - stubs\build.bat.stub - и оттуда централизованно доходят до всех проектов.
+rem  Особенности проекта - в scripts\host-scripts.conf (он принадлежит проекту).
+rem
+rem  Сборка фронта под текущее окружение - подробности и параметры в
+rem  scripts\kit-build.mjs.
+rem    build.bat [--env=local^|preprod^|production] [--no-ssr] [--no-install] [--no-checks] [--verbose]
+rem ---------------------------------------------------------------------------
+cd /d "%~dp0"
+node scripts\kit-build.mjs %*
+exit /b %errorlevel%

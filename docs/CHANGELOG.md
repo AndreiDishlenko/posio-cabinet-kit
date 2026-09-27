@@ -1,5 +1,47 @@
 # Changelog
 
+## Unreleased — project scripts belong to the package
+
+**Changed**
+- `deploy`, `build`, `build.bat`, `scripts/kit-build.mjs` (new), `cc`, `cc.bat`
+  and `release.bat` are managed like the update launchers: one version for
+  every project, marked `managed-by: posio/cabinet-kit`, overwritten by
+  `cabinet-kit:sync-config` on every update. Each carries a header saying that
+  changes go into the package's `stubs/`, never into the project.
+- What sets a project apart moves to `scripts/host-scripts.conf`, created once
+  and then owned by the project: its own build command, build and production
+  checks, node heap on the server, SSR process names per environment, a step
+  after the code update, `DEPLOY_LARAVEL_CACHES=optimize|clear`, preprod build
+  outputs and extra front-end sources.
+- `deploy` gains the preprod mode (`--preprod [--build|--no-build]`) for a
+  preprod that shares the production database: no migrations, no shared cache
+  flush, only its own queue and SSR process; refuses to run unless the package
+  migrations, routes and role sync are switched off. Production deploy now
+  refuses to run outside `APP_ENV=production`, runs the project's step after
+  the code update and builds through `./build`.
+- `./build` replaces `npm run buildssr` in deploy: it installs npm dependencies
+  when the lock changed, stops the SSR process for the build and starts it
+  afterwards (on production it creates one when missing), builds
+  `vite build` + `vite build --ssr` or the project's own command, and runs the
+  project's checks. The production SSR name is read from `pm2 stop <name>` in
+  the project's npm scripts unless set explicitly; preprod never touches it.
+- All scripts print the same way: `■ <script> · <stage>` in the script's own
+  colour, `OK` / `WARN` / `FAIL` lines, a closing `✓` / `✗`; command output is
+  shown when a step fails. `release.bat` and `cc.bat` switch the console to
+  UTF-8 for that and restore its code page on exit. `NO_COLOR=1` disables colour.
+- `cc` and `deploy` pick PHP 8.2+ the same way: `PHP_BIN`, `php` from `PATH`,
+  the version from the site's `.htaccess` handler, then the oldest 8.2+ on
+  CloudLinux/cPanel.
+- `scripts/pre-push-checks.sh` for new projects builds with `./build`.
+
+**Upgrading**
+- Earlier copies of these scripts have no marker. `cabinet-kit:sync-config`
+  recognises them, replaces them with the managed versions and keeps each old
+  file as `<name>.bak`. Move what the copy adapted into
+  `scripts/host-scripts.conf`, then delete the `.bak`.
+- A host whose production `npm run buildssr` did more than build and restart
+  SSR sets `BUILD_COMMAND` / `BUILD_PRODUCTION_CHECKS` accordingly.
+
 ## Unreleased — one launcher for every project, refreshed from the package
 
 **Changed**

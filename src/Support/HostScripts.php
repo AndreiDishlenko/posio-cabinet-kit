@@ -5,12 +5,16 @@ namespace Posio\CabinetKit\Support;
 use Illuminate\Support\Facades\File;
 
 /**
- * Базовые скрипты сопровождения проекта: деплой, сброс кэшей, релиз и набор
- * проверок перед ним. Кладутся один раз, если файла ещё нет: дальше скрипт
- * принадлежит проекту и подгоняется под его сервер.
+ * Скрипты сопровождения проекта: деплой, сборка фронта, сброс кэшей, релиз.
  *
- * Из готовых файлов проекта пакет трогает ровно одно — шаг своих тестов в
- * проверках перед релизом: без него поломка входа уходит в релиз незамеченной.
+ * Скрипты общие для всех проектов и принадлежат пакету: несут метку обслуживания
+ * и перезаписываются из стабов на каждом обновлении кабинета, так что правка
+ * стаба сама доезжает до всех проектов. Всё, чем проект отличается, живёт в его
+ * собственных файлах — настройках скриптов и проверках перед релизом: их пакет
+ * кладёт один раз и больше не трогает.
+ *
+ * Из файлов проекта пакет трогает ровно одно — шаг своих тестов в проверках
+ * перед релизом: без него поломка входа уходит в релиз незамеченной.
  */
 class HostScripts
 {
@@ -18,20 +22,41 @@ class HostScripts
 
     public const RELEASE = 'release.bat';
 
+    public const PROJECT_CONF = 'scripts/host-scripts.conf';
+
     // Маркер, по которому проверки перед релизом узнаются как уже гоняющие тесты пакета.
     public const TEST_COMMAND = 'cabinet-kit:test';
 
-    /** Путь в проекте => стаб пакета. */
-    protected const SCRIPTS = [
+    /** Скрипты пакета: путь в проекте => стаб. */
+    public const MANAGED = [
         'deploy' => 'deploy.stub',
+        'build' => 'build.stub',
+        'build.bat' => 'build.bat.stub',
+        'scripts/kit-build.mjs' => 'kit-build.mjs.stub',
         'cc' => 'cc.stub',
         'cc.bat' => 'cc.bat.stub',
         self::RELEASE => 'release.bat.stub',
+    ];
+
+    /** Файлы проекта: путь в проекте => стаб, кладётся только при отсутствии. */
+    protected const PROJECT_OWNED = [
+        self::PROJECT_CONF => 'host-scripts.conf.stub',
         self::CHECKS => 'pre-push-checks.sh.stub',
     ];
 
-    // Узнаёт скрипт релиза того же происхождения, что и стаб пакета.
-    protected const RELEASE_SIGNATURE = 'one-step patch release for any git repository';
+    /**
+     * Узнают версии скриптов, разложенные пакетом до того, как скрипты стали его
+     * собственностью, и их копии, подогнанные под проект. Всё, что проекту в них
+     * было нужно, теперь задаётся его настройками скриптов.
+     */
+    protected const LEGACY_SIGNATURES = [
+        'deploy' => ['Базовая версия от CabinetKit', 'Деплой на прод: обновление кода из git', 'Деплой прода и препрода из git'],
+        'build' => ['Сборка фронта проекта под текущее окружение'],
+        'build.bat' => ['Сборка фронта проекта под текущее окружение'],
+        'cc' => ['Прод-аналог cc.bat'],
+        'cc.bat' => ['php artisan permission:cache-reset'],
+        self::RELEASE => ['one-step patch release for any git repository'],
+    ];
 
     /**
      * @return string[] пути созданных файлов
@@ -40,13 +65,75 @@ class HostScripts
     {
         $created = [];
 
-        foreach (self::SCRIPTS as $name => $stub) {
+        foreach (self::MANAGED + self::PROJECT_OWNED as $name => $stub) {
             if (HostUpdateLaunchers::writeStub($name, $stub)) {
                 $created[] = $name;
             }
         }
 
         return $created;
+    }
+
+    public static function isManaged(string $name): bool
+    {
+        return array_key_exists($name, self::MANAGED);
+    }
+
+    /**
+     * Приводит скрипты с меткой обслуживания к стабам текущей версии пакета.
+     *
+     * @return string[] пути обновлённых файлов
+     */
+    public static function refreshManaged(): array
+    {
+        return HostUpdateLaunchers::refreshFiles(self::MANAGED);
+    }
+
+    /**
+     * Забирает под управление пакета скрипты без метки, узнанные как прежние
+     * версии пакетных. Прежний файл остаётся рядом копией: подгонку под проект
+     * из него переносят в настройки скриптов проекта.
+     *
+     * Скрипт без метки и без узнаваемой подписи — собственный скрипт проекта с тем
+     * же именем: он не трогается.
+     *
+     * @return string[] пути заменённых файлов
+     */
+    public static function adoptLegacy(): array
+    {
+        $adopted = [];
+
+        foreach (self::LEGACY_SIGNATURES as $name => $signatures) {
+            $path = base_path($name);
+
+            if (! File::exists($path)) {
+                continue;
+            }
+
+            $contents = File::get($path);
+
+            if (str_contains($contents, HostUpdateLaunchers::MANAGED_MARKER) || ! self::containsAny($contents, $signatures)) {
+                continue;
+            }
+
+            // Первая копия ценнее следующих: в ней подгонка, сделанная ещё руками.
+            if (! File::exists($path.'.bak')) {
+                File::copy($path, $path.'.bak');
+            }
+
+            File::put($path, HostUpdateLaunchers::withPlatformLineEndings(
+                $name,
+                File::get(HostUpdateLaunchers::stubPath(self::MANAGED[$name])),
+            ));
+
+            if (HostUpdateLaunchers::isShellScript($name)) {
+                @chmod($path, 0755);
+            }
+
+            $adopted[] = $name;
+        }
+
+        return $adopted;
     }
 
     /**
@@ -85,43 +172,6 @@ class HostScripts
         return true;
     }
 
-    /**
-     * Скрипт релиза старше проверок перед релизом их не запускает, и тесты
-     * пакета в нём молча не выполняются. Такой заменяется стабом: это тот же
-     * самодостаточный скрипт, только новее, — прежний остаётся рядом копией.
-     *
-     * @return bool|null true — заменён, false — замена не нужна, null — чужой скрипт, запускающий проверки не умеет
-     */
-    public static function upgradeReleaseScript(): ?bool
-    {
-        $path = base_path(self::RELEASE);
-
-        if (! File::exists($path)) {
-            return false;
-        }
-
-        $contents = File::get($path);
-
-        if (self::releaseRunsChecks($contents)) {
-            return false;
-        }
-
-        if (! str_contains($contents, self::RELEASE_SIGNATURE)) {
-            return null;
-        }
-
-        if (! File::exists($path.'.bak')) {
-            File::copy($path, $path.'.bak');
-        }
-
-        File::put($path, HostUpdateLaunchers::withPlatformLineEndings(
-            self::RELEASE,
-            File::get(HostUpdateLaunchers::stubPath(self::SCRIPTS[self::RELEASE])),
-        ));
-
-        return true;
-    }
-
     // Состояние для диагностики: гоняются ли тесты пакета при релизе проекта.
     public static function releaseRunsPackageTests(): bool
     {
@@ -129,13 +179,19 @@ class HostScripts
         $checks = base_path(self::CHECKS);
 
         return File::exists($release)
-            && self::releaseRunsChecks(File::get($release))
+            && str_contains(File::get($release), 'pre-push-checks.sh')
             && File::exists($checks)
             && str_contains(File::get($checks), self::TEST_COMMAND);
     }
 
-    protected static function releaseRunsChecks(string $contents): bool
+    protected static function containsAny(string $contents, array $needles): bool
     {
-        return str_contains($contents, 'pre-push-checks.sh');
+        foreach ($needles as $needle) {
+            if (str_contains($contents, $needle)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

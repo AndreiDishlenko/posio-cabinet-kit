@@ -1,11 +1,107 @@
 @echo off
-php artisan config:cache
-php artisan config:clear
-php artisan route:cache
-php artisan cache:clear
-php artisan view:cache
-php artisan optimize:clear
+setlocal EnableExtensions EnableDelayedExpansion
+rem ---------------------------------------------------------------------------
+rem  managed-by: posio/cabinet-kit
+rem
+rem  ВНИМАНИЕ: файл принадлежит пакету posio/cabinet-kit и перезаписывается при
+rem  каждом обновлении кабинета (updcab.bat -^> php artisan cabinet-kit:sync-config).
+rem  Правка здесь пропадёт на ближайшем обновлении. Любые изменения вносятся только
+rem  в пакет - stubs\cc.bat.stub - и оттуда централизованно доходят до всех проектов.
+rem
+rem  Сброс кэшей Laravel на машине разработчика (на сервере - ./cc).
+rem    cc.bat
+rem    set NO_COLOR=1 ^& cc.bat   - вывод без цвета
+rem ---------------------------------------------------------------------------
 
-php artisan permission:cache-reset
+cd /d "%~dp0"
 
+call :ui_init "1;34"
+rem Кириллица - только после переключения консоли на UTF-8: строка, прочитанная
+rem раньше, разобралась бы в прежней кодовой странице.
+set "UI_NAME=Кэши"
+call :main
+set "RC=!errorlevel!"
+call :ui_done
+exit /b %RC%
+
+:main
+call :stage "Laravel"
+
+rem Каждая команда сборки кэша заодно проверяет, что он вообще собирается:
+rem ошибка в конфиге или маршрутах всплывает здесь, а не на живом запросе.
+set "FAILED="
+call :step "config:cache"   "php artisan config:cache"   || set "FAILED=1"
+call :step "config:clear"   "php artisan config:clear"   || set "FAILED=1"
+call :step "route:cache"    "php artisan route:cache"    || set "FAILED=1"
+call :step "cache:clear"    "php artisan cache:clear"    || set "FAILED=1"
+call :step "view:cache"     "php artisan view:cache"     || set "FAILED=1"
+call :step "optimize:clear" "php artisan optimize:clear" || set "FAILED=1"
+
+call :step "permission:cache-reset" "php artisan permission:cache-reset" || set "FAILED=1"
+
+rem Кэш маршрутов из версий Laravel до 8 новая версия не читает и не удаляет сама.
 if exist bootstrap\cache\routes-v7.php del /q bootstrap\cache\routes-v7.php
+
+if defined FAILED (
+	call :failure "Кэши сброшены с ошибками"
+	exit /b 1
+)
+
+call :success "Кэши сброшены"
+exit /b 0
+
+rem --- Оформление -----------------------------------------------------------
+rem  Одно на все скрипты пакета (deploy, build, cc, release.bat): этап - «■ Скрипт · этап»
+rem  своим цветом у каждого скрипта, строки результата - OK / WARN / FAIL, итог - ✓ / ✗.
+
+:ui_init
+set "C_STAGE=" & set "C_OK=" & set "C_WARN=" & set "C_FAIL=" & set "C_DIM=" & set "C_RESET="
+rem Значки и кириллица этапов - в UTF-8; прежняя кодовая страница консоли
+rem возвращается на выходе, чтобы не сломать вывод вызвавшему окну.
+set "UI_OLDCP="
+for /f "tokens=2 delims=:" %%c in ('chcp') do set "UI_OLDCP=%%c"
+if defined UI_OLDCP set "UI_OLDCP=!UI_OLDCP: =!"
+if defined UI_OLDCP set "UI_OLDCP=!UI_OLDCP:.=!"
+chcp 65001 >nul
+if defined NO_COLOR exit /b 0
+for /f %%e in ('echo prompt $E^| cmd') do set "ESC=%%e"
+set "C_STAGE=!ESC![%~1m"
+set "C_OK=!ESC![1;32m"
+set "C_WARN=!ESC![1;33m"
+set "C_FAIL=!ESC![1;31m"
+set "C_DIM=!ESC![90m"
+set "C_RESET=!ESC![0m"
+exit /b 0
+
+:ui_done
+if defined UI_OLDCP chcp !UI_OLDCP! >nul
+exit /b 0
+
+:stage
+echo.
+echo !C_STAGE!■ !UI_NAME! · %~1!C_RESET!
+exit /b 0
+
+:success
+echo.
+echo !C_OK!✓ %~1!C_RESET!
+exit /b 0
+
+:failure
+echo.
+echo !C_FAIL!✗ %~1!C_RESET!
+exit /b 0
+
+rem Вывод команды копится и показывается, только если шаг упал: ради него провал и читают.
+:step
+set "STEP_LOG=%TEMP%\cabinet-kit-step-%RANDOM%%RANDOM%.log"
+%~2 >"!STEP_LOG!" 2>&1
+set "STEP_RC=!errorlevel!"
+if "!STEP_RC!"=="0" (
+	echo !C_OK!OK  !C_RESET! %~1
+) else (
+	echo !C_FAIL!FAIL!C_RESET! %~1
+	for /f "usebackq delims=" %%l in ("!STEP_LOG!") do echo       %%l
+)
+del /q "!STEP_LOG!" 2>nul
+exit /b %STEP_RC%

@@ -1,0 +1,50 @@
+#!/bin/bash
+#
+# managed-by: posio/cabinet-kit
+#
+# ВНИМАНИЕ: файл принадлежит пакету posio/cabinet-kit и перезаписывается при каждом
+# обновлении кабинета (./updcab → php artisan cabinet-kit:sync-config). Правка здесь
+# пропадёт на ближайшем обновлении. Любые изменения вносятся только в пакет —
+# stubs/build.stub — и оттуда централизованно доходят до всех проектов.
+# Особенности проекта — в scripts/host-scripts.conf (он принадлежит проекту).
+#
+# Сборка фронта под текущее окружение (локально, препрод, прод) — подробности и
+# параметры в scripts/kit-build.mjs.
+#   ./build [--env=local|preprod|production] [--no-ssr] [--no-install] [--no-checks] [--verbose]
+#
+# Эта обёртка нужна затем, чтобы на сервере нашлись node и pm2: они стоят через nvm
+# и в неинтерактивном сеансе (ssh-команда, деплой) в PATH не попадают. Системный
+# node, если он есть, обычно старее того, под который собран проект.
+
+cd "$(dirname "$0")" || exit 1
+
+# nvm ищется в NVM_DIR, в домашнем каталоге и выше по пути проекта: на хостинге
+# сайт лежит внутри каталога аккаунта, а HOME у фонового сеанса бывает другим.
+find_nvm() {
+	local dir
+
+	for dir in "${NVM_DIR:-}" "$HOME/.nvm"; do
+		[ -n "$dir" ] && [ -s "$dir/nvm.sh" ] && { echo "$dir"; return 0; }
+	done
+
+	dir="$PWD"
+	while [ "$dir" != "/" ] && [ -n "$dir" ]; do
+		[ -s "$dir/.nvm/nvm.sh" ] && { echo "$dir/.nvm"; return 0; }
+		dir="$(dirname "$dir")"
+	done
+
+	return 1
+}
+
+if nvm_dir="$(find_nvm)"; then
+	export NVM_DIR="$nvm_dir"
+	# shellcheck disable=SC1091
+	\. "$NVM_DIR/nvm.sh"
+fi
+
+if ! command -v node >/dev/null 2>&1; then
+	echo "node не найден: ни в PATH, ни через nvm. Укажите каталог nvm: NVM_DIR=/path/to/.nvm ./build"
+	exit 1
+fi
+
+exec node scripts/kit-build.mjs "$@"

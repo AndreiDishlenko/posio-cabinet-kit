@@ -124,15 +124,36 @@ patches `vite.config`, `tailwind.config` and `app/Models/User.php` with
 launchers) in the project root, runs migrations, seeds base roles, and
 finishes with `cabinet-kit:doctor`.
 
-It also drops the project scripts that are missing — each a starting point
-that belongs to the project from then on:
+It also drops the project scripts. They are **the package's own**: the same in
+every project, marked `managed-by: posio/cabinet-kit`, and overwritten from
+`stubs/` by `cabinet-kit:sync-config` on every update (`./updcab`). Never edit
+them in a project — the change is lost on the next update. Change the stub in
+this package instead; it then reaches every project at once.
 
 | file | what it does |
 |---|---|
-| `deploy` | production deploy over ssh: `git pull --ff-only`, migrate, re-cache, `queue:restart`, `sitemap:generate`, `npm run buildssr` (or `build`), site check; `./deploy --rollback` returns the previous code |
-| `cc`, `cc.bat` | reset and rebuild the Laravel caches |
+| `deploy` | production deploy over ssh: `git pull --ff-only`, migrate, re-cache, `queue:restart`, `sitemap:generate` (when the host has it), `./build`, site check; `./deploy --rollback` returns the previous code; `./deploy --preprod` updates a preprod that shares the production database |
+| `build`, `build.bat`, `scripts/kit-build.mjs` | front-end build for the current environment (local / preprod / production from `.env`): npm dependencies, SSR process stop/start through pm2, `vite build` (+ `--ssr`) or the project's own command, the project's checks |
+| `cc`, `cc.bat` | reset the Laravel caches |
 | `release.bat` | one-step patch release (`./release`): runs `scripts/pre-push-checks.sh`, commits, tags, pushes |
+
+All of them print the same way: a stage line `■ <script> · <stage>` in the
+script's own colour (deploy magenta, build cyan, cc blue, release orange),
+`OK` / `WARN` / `FAIL` result lines and a closing `✓` / `✗`. `NO_COLOR=1`
+turns colour off.
+
+What sets one project apart lives in two files the package creates once and
+never touches again:
+
+| file | what it holds |
+|---|---|
+| `scripts/host-scripts.conf` | the project's settings for the scripts: its own build command, build checks, node heap, SSR process names, a step after the code update, cache mode, preprod build outputs |
 | `scripts/pre-push-checks.sh` | the checks before a release: `php artisan cabinet-kit:test`, `php artisan test`, the build |
+
+Copies of these scripts made before they were managed carry no marker. The
+first update recognises them, replaces them with the managed version and keeps
+the old file next to it as `<name>.bak`: move whatever it adapted into
+`scripts/host-scripts.conf`, then delete the copy.
 
 ### Tests in the host project
 

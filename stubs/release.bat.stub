@@ -1,46 +1,57 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 rem ---------------------------------------------------------------------------
+rem  managed-by: posio/cabinet-kit
+rem
+rem  ВНИМАНИЕ: файл принадлежит пакету posio/cabinet-kit и перезаписывается при
+rem  каждом обновлении кабинета (updcab.bat -^> php artisan cabinet-kit:sync-config).
+rem  Правка здесь пропадёт на ближайшем обновлении. Любые изменения вносятся только
+rem  в пакет - stubs\release.bat.stub - и оттуда централизованно доходят до всех
+rem  проектов. Проверки перед релизом - scripts\pre-push-checks.sh - принадлежат проекту.
+rem
 rem  release.bat - one-step patch release for any git repository.
 rem
-rem  Reads the current release version, increments its third number (patch),
-rem  commits the whole working tree with that version as the commit message,
-rem  tags that commit and pushes branch + tag in one atomic push. 
+rem  Берёт текущую версию релиза, увеличивает третье число (patch), коммитит всё
+rem  рабочее дерево с версией в сообщении, ставит тег и отправляет ветку и тег
+rem  одним атомарным push.
 rem
-rem  Self-contained: no PowerShell script, no project-specific paths. Copy this
-rem  file into the root of any repository and it works there.
+rem    release.bat                    0.3.33 -^> 0.3.34, коммит, тег, push
+rem    release.bat fixed the header   то же с описанием: "0.3.34 fixed the header"
+rem    release.bat -m "fixed header"  то же описание, заданное явно
+rem    release.bat -same              повторный коммит с текущей версией, без нового тега
+rem    release.bat -version X.Y.Z     ровно эта версия вместо автоувеличения; становится
+rem                                   новой точкой отсчёта для следующих запусков
+rem    release.bat -dryrun            показать план, ничего не менять
+rem    release.bat -nopush            коммит и тег локально, без отправки
+rem    release.bat -notests           без проверок перед релизом
+rem    release.bat -h                 справка
+rem    set NO_COLOR=1                 вывод без цвета
 rem
-rem  Usage:
-rem    release.bat                    0.3.33 -> 0.3.34, commit, tag, push
-rem    release.bat fixed the header   same, plus a description: commit and tag
-rem                                   read "0.3.34 fixed the header"
-rem    release.bat -m "fixed header"  the same description, given explicitly
-rem    release.bat -Same              repeat commit with the current version, no new tag
-rem    release.bat -Version X.Y.Z     commit, tag and push exactly this version instead
-rem                                   of auto-incrementing patch; becomes the new
-rem                                   baseline that later plain runs bump from  
-rem    release.bat -dryrun            print the plan, change nothing
-rem    release.bat -NoPush            commit and tag locally, push nothing
-rem    release.bat -notests           skip the pre-release checks
-rem    release.bat -h                 show this help
+rem  Ключи нечувствительны к регистру, но пишутся строчными. Всё, что не ключ, -
+rem  свободный текст описания: его можно писать сразу после команды без кавычек.
 rem
-rem  If the repository has scripts\pre-push-checks.sh, it runs through Git Bash
-rem  before anything is committed; a failure stops the release untouched.
+rem  Если в репозитории есть scripts\pre-push-checks.sh, он запускается через Git Bash
+rem  до коммита; провал останавливает релиз, ничего не тронув.
 rem
-rem  Anything that is not a switch is free text and joins the description, so it
-rem  can be typed straight after the command without quotes. Switches and text
-rem  may be mixed in any order.
-rem
-rem  Tag format follows the current tag: 0.3.33 -> 0.3.34, v0.3.33 -> v0.3.34.
-rem  The commit message always starts with the bare version, without the "v".
-rem  Minor and major bumps stay manual: git tag X.Y.0 && git push origin X.Y.0
-rem  (or use -Version X.Y.0 to also commit and push in one step).
+rem  Формат тега повторяет текущий: 0.3.33 -^> 0.3.34, v0.3.33 -^> v0.3.34. Сообщение
+rem  коммита всегда начинается с голой версии, без "v". Минорные и мажорные версии -
+rem  вручную: -version X.Y.0.
 rem ---------------------------------------------------------------------------
 
 rem Captured before any shift: shift moves %0 too, and %~dp0 would then resolve
 rem against the caller's directory instead of this file's repository.
 set "SELFDIR=%~dp0"
 
+call :ui_init "38;5;208"
+rem Кириллица - только после переключения консоли на UTF-8: строка, прочитанная
+rem раньше, разобралась бы в прежней кодовой странице.
+set "UI_NAME=Релиз"
+call :main %*
+set "RC=!errorlevel!"
+call :ui_done
+exit /b %RC%
+
+:main
 set "DRYRUN="
 set "NOPUSH="
 set "NOTESTS="
@@ -51,12 +62,12 @@ set "DESC="
 :parse
 if "%~1"=="" goto :parsed
 if /i "%~1"=="-dryrun" (set "DRYRUN=1" & shift /1 & goto :parse)
-if /i "%~1"=="-NoPush" (set "NOPUSH=1" & shift /1 & goto :parse)
+if /i "%~1"=="-nopush" (set "NOPUSH=1" & shift /1 & goto :parse)
 if /i "%~1"=="-notests" (set "NOTESTS=1" & shift /1 & goto :parse)
-if /i "%~1"=="-Same"   (set "SAME=1"   & shift /1 & goto :parse)
-if /i "%~1"=="-Version" (
+if /i "%~1"=="-same"   (set "SAME=1"   & shift /1 & goto :parse)
+if /i "%~1"=="-version" (
     if "%~2"=="" (
-        echo ERROR: -Version requires a value, e.g. -Version 2.6.0
+        echo !C_FAIL!FAIL!C_RESET! -version требует значение, например -version 2.6.0
         exit /b 1
     )
     set "NEWVERSION=%~2"
@@ -66,7 +77,7 @@ if /i "%~1"=="-Version" (
 )
 if /i "%~1"=="-m" (
     if "%~2"=="" (
-        echo ERROR: -m requires a value, e.g. -m "fixed the header"
+        echo !C_FAIL!FAIL!C_RESET! -m требует значение, например -m "fixed the header"
         exit /b 1
     )
     call :adddesc "%~2"
@@ -81,11 +92,11 @@ rem Free text: everything that does not look like a switch describes the release
 rem so a message can be typed right after the command without quoting it.
 set "ARG=%~1"
 if "!ARG:~0,1!"=="-" (
-    echo ERROR: unknown argument "%~1"
+    echo !C_FAIL!FAIL!C_RESET! Неизвестный параметр: %~1
     goto :help
 )
 if "!ARG:~0,1!"=="/" (
-    echo ERROR: unknown argument "%~1"
+    echo !C_FAIL!FAIL!C_RESET! Неизвестный параметр: %~1
     goto :help
 )
 call :adddesc "%~1"
@@ -94,22 +105,24 @@ goto :parse
 :parsed
 
 if defined SAME if defined NEWVERSION (
-    echo ERROR: -Same and -Version cannot be combined.
+    echo !C_FAIL!FAIL!C_RESET! -same и -version вместе не используются.
     exit /b 1
 )
 
 rem Work in the repository the batch file itself lives in, not the caller's cwd.
 cd /d "!SELFDIR!"
 
+call :stage "Версия"
+
 git rev-parse --is-inside-work-tree >nul 2>&1
 if errorlevel 1 (
-    echo ERROR: "!SELFDIR!" is not a git repository.
+    echo !C_FAIL!FAIL!C_RESET! "!SELFDIR!" - не git-репозиторий.
     exit /b 1
 )
 
 for /f "delims=" %%b in ('git rev-parse --abbrev-ref HEAD') do set "BRANCH=%%b"
 if "!BRANCH!"=="HEAD" (
-    echo ERROR: detached HEAD - check out a branch first.
+    echo !C_FAIL!FAIL!C_RESET! Отсоединённый HEAD - сначала переключитесь на ветку.
     exit /b 1
 )
 
@@ -150,7 +163,7 @@ for /f "usebackq tokens=1 delims= " %%m in (`git log --format^=%%s !LOGSPEC! 2^>
 )
 
 if not defined CURRENT if not defined NEWVERSION (
-    echo ERROR: no X.Y.Z version found - create the first tag by hand, e.g. git tag 0.1.0
+    echo !C_FAIL!FAIL!C_RESET! Версия X.Y.Z не найдена - первый релиз задайте явно: release.bat -version 0.1.0
     exit /b 1
 )
 
@@ -168,7 +181,7 @@ if defined NEWVERSION (
 
     echo !NUMBER!| findstr /r /c:"^[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$" >nul
     if errorlevel 1 (
-        echo ERROR: cannot parse "-Version !NEWVERSION!" as X.Y.Z
+        echo !C_FAIL!FAIL!C_RESET! "-version !NEWVERSION!" не читается как X.Y.Z
         exit /b 1
     )
 
@@ -177,17 +190,17 @@ if defined NEWVERSION (
 
     git rev-parse -q --verify "refs/tags/!TAG!" >nul 2>&1
     if not errorlevel 1 (
-        echo ERROR: tag !TAG! already exists.
+        echo !C_FAIL!FAIL!C_RESET! Тег !TAG! уже существует.
         exit /b 1
     )
 
-    echo Branch:          !BRANCH!
+    echo !C_OK!OK  !C_RESET! Ветка:          !BRANCH!
     if defined CURRENT (
-        echo Current release: !CURRENT!
+        echo !C_OK!OK  !C_RESET! Текущий релиз:  !CURRENT!
     ) else (
-        echo Current release: ^(none^)
+        echo !C_OK!OK  !C_RESET! Текущий релиз:  нет
     )
-    echo New release:     !TAG! ^(explicit -Version, new baseline^)
+    echo !C_OK!OK  !C_RESET! Новый релиз:    !TAG! !C_DIM!^(явный -version, новая точка отсчёта^)!C_RESET!
     goto :message
 )
 
@@ -206,7 +219,7 @@ for /f "tokens=1,2,3 delims=." %%a in ("!NUMBER!") do (
 
 echo !MAJOR!.!MINOR!.!PATCH!| findstr /r /c:"^[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$" >nul
 if errorlevel 1 (
-    echo ERROR: cannot parse "!CURRENT!" as X.Y.Z
+    echo !C_FAIL!FAIL!C_RESET! "!CURRENT!" не читается как X.Y.Z
     exit /b 1
 )
 
@@ -214,8 +227,8 @@ rem Repeat release: keep the current version, no bump and no new tag.
 if defined SAME (
     set "VERSION=!NUMBER!"
     set "TAG=!CURRENT!"
-    echo Branch:          !BRANCH!
-    echo Current release: !CURRENT! ^(repeat commit, no new tag^)
+    echo !C_OK!OK  !C_RESET! Ветка:          !BRANCH!
+    echo !C_OK!OK  !C_RESET! Текущий релиз:  !CURRENT! !C_DIM!^(повторный коммит, без нового тега^)!C_RESET!
     goto :message
 )
 
@@ -229,13 +242,13 @@ set "TAG=!PREFIX!!VERSION!"
 
 git rev-parse -q --verify "refs/tags/!TAG!" >nul 2>&1
 if not errorlevel 1 (
-    echo ERROR: tag !TAG! already exists.
+    echo !C_FAIL!FAIL!C_RESET! Тег !TAG! уже существует.
     exit /b 1
 )
 
-echo Branch:          !BRANCH!
-echo Current release: !CURRENT!
-echo New release:     !TAG!
+echo !C_OK!OK  !C_RESET! Ветка:          !BRANCH!
+echo !C_OK!OK  !C_RESET! Текущий релиз:  !CURRENT!
+echo !C_OK!OK  !C_RESET! Новый релиз:    !TAG!
 
 :message
 
@@ -245,7 +258,7 @@ rem The version stays the first word of the subject: that is what the baseline
 rem scan above reads back on the next run.
 set "MSG=!VERSION!"
 if defined DESC set "MSG=!VERSION! !DESC!"
-echo Message:         !MSG!
+echo !C_OK!OK  !C_RESET! Сообщение:      !MSG!
 
 rem --- remote -----------------------------------------------------------------
 
@@ -263,47 +276,54 @@ rem then skips the pre-push hook so the same set does not run twice.
 set "NOVERIFY="
 if exist "scripts\pre-push-checks.sh" (
     set "NOVERIFY=--no-verify"
+    call :stage "Проверки"
     if defined NOTESTS (
-        echo Checks:          skipped ^(-NoTests^)
+        echo !C_WARN!WARN!C_RESET! Проверки пропущены ^(-notests^)
     ) else if defined DRYRUN (
-        echo DRY-RUN: bash scripts/pre-push-checks.sh
+        echo       !C_DIM!DRY-RUN: bash scripts/pre-push-checks.sh!C_RESET!
     ) else (
         call :runchecks
         if errorlevel 1 goto :checksfail
+        echo !C_OK!OK  !C_RESET! Проверки пройдены
     )
 )
 
 rem --- commit -----------------------------------------------------------------
 
+call :stage "Коммит"
+
 set "DIRTY="
 for /f "delims=" %%s in ('git status --porcelain') do set "DIRTY=1"
 
 if defined DIRTY (
-    echo Committing working tree as !VERSION! ...
     if defined DRYRUN (
-        echo DRY-RUN: git add -A
-        echo DRY-RUN: git commit -m "!MSG!"
+        echo       !C_DIM!DRY-RUN: git add -A!C_RESET!
+        echo       !C_DIM!DRY-RUN: git commit -m "!MSG!"!C_RESET!
     ) else (
         git add -A || goto :fail
-        git commit -m "!MSG!" || goto :fail
+        git commit -q -m "!MSG!" || goto :fail
+        echo !C_OK!OK  !C_RESET! Рабочее дерево закоммичено как !VERSION!
     )
 ) else (
     if defined SAME (
-        echo ERROR: nothing to commit - a repeat release needs changes in the working tree.
+        echo !C_FAIL!FAIL!C_RESET! Нечего коммитить - повторному релизу нужны изменения в рабочем дереве.
         exit /b 1
     )
-    echo No changes - tagging the current HEAD.
+    echo !C_OK!OK  !C_RESET! Изменений нет - тег ставится на текущий HEAD
 )
 
 rem --- tag and push -----------------------------------------------------------
+
+call :stage "Тег и отправка"
 
 rem A repeat release reuses the existing tag: only the branch moves forward.
 if defined SAME goto :push
 
 if defined DRYRUN (
-    echo DRY-RUN: git tag -a "!TAG!" -m "!MSG!"
+    echo       !C_DIM!DRY-RUN: git tag -a "!TAG!" -m "!MSG!"!C_RESET!
 ) else (
     git tag -a "!TAG!" -m "!MSG!" || goto :fail
+    echo !C_OK!OK  !C_RESET! Тег !TAG!
 )
 
 :push
@@ -312,40 +332,43 @@ if defined SAME set "PUSHARGS=!BRANCH!"
 
 if defined NOPUSH (
     if defined REMOTE (
-        echo Done locally. Push with: git push --atomic !NOVERIFY! !REMOTE! !PUSHARGS!
+        echo !C_WARN!WARN!C_RESET! Отправка пропущена ^(-nopush^). Отправить: git push --atomic !NOVERIFY! !REMOTE! !PUSHARGS!
     ) else (
-        echo Done locally. No remote configured.
+        echo !C_WARN!WARN!C_RESET! Удалённый репозиторий не настроен.
     )
+    call :success "Релиз !TAG! готов локально"
     exit /b 0
 )
 
 if not defined REMOTE (
-    echo No remote configured - commit stays local.
+    echo !C_WARN!WARN!C_RESET! Удалённый репозиторий не настроен - коммит остаётся локальным.
+    call :success "Релиз !TAG! готов локально"
     exit /b 0
 )
 
 if defined DRYRUN (
-    echo DRY-RUN: git push --atomic !NOVERIFY! !REMOTE! !PUSHARGS!
-) else (
-    git push --atomic !NOVERIFY! !REMOTE! !PUSHARGS! || goto :fail
+    echo       !C_DIM!DRY-RUN: git push --atomic !NOVERIFY! !REMOTE! !PUSHARGS!!C_RESET!
+    call :success "План релиза !TAG! показан, ничего не изменено"
+    exit /b 0
 )
 
+git push -q --atomic !NOVERIFY! !REMOTE! !PUSHARGS! || goto :fail
+echo !C_OK!OK  !C_RESET! Отправлено в !REMOTE!: !PUSHARGS!
+
 if defined SAME (
-    echo Released !TAG! ^(repeat commit^)
+    call :success "Выпущен !TAG! (повторный коммит)"
 ) else (
-    echo Released !TAG!
+    call :success "Выпущен !TAG!"
 )
 exit /b 0
 
 :fail
-echo.
-echo RELEASE FAILED - fix the error above. Nothing was pushed.
+call :failure "РЕЛИЗ НЕ УДАЛСЯ - исправьте ошибку выше. Ничего не отправлено."
 exit /b 1
 
 :checksfail
-echo.
-echo RELEASE STOPPED - checks failed. Nothing was committed, tagged or pushed.
-echo Skip the checks on purpose with: release.bat -NoTests
+echo !C_FAIL!FAIL!C_RESET! Проверки не пройдены. Пропустить их намеренно: release.bat -notests
+call :failure "РЕЛИЗ ОСТАНОВЛЕН - ничего не закоммичено, не помечено тегом и не отправлено."
 exit /b 1
 
 rem --- subroutines ------------------------------------------------------------
@@ -358,10 +381,9 @@ for /f "delims=" %%g in ('where git 2^>nul') do (
     if not defined GITBASH set "GITBASH=%%~dpg..\bin\bash.exe"
 )
 if not exist "!GITBASH!" (
-    echo ERROR: Git Bash not found next to git - install Git for Windows or use -NoTests.
+    echo !C_FAIL!FAIL!C_RESET! Git Bash не найден рядом с git - установите Git for Windows или запустите с -notests.
     exit /b 1
 )
-echo Running checks ...
 "!GITBASH!" scripts/pre-push-checks.sh
 exit /b !errorlevel!
 
@@ -395,31 +417,70 @@ goto :eof
 
 :help
 echo.
-echo  release.bat - one-step patch release for any git repository.
-echo  Reads the current release version, increments its third number, commits the
-echo  working tree with that version as the message, tags it and pushes.
+echo  release.bat - релиз patch-версии одной командой для любого git-репозитория.
+echo  Берёт текущую версию, увеличивает третье число, коммитит рабочее дерево
+echo  с версией в сообщении, ставит тег и отправляет.
 echo.
-echo    release.bat                    0.3.33 -^> 0.3.34, commit, tag, push
-echo    release.bat fixed the header   same, plus a description: commit and tag
-echo                                   read "0.3.34 fixed the header"
-echo    release.bat -m "fixed header"  the same description, given explicitly
-echo    release.bat -Same              repeat commit with the current version, no new tag
-echo    release.bat -Version X.Y.Z     commit, tag and push exactly this version;
-echo                                   becomes the new baseline for later plain runs
-echo    release.bat -DryRun            print the plan, change nothing
-echo    release.bat -NoPush            commit and tag locally, push nothing
-echo    release.bat -NoTests           skip the pre-release checks
-echo    release.bat -h                 show this help
+echo    release.bat                    0.3.33 -^> 0.3.34, коммит, тег, push
+echo    release.bat fixed the header   то же с описанием: "0.3.34 fixed the header"
+echo    release.bat -m "fixed header"  то же описание, заданное явно
+echo    release.bat -same              повторный коммит с текущей версией, без нового тега
+echo    release.bat -version X.Y.Z     ровно эта версия; новая точка отсчёта
+echo    release.bat -dryrun            показать план, ничего не менять
+echo    release.bat -nopush            коммит и тег локально, без отправки
+echo    release.bat -notests           без проверок перед релизом
+echo    release.bat -h                 эта справка
 echo.
-echo  Anything that is not a switch is free text and joins the description, so it
-echo  can be typed straight after the command without quotes.
+echo  Ключи нечувствительны к регистру, но пишутся строчными. Всё, что не ключ, -
+echo  описание релиза: его можно писать сразу после команды без кавычек.
 echo.
-echo  The next version is taken from the highest version reachable from HEAD -
-echo  tags and commit subjects alike - so a bump that was committed without a tag
-echo  is not released again under an older number.
+echo  Следующая версия считается от самой старшей, достижимой из HEAD, - по тегам
+echo  и по темам коммитов, так что закоммиченная без тега версия не выпустится
+echo  второй раз под старым номером.
 echo.
-echo  Tag format follows the current tag ^(0.3.33 or v0.3.33^); the commit message
-echo  always starts with the bare version. Minor/major bumps stay manual
-echo  ^(or use -Version X.Y.0 to also commit and push in one step^).
+echo  Формат тега повторяет текущий ^(0.3.33 или v0.3.33^); сообщение коммита
+echo  всегда начинается с голой версии. Минорные и мажорные версии - через -version X.Y.0.
 echo.
+exit /b 0
+
+rem --- Оформление -----------------------------------------------------------
+rem  Одно на все скрипты пакета (deploy, build, cc, release.bat): этап - «■ Скрипт · этап»
+rem  своим цветом у каждого скрипта, строки результата - OK / WARN / FAIL, итог - ✓ / ✗.
+
+:ui_init
+set "C_STAGE=" & set "C_OK=" & set "C_WARN=" & set "C_FAIL=" & set "C_DIM=" & set "C_RESET="
+rem Значки и кириллица этапов - в UTF-8; прежняя кодовая страница консоли
+rem возвращается на выходе, чтобы не сломать вывод вызвавшему окну.
+set "UI_OLDCP="
+for /f "tokens=2 delims=:" %%c in ('chcp') do set "UI_OLDCP=%%c"
+if defined UI_OLDCP set "UI_OLDCP=!UI_OLDCP: =!"
+if defined UI_OLDCP set "UI_OLDCP=!UI_OLDCP:.=!"
+chcp 65001 >nul
+if defined NO_COLOR exit /b 0
+for /f %%e in ('echo prompt $E^| cmd') do set "ESC=%%e"
+set "C_STAGE=!ESC![%~1m"
+set "C_OK=!ESC![1;32m"
+set "C_WARN=!ESC![1;33m"
+set "C_FAIL=!ESC![1;31m"
+set "C_DIM=!ESC![90m"
+set "C_RESET=!ESC![0m"
+exit /b 0
+
+:ui_done
+if defined UI_OLDCP chcp !UI_OLDCP! >nul
+exit /b 0
+
+:stage
+echo.
+echo !C_STAGE!■ !UI_NAME! · %~1!C_RESET!
+exit /b 0
+
+:success
+echo.
+echo !C_OK!✓ %~1!C_RESET!
+exit /b 0
+
+:failure
+echo.
+echo !C_FAIL!✗ %~1!C_RESET!
 exit /b 0

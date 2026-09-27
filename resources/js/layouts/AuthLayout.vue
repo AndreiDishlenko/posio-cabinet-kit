@@ -2,7 +2,7 @@
 
 	<Head :title="$t ? $t(title || 'Cabinet') : (title || 'Cabinet')"/>
 
-	<div class="v-flex !min-h-dvh-100" :class="$inprogress.value ? 'disabled' : ''">
+	<div class="auth-screen v-flex !min-h-dvh-100" :class="$inprogress.value ? 'disabled' : ''">
 
         <!-- <ParticlesBackground /> -->
 
@@ -28,7 +28,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
                             </svg>
                         </Link>
-                        <span class="h2 !text-2xl text-secondary">
+                        <span class="auth-title h2 !text-2xl text-secondary">
                             {{ $t(title)}}
                         </span>
                     </div>
@@ -100,5 +100,27 @@
 <style lang="scss" scoped>
     .card {
         background-color: #292929;
+    }
+
+    // В posio.cabinet гостевые экраны живут в оболочке публичного сайта и берут его типографику:
+    // постоянную шкалу кегля вместо плавающей кабинетной. Без неё у остальных хостов вход мельче.
+    .auth-screen {
+        --font-base:   "Inter", "Roboto", "Noto sans", sans-serif;
+        --header-font: "PT Sans", "Montserrat", "Oswald", sans-serif;
+
+        --text-xs:   12px;
+        --text-sm:   14px;
+        --text-md:   15px;
+        --text-base: 16px;
+        --text-lg:   16px;
+        --text-xl:   20px;
+        --text-2xl:  24px;
+
+        font-family: var(--font-base);
+        font-size:   var(--text-base);
+    }
+
+    .auth-title {
+        font-family: var(--header-font);
     }
 </style>

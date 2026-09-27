@@ -72,6 +72,9 @@ for /d %%D in (vendor\posio\*) do (
 		for /f "tokens=2 delims=[]" %%T in ('dir /AL vendor\posio 2^>nul ^| findstr /L /I /C:" %%~nxD ["') do set "LINK_TARGET_%%~nxD=%%T"
 	)
 )
+rem A junction made by PowerShell (New-Item -ItemType Junction) is listed with
+rem its internal \??\ prefix; relinked with it, the target would not exist.
+for %%N in (%LINKED_NAMES%) do if defined LINK_TARGET_%%N set "LINK_TARGET_%%N=!LINK_TARGET_%%N:\??\=!"
 
 rem A module required since the last run has no folder in vendor yet; the
 rem wildcard below installs it.
@@ -88,6 +91,12 @@ rem and the links are put back right after it, whatever composer ends with.
 if not defined LINKED goto :run_composer
 for %%N in (%LINKED_NAMES%) do if not defined LINK_TARGET_%%N (
 	echo Could not read where vendor\posio\%%N links to.
+	goto :failed
+)
+rem Checked before anything is lifted: a link put back to a misread path would
+rem leave the site without the package.
+for %%N in (%LINKED_NAMES%) do if not exist "!LINK_TARGET_%%N!\" (
+	echo vendor\posio\%%N links to !LINK_TARGET_%%N!, which does not exist.
 	goto :failed
 )
 echo Linked to a working copy, composer.lock updated and the link kept:%LINKED%

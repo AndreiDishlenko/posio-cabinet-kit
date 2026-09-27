@@ -1,0 +1,379 @@
+#!/usr/bin/env node
+/**
+ * managed-by: posio/cabinet-kit
+ *
+ * ВНИМАНИЕ: файл принадлежит пакету posio/cabinet-kit и перезаписывается при каждом
+ * обновлении кабинета (./updcab → php artisan cabinet-kit:sync-config). Правка здесь
+ * пропадёт на ближайшем обновлении. Любые изменения вносятся только в пакет —
+ * stubs/kit-build.mjs.stub — и оттуда централизованно доходят до всех проектов.
+ * Особенности проекта — в scripts/host-scripts.conf (он принадлежит проекту).
+ *
+ * Сборка фронта проекта в любом окружении: машина разработчика, препрод, прод.
+ * Окружение определяется по .env, всё остальное — зависимости, куча, SSR-процесс,
+ * прод-проверки — выбирается под него. Запускается через ./build (или build.bat).
+ *
+ *   ./build                  — собрать всё под текущее окружение
+ *   ./build --no-ssr         — без SSR-бандла (только локально: серверу он нужен)
+ *   ./build --no-install     — не ставить npm-зависимости, даже если lock сменился
+ *   ./build --no-checks      — без прод-проверок после сборки
+ *   ./build --verbose        — полный вывод сборщика со списком собранных файлов
+ *   ./build --env=preprod    — окружение явно: local | preprod | production
+ *   BUILD_MEM=3072 ./build   — куча node, МБ (перекрывает BUILD_HEAP_MB проекта)
+ *   NO_COLOR=1 ./build       — вывод без цвета
+ *
+ * SSR-процесс pm2: SSR_PROCESS в .env, иначе SSR_PROCESS_<ОКРУЖЕНИЕ> из настроек
+ * проекта, иначе (только на проде) имя из npm-скрипта проекта `pm2 stop <имя>`.
+ */
+
+import { execSync, spawn }                                              from 'node:child_process';
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { delimiter, dirname, join, resolve }                            from 'node:path';
+import { fileURLToPath }                                                from 'node:url';
+
+const ROOT         = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const STATE_DIR    = join(ROOT, 'storage/app/build');
+const LOCK_DIR     = join(STATE_DIR, 'build.lock');
+const PROJECT_CONF = 'scripts/host-scripts.conf';
+
+// ─── Оформление ──────────────────────────────────────────────────────────────
+// Одно на все скрипты пакета (deploy, build, cc, release.bat): этап — «■ Скрипт · этап»
+// своим цветом у каждого скрипта, строки результата — OK / WARN / FAIL, итог — ✓ / ✗.
+// Цвет и анимация — только в терминале: в логе управляющие коды были бы мусором.
+
+const isTTY    = Boolean(process.stdout.isTTY);
+const useColor = !process.env.NO_COLOR && (isTTY || Boolean(process.env.FORCE_COLOR));
+const wrap     = (codes, s) => (useColor ? `\x1b[${codes}m${s}\x1b[0m` : String(s));
+
+const STAGE_COLOR = '1;36';
+
+const paint = {
+	bold:  s => wrap('1', s),
+	dim:   s => wrap('90', s),
+	green: s => wrap('1;32', s),
+	red:   s => wrap('1;31', s),
+	stage: s => wrap(STAGE_COLOR, s),
+};
+
+const TAGS = {
+	ok:   () => wrap('1;32', 'OK  '),
+	warn: () => wrap('1;33', 'WARN'),
+	fail: () => wrap('1;31', 'FAIL'),
+};
+
+function stage(title, note = '') {
+	console.log('');
+	console.log(paint.stage(`■ Сборка · ${title}`) + (note ? `  ${paint.dim(note)}` : ''));
+}
+
+// Подробности — под строкой результата с отступом. Текст ошибки не приглушается:
+// ради него провал и читают.
+function report(status, label, details = []) {
+	const lines = (Array.isArray(details) ? details : String(details).split(/\r?\n/))
+		.filter(line => String(line).trim() !== '');
+	const out = status === 'fail' ? console.error : console.log;
+
+	out(`${TAGS[status]()} ${label}`);
+	for (const line of lines)
+		out(`      ${status === 'fail' ? line : paint.dim(line)}`);
+}
+
+const seconds = startedAt => `${Math.round((Date.now() - startedAt) / 1000)}s`;
+
+// Вне терминала кадры не перерисовываются — вместо анимации ничего, итог скажет строка результата.
+function spinner(label) {
+	const startedAt = Date.now();
+	if (!isTTY) return { stop: () => seconds(startedAt) };
+
+	const frames = '⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏';
+	let frame = 0;
+	const draw = () => process.stdout.write(`\r\x1b[2K${paint.stage(frames[frame++ % frames.length])}    ${label} ${paint.dim(seconds(startedAt))}`);
+
+	draw();
+	const timer = setInterval(draw, 80);
+
+	return {
+		stop() {
+			clearInterval(timer);
+			process.stdout.write('\r\x1b[2K');
+			return seconds(startedAt);
+		},
+	};
+}
+
+// Вывод команды копится, а не печатается: он нужен, только если шаг упал.
+function runCaptured(cmd, env) {
+	return new Promise(done => {
+		const child = spawn(cmd, {
+			shell: true,
+			cwd: ROOT,
+			env: useColor ? { ...env, FORCE_COLOR: '1' } : env,
+			stdio: ['ignore', 'pipe', 'pipe'],
+		});
+
+		let output = '';
+		child.stdout.on('data', chunk => { output += chunk; });
+		child.stderr.on('data', chunk => { output += chunk; });
+		child.on('error', e => done({ code: 1, output: output + e.message }));
+		child.on('close', code => done({ code, output: output.trimEnd() }));
+	});
+}
+
+async function runStep(label, cmd, env) {
+	const spin = spinner(label);
+	const result = await runCaptured(cmd, env);
+	const took = spin.stop();
+
+	if (result.code === 0)
+		report('ok', `${label} ${paint.dim(took)}`);
+	else
+		report('fail', `${label} ${paint.dim(took)}`, result.output);
+
+	return result.code === 0;
+}
+
+// ─── Параметры ───────────────────────────────────────────────────────────────
+
+const args = process.argv.slice(2);
+const flag = (name) => args.includes(name);
+
+function option(name) {
+	const hit = args.find(a => a.startsWith(`${name}=`));
+	return hit ? hit.slice(name.length + 1) : null;
+}
+
+const USAGE = 'Запуск: ./build [--env=local|preprod|production] [--no-ssr] [--no-install] [--no-checks] [--verbose]';
+const known = ['--no-ssr', '--no-install', '--no-checks', '--verbose', '-h', '--help'];
+const unknown = args.filter(a => !known.includes(a) && !a.startsWith('--env='));
+if (unknown.length || flag('-h') || flag('--help')) {
+	if (unknown.length) console.error(`Неизвестный параметр: ${unknown.join(' ')}`);
+	console.log(USAGE);
+	process.exit(unknown.length ? 2 : 0);
+}
+
+// Формат .env и настроек проекта один — строки KEY=value, значение можно в кавычках.
+function readKeyValueFile(relative) {
+	const path = join(ROOT, relative);
+	const values = {};
+	if (!existsSync(path)) return values;
+
+	for (const line of readFileSync(path, 'utf8').split(/\r?\n/)) {
+		const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
+		if (m) values[m[1]] = m[2].trim().replace(/^(['"])(.*)\1$/, '$2');
+	}
+	return values;
+}
+
+// Препрод по .env — тоже production, отличает его только адрес.
+function detectEnvironment(env) {
+	if ((env.APP_URL || '').includes('preprod')) return 'preprod';
+	if (env.APP_ENV === 'production') return 'production';
+	return 'local';
+}
+
+const dotenv      = readKeyValueFile('.env');
+const conf        = readKeyValueFile(PROJECT_CONF);
+const environment = option('--env') || detectEnvironment(dotenv);
+const ENVIRONMENTS = ['local', 'preprod', 'production'];
+
+if (!ENVIRONMENTS.includes(environment)) {
+	console.error(`Неизвестное окружение: ${environment}. Допустимо: ${ENVIRONMENTS.join(', ')}`);
+	process.exit(2);
+}
+
+// Без SSR-бандла сервер продолжил бы рендерить старую разметку поверх новых ассетов.
+if (flag('--no-ssr') && environment !== 'local') {
+	console.error('--no-ssr допустим только локально: на сервере SSR-бандл обязан совпадать с клиентским.');
+	process.exit(2);
+}
+
+const packageJson = existsSync(join(ROOT, 'package.json')) ? readFileSync(join(ROOT, 'package.json'), 'utf8') : '';
+
+// Имя SSR-процесса на проде проект обычно уже записал в своём npm-скрипте
+// (`pm2 stop elo-ssr ; vite build ...`) — второй раз его вписывать не нужно.
+function ssrNameFromPackageJson() {
+	const m = packageJson.match(/pm2 stop ([\w.-]+)/);
+	return m ? m[1] : null;
+}
+
+// Препрод и прод живут на одном сервере под одним пользователем: процессы pm2 у
+// каждого свои, и чужой трогать нельзя — остановка SSR прода из папки препрода
+// кладёт сайт прода. Поэтому имя из npm-скрипта (это имя прода) берётся только на проде.
+function ssrProcessName() {
+	if (environment === 'local') return null;
+	return dotenv.SSR_PROCESS
+		|| conf[`SSR_PROCESS_${environment.toUpperCase()}`]
+		|| (environment === 'production' ? ssrNameFromPackageJson() : null);
+}
+
+const ssrName   = ssrProcessName();
+const usesSsr   = Boolean(ssrName) || /vite build --ssr/.test(packageJson) || Boolean(conf.SSR_PROCESS_PRODUCTION) || Boolean(ssrNameFromPackageJson());
+const buildsSsr = usesSsr && !flag('--no-ssr');
+
+// Машина разработчика не делит память с сайтом — там куча по умолчанию сборщика.
+const heap = process.env.BUILD_MEM || (environment !== 'local' ? conf.BUILD_HEAP_MB : '') || '';
+
+// Сборщик зовёт утилиты пакетов по имени; npm run кладёт их в PATH сам, прямой вызов — нет.
+const pathKey = Object.keys(process.env).find(k => k.toUpperCase() === 'PATH') || 'PATH';
+const childEnv = {
+	...process.env,
+	[pathKey]: join(ROOT, 'node_modules', '.bin') + delimiter + (process.env[pathKey] || ''),
+};
+if (heap) {
+	// Своя команда сборки проекта может подбирать кучу сама — ей передаётся стартовое значение.
+	childEnv.BUILD_MEM_DEFAULT = String(heap);
+	if (!conf.BUILD_COMMAND)
+		childEnv.NODE_OPTIONS = `${process.env.NODE_OPTIONS || ''} --max-old-space-size=${heap}`.trim();
+}
+
+// ─── Шаги ────────────────────────────────────────────────────────────────────
+
+// Для шагов со своим оформлением вывода (своя сборка проекта, проверки).
+function run(cmd) {
+	try {
+		execSync(cmd, { stdio: 'inherit', cwd: ROOT, env: childEnv });
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+function quiet(cmd) {
+	try {
+		execSync(cmd, { stdio: 'ignore', cwd: ROOT, env: childEnv });
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+// Две сборки одновременно пишут в одну папку ассетов и склеивают манифест из обрывков.
+function acquireLock() {
+	mkdirSync(STATE_DIR, { recursive: true });
+
+	try {
+		mkdirSync(LOCK_DIR);
+	} catch {
+		const owner = parseInt(readFileSync(join(LOCK_DIR, 'pid'), { encoding: 'utf8', flag: 'a+' }), 10);
+		if (owner && processAlive(owner)) {
+			console.error(`${TAGS.fail()} Сборка уже идёт (pid ${owner}) — дождитесь её окончания.`);
+			process.exit(1);
+		}
+		// Замок остался от сборки, убитой вместе с сеансом.
+		report('warn', 'Снят замок прерванной сборки');
+	}
+
+	writeFileSync(join(LOCK_DIR, 'pid'), String(process.pid));
+	process.on('exit', () => rmSync(LOCK_DIR, { recursive: true, force: true }));
+	for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'])
+		process.on(signal, () => process.exit(130));
+}
+
+function processAlive(pid) {
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch (e) {
+		return e.code === 'EPERM';
+	}
+}
+
+// npm сам отмечает момент установки: lock новее отметки — зависимости устарели.
+function dependenciesOutdated() {
+	const marker = join(ROOT, 'node_modules', '.package-lock.json');
+	if (!existsSync(marker)) return true;
+	const lock = join(ROOT, 'package-lock.json');
+	return existsSync(lock) && statSync(lock).mtimeMs > statSync(marker).mtimeMs;
+}
+
+// Сервер ставит ровно то, что записано в lock; без lock ставить точно нечего — только install.
+function installCommand() {
+	return environment !== 'local' && existsSync(join(ROOT, 'package-lock.json')) ? 'npm ci' : 'npm install';
+}
+
+async function installDependencies(step) {
+	if (flag('--no-install')) {
+		report('warn', 'npm-зависимости не проверялись (--no-install)');
+		return true;
+	}
+	if (!dependenciesOutdated()) {
+		report('ok', 'npm-зависимости актуальны');
+		return true;
+	}
+	const cmd = installCommand();
+	return step(`npm-зависимости: ${cmd}`, cmd);
+}
+
+// Своя команда проекта получает те же флаги, что и сама сборка, и сама оформляет вывод.
+async function buildBundles(step) {
+	if (conf.BUILD_COMMAND) {
+		const passed = ['--no-ssr', '--verbose'].filter(flag).map(arg => ' ' + arg).join('');
+		stage('Бандлы', conf.BUILD_COMMAND);
+		return run(`${conf.BUILD_COMMAND}${passed}`);
+	}
+
+	stage('Бандлы');
+	const bundles = [['клиентский бандл', 'vite build']];
+	if (buildsSsr) bundles.push(['серверный бандл', 'vite build --ssr']);
+
+	for (const [label, cmd] of bundles) {
+		const ok = flag('--verbose') ? run(cmd) : await step(label, cmd);
+		if (flag('--verbose')) report(ok ? 'ok' : 'fail', label);
+		if (!ok) return false;
+	}
+	return true;
+}
+
+function runChecks(title, commands) {
+	if (!commands) return true;
+	stage(title);
+	return run(commands);
+}
+
+async function main() {
+	acquireLock();
+
+	stage('Подготовка', `окружение ${environment}`);
+	const step = (label, cmd) => runStep(label, cmd, childEnv);
+
+	if (!await installDependencies(step)) {
+		console.error(paint.red('\n✗ Установка npm-зависимостей упала — сборка не запускалась.'));
+		return 1;
+	}
+
+	const hasPm2 = Boolean(ssrName) && quiet('pm2 -v');
+	if (ssrName && !hasPm2)
+		report('warn', `pm2 не найден — SSR-процесс ${ssrName} не перезапускается`);
+
+	// Остановленный SSR освобождает память аккаунта под сборку; на время сборки сайт
+	// отдаёт страницы без серверной разметки — это короче, чем сборка, убитая по лимиту.
+	const ssrRegistered = hasPm2 && quiet(`pm2 describe ${ssrName}`);
+	if (ssrRegistered) await step(`SSR остановлен на время сборки: ${ssrName}`, `pm2 stop ${ssrName}`);
+
+	const built = await buildBundles(step);
+
+	// SSR поднимается и после неудачной сборки: без него сайт отдаёт страницы без разметки.
+	// Создаётся процесс только на проде — препроду свой SSR нужен не всегда.
+	const createsSsr = hasPm2 && !ssrRegistered && environment === 'production' && existsSync(join(ROOT, 'bootstrap/ssr/ssr.js'));
+	if (ssrRegistered || createsSsr) {
+		stage('Запуск SSR');
+		if (ssrRegistered) await step(`SSR запущен: ${ssrName}`, `pm2 start ${ssrName}`);
+		else await step(`SSR создан: ${ssrName}`, `pm2 start bootstrap/ssr/ssr.js --name ${ssrName}`);
+	}
+
+	let failed = !built;
+
+	// Проверки идут и после неудачной сборки: они показывают, какая часть сервиса лежит.
+	if (!flag('--no-checks')) {
+		failed = !runChecks('Проверки сборки', conf.BUILD_CHECKS) || failed;
+		if (environment === 'production')
+			failed = !runChecks('Прод-проверки', conf.BUILD_PRODUCTION_CHECKS) || failed;
+	}
+
+	console.log('');
+	console.log(failed
+		? paint.red(`✗ СБОРКА ЗАВЕРШИЛАСЬ С ОШИБКАМИ (${environment})`)
+		: paint.green(`✓ Сборка завершена (${environment})`));
+	return failed ? 1 : 0;
+}
+
+process.exit(await main());

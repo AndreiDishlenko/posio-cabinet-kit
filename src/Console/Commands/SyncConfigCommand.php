@@ -128,20 +128,27 @@ class SyncConfigCommand extends Command
     }
 
     /**
-     * Скрипты деплоя и релиза доезжают до уже установленных проектов так же, как
-     * лаунчер обновления. Тесты входа и регистрации пакета должны гоняться при
-     * каждом релизе проекта, поэтому устаревший скрипт релиза, не умеющий
-     * запускать проверки, заменяется, а в готовые проверки добавляется их шаг.
+     * Скрипты деплоя, сборки, кэшей и релиза принадлежат пакету и обновляются здесь
+     * так же, как лаунчер обновления: правка стаба сама доезжает до всех проектов.
+     * Их прежние версии без метки обслуживания забираются под управление пакета.
+     * Тесты входа и регистрации пакета должны гоняться при каждом релизе проекта,
+     * поэтому в проверки перед релизом добавляется их шаг.
      */
     protected function syncHostScripts(): void
     {
         try {
             foreach (HostScripts::scaffold() as $name) {
-                $this->info("Created {$name} — a starting point, adapt it to this project's server.");
+                $this->info(HostScripts::isManaged($name)
+                    ? "Created {$name} — managed by the package, refreshed on every update."
+                    : "Created {$name} — belongs to this project, the package never touches it again.");
             }
 
-            if (HostScripts::upgradeReleaseScript()) {
-                $this->info('Replaced '.HostScripts::RELEASE.' with the version that runs '.HostScripts::CHECKS.' before a release; the old one is kept as '.HostScripts::RELEASE.'.bak.');
+            foreach (HostScripts::adoptLegacy() as $name) {
+                $this->info("Replaced {$name} with the package-managed version; the previous one is kept as {$name}.bak — move its project specifics to ".HostScripts::PROJECT_CONF.'.');
+            }
+
+            foreach (HostScripts::refreshManaged() as $name) {
+                $this->info("Refreshed {$name} from the package.");
             }
 
             $wired = HostScripts::wireTestsIntoReleaseChecks();
