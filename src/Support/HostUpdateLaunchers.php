@@ -14,8 +14,9 @@ use Illuminate\Support\Facades\Process;
  * на одной платформе, а разворачивают по ssh на другой, и лаунчер едет туда
  * вместе с репозиторием.
  *
- * Существующий файл никогда не перезаписывается: хост мог адаптировать его под
- * свой деплой.
+ * Лаунчер с меткой обслуживания обновляется из пакета на каждом обновлении:
+ * так правка стаба сама доезжает до всех проектов. Хост, адаптировавший
+ * лаунчер под свой деплой, удаляет метку — и файл больше не перезаписывается.
  */
 class HostUpdateLaunchers
 {
@@ -24,6 +25,64 @@ class HostUpdateLaunchers
         'updcab.bat' => 'updcab.bat.stub',
         'updcab' => 'updcab.stub',
     ];
+
+    public const MANAGED_MARKER = 'managed-by: posio/cabinet-kit';
+
+    // Выставляет сам лаунчер: пока он выполняется, его файл нельзя переписать на месте.
+    public const RUNNING_ENV = 'CABINET_KIT_UPDCAB';
+
+    /**
+     * Приводит лаунчеры с меткой обслуживания к стабу текущей версии пакета.
+     *
+     * cmd читает выполняемый bat-файл построчно по смещению, и замена файла
+     * посреди запуска исполнила бы обрывки новой версии. Поэтому во время
+     * запуска новая версия кладётся рядом, и лаунчер подменяет себя последней
+     * командой. Оболочка же держит открытый файл, так что замена переименованием
+     * ей не мешает.
+     *
+     * @return string[] имена обновлённых (или подготовленных к подмене) файлов
+     */
+    public static function refreshManaged(): array
+    {
+        $refreshed = [];
+
+        foreach (self::LAUNCHERS as $name => $stub) {
+            $path = base_path($name);
+            $source = self::stubPath($stub);
+
+            if (! File::exists($path) || ! File::exists($source)) {
+                continue;
+            }
+
+            $current = File::get($path);
+
+            if (! str_contains($current, self::MANAGED_MARKER)) {
+                continue;
+            }
+
+            $fresh = self::withPlatformLineEndings($name, File::get($source));
+
+            if ($fresh === self::withPlatformLineEndings($name, $current)) {
+                // Подмену мог приготовить более ранний шаг того же запуска по
+                // другой копии пакета — лаунчер уже совпадает, она лишняя.
+                File::delete($path.'.new');
+                continue;
+            }
+
+            if (str_ends_with($name, '.bat')) {
+                $target = getenv(self::RUNNING_ENV) ? $path.'.new' : $path;
+                File::put($target, $fresh);
+            } else {
+                File::put($path.'.new', $fresh);
+                @chmod($path.'.new', 0755);
+                File::move($path.'.new', $path);
+            }
+
+            $refreshed[] = $name;
+        }
+
+        return $refreshed;
+    }
 
     /**
      * @return string[] имена созданных файлов

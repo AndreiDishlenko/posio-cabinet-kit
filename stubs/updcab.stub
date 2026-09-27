@@ -6,32 +6,37 @@
 # Same procedure as updcab.bat, for a Linux/macOS host over ssh:
 #     cd /var/www/example.com && ./updcab
 #
-#     ./updcab --no-build   assets are built elsewhere (CI, another machine)
-#     ./updcab --ssr        the site renders on the server: npm run buildssr
+# Assets are not built here: the project builds them its own way afterwards
+# (./build when it has one, otherwise npm run build).
+#
 #     ./updcab --full       also update the packages' composer dependencies
-#                           and reinstall node dependencies (npm install)
 #     PHP_BIN=/usr/bin/php8.3 ./updcab   overrides the PHP picked automatically
 #     COMPOSER_BIN=/path/to/composer ./updcab
+#
+# managed-by: posio/cabinet-kit
+# Refreshed from the package on every update. To keep your own version of this
+# file, delete the line above - then updates leave it alone.
 set -u
 
 cd "$(dirname "$0")" || exit 1
 
+# Tells the package this file is running (the refresh then only renames over it).
+CABINET_KIT_UPDCAB=1
+export CABINET_KIT_UPDCAB
+
 php_bin="${PHP_BIN:-php}"
-skip_build=0
-build_script="build"
 install_deps=0
 
 for arg in "$@"; do
 	case "$arg" in
-		--no-build)
-			skip_build=1
+		# Build options of earlier versions: accepted so that habits and old notes
+		# do not stop the update, but the build itself is ./build now.
+		--no-build|--ssr)
+			echo "$arg: the build is no longer part of ./updcab — build the assets afterwards."
 			;;
-		# A plain build leaves the server-rendering process on the old bundle, and
-		# the markup it sends stops matching the client assets. The host's own
-		# script rebuilds both bundles and restarts that process — only the host
-		# knows how its process is named and supervised.
-		--ssr)
-			build_script="buildssr"
+		# Earlier the lock-only update was a separate launcher; now every run does
+		# it for linked packages, so the option only has to be accepted.
+		--local|-local)
 			;;
 		# Dependencies rarely change with a package update, and updating them is
 		# the slowest part of the run — so only on request.
@@ -39,7 +44,7 @@ for arg in "$@"; do
 			install_deps=1
 			;;
 		-h|--help)
-			echo "usage: ./updcab [--no-build] [--ssr] [--full]"
+			echo "usage: ./updcab [--full]; then build the assets"
 			exit 0
 			;;
 		*)
@@ -48,11 +53,6 @@ for arg in "$@"; do
 			;;
 	esac
 done
-
-if [ "$skip_build" -eq 1 ] && [ "$build_script" = "buildssr" ]; then
-	echo "--no-build and --ssr contradict each other: --ssr is a way to build." >&2
-	exit 1
-fi
 
 # The site runs on the PHP its control panel selected, but the shell of the same
 # account often still starts a years-old default — and then the very first step
@@ -278,7 +278,6 @@ fi
 # and edits to the package would silently stop reaching this site.
 linked=""
 link_map=""
-update_targets=""
 for dir in vendor/posio/*/; do
 	dir=${dir%/}
 	[ -d "$dir" ] || continue
@@ -287,26 +286,21 @@ for dir in vendor/posio/*/; do
 		linked="$linked posio/${dir##*/}"
 		link_map="$link_map${dir##*/}|$(readlink "$dir")
 "
-	else
-		update_targets="$update_targets posio/${dir##*/}"
 	fi
 done
 
-# A module required since the last run has no folder in vendor/ yet.
+# A module required since the last run has no folder in vendor/ yet; the
+# wildcard below installs it.
 missing=$("$php_bin" -r 'foreach (array_keys(json_decode(file_get_contents("composer.json"), true)["require"] ?? []) as $p) if (strncmp($p, "posio/", 6) === 0 && ! is_dir("vendor/".$p)) echo " ", $p;')
 
-# The new module is released against the current kit, and composer moves only
-# what it may update — so every posio package goes, the linked ones too. Their
-# links are lifted for the run, so composer never works inside a working copy,
-# and put back right after it, whatever composer ends with.
+# Linked packages are updated too, so composer.lock records the new release
+# that servers install. Updating the lock alone is not enough: the installed
+# list would keep the old version, and the next composer install or update
+# would "repair" the difference by replacing the link with a download. So the
+# links are lifted for the run, composer installs the release where they were,
+# and the links are put back right after it, whatever composer ends with.
 lift_links=0
-if [ -n "$missing" ]; then
-	update_targets=" posio/*"
-	[ -n "$linked" ] && lift_links=1
-# Nothing linked: the wildcard also installs a module required since the last run.
-elif [ -z "$linked" ]; then
-	update_targets=" posio/*"
-fi
+[ -n "$linked" ] && lift_links=1
 
 # A link that survived the run is still the working copy — left as it is.
 restore_links() {
@@ -347,10 +341,8 @@ detach_links() {
 # From here on posio/* is an argument for composer, not a path to expand.
 set -f
 
-steps=6
+steps=5
 [ "$recache" -eq 1 ] && steps=$((steps + 1))
-[ "$skip_build" -eq 1 ] && steps=$((steps - 1))
-[ -z "$update_targets" ] && steps=$((steps - 1))
 step=0
 
 fail() {
@@ -371,35 +363,28 @@ if [ -n "$missing" ]; then
 fi
 
 if [ "$lift_links" -eq 1 ]; then
-	echo "Linked to a working copy, relinked after the update:$linked"
+	echo "Linked to a working copy, composer.lock updated and the link kept:$linked"
 	detach_links || fail
-elif [ -n "$linked" ]; then
-	echo ""
-	echo "Not updated, linked to a working copy:$linked"
 fi
 
-if [ -z "$update_targets" ]; then
-	echo ""
-	echo "== skipped: composer update (every posio/* package is linked)"
-else
-	composer_flags=""
-	composer_note=" (dependencies kept, --full to update them)"
-	if [ "$install_deps" -eq 1 ]; then
-		composer_flags="--with-all-dependencies"
-		composer_note=" --with-all-dependencies"
-	fi
-
-	announce "composer update$update_targets$composer_note"
-	composer_status=0
-	composer_cmd update $update_targets $composer_flags --no-interaction || composer_status=$?
-
-	if [ "$lift_links" -eq 1 ]; then
-		restore_links || fail
-	fi
-	[ "$composer_status" -eq 0 ] || fail
+composer_flags=""
+composer_note=" (dependencies kept, --full to update them)"
+if [ "$install_deps" -eq 1 ]; then
+	composer_flags="--with-all-dependencies"
+	composer_note=" --with-all-dependencies"
 fi
 
-# No-op when the composer post-update hook already ran it. Also refreshes the
+announce "composer update posio/*$composer_note"
+composer_status=0
+composer_cmd update "posio/*" $composer_flags --no-interaction || composer_status=$?
+
+if [ "$lift_links" -eq 1 ]; then
+	restore_links || fail
+fi
+[ "$composer_status" -eq 0 ] || fail
+
+# Also re-applies the wiring from the working copy: the composer hook above ran
+# it on the downloaded release while the links were lifted. Also refreshes the
 # integration docs in docs/cabinet-kit/ that assistants read.
 announce "php artisan cabinet-kit:sync-config"
 "$php_bin" artisan cabinet-kit:sync-config || fail
@@ -412,26 +397,6 @@ announce "php artisan migrate"
 announce "php artisan optimize:clear"
 "$php_bin" artisan optimize:clear || fail
 
-if [ "$skip_build" -eq 1 ]; then
-	echo ""
-	echo "== skipped: npm install && npm run build (--no-build)"
-elif command -v npm >/dev/null 2>&1; then
-	# Without installed dependencies the build cannot run at all.
-	[ -d node_modules ] || install_deps=1
-
-	if [ "$install_deps" -eq 1 ]; then
-		announce "npm install && npm run $build_script"
-		npm install || fail
-	else
-		announce "npm run $build_script (npm install skipped, --full to run it)"
-	fi
-	npm run "$build_script" || fail
-else
-	echo "npm was not found. Install Node.js, or run with --no-build when the" >&2
-	echo "assets of this deploy are built elsewhere." >&2
-	fail
-fi
-
 if [ "$recache" -eq 1 ]; then
 	announce "php artisan optimize"
 	"$php_bin" artisan optimize || fail
@@ -441,4 +406,8 @@ announce "php artisan cabinet-kit:doctor"
 "$php_bin" artisan cabinet-kit:doctor || fail
 
 echo ""
-echo "CabinetKit updated."
+if [ -f build ]; then
+	echo "CabinetKit updated. Build the assets next: ./build"
+else
+	echo "CabinetKit updated. Build the assets next: npm run build"
+fi

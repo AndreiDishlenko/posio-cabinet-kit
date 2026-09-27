@@ -114,6 +114,17 @@ class SyncConfigCommand extends Command
         foreach ($widened as $name) {
             $this->info("Patched {$name}: it now updates every posio/* package, modules included.");
         }
+
+        try {
+            $refreshed = HostUpdateLaunchers::refreshManaged();
+        } catch (\Throwable $e) {
+            $this->warn('Update launchers were not refreshed: '.$e->getMessage());
+            return;
+        }
+
+        foreach ($refreshed as $name) {
+            $this->info("Refreshed {$name} from the package (remove its managed-by line to keep your own).");
+        }
     }
 
     /**

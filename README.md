@@ -68,10 +68,11 @@ npm install && npm run build
 
 The install command drops two launchers in the project root — `updcab.bat` for
 Windows and `updcab` for a Linux/macOS host over ssh. Either one performs the
-whole [Update](#update) procedure in order and stops at the first failing step:
+whole [Update](#update) procedure except the build, in order, and stops at the
+first failing step; the assets are built afterwards the project's own way:
 
 ```bash
-cd /var/www/example.com && ./updcab
+cd /var/www/example.com && ./updcab && npm run build
 ```
 
 Requirements and what those commands actually do — below; the full
@@ -173,9 +174,21 @@ user only; accounts come from the seeded system users and from invitations.
 
 Run the launcher from the project root — `updcab.bat` on Windows, `./updcab`
 on a Linux/macOS host (that one is the whole update on a production server
-over ssh). Both are scaffolded by the install command, run exactly the six
-steps below and stop at the first one that fails. Everything after this
-paragraph describes what they do (and what to run by hand elsewhere).
+over ssh). Both are scaffolded by the install command, run the steps below
+except step 5 and stop at the first one that fails. Step 5 — the build — is
+left to the project: it knows its own bundles, SSR process and environments
+(`build.bat` / `./build` when the project has one, otherwise `npm run build`).
+Everything after this paragraph describes what they do (and what to run by
+hand elsewhere).
+
+Both launchers carry a `managed-by: posio/cabinet-kit` line. While it is there,
+`cabinet-kit:sync-config` — run by every `composer update` and by the launcher
+itself — replaces the file with the one from the installed package version, so
+a change to the launcher reaches every project with its next update. A project
+linked to the package's working copy gets the change on its next run. To keep
+an adapted launcher, delete that line: the file is then never rewritten.
+`updcab.bat` cannot be rewritten while it runs — the new version waits next to
+it as `updcab.bat.new` and takes its place on the launcher's last line.
 
 `./updcab` differs from the batch file only where a server differs from a
 workstation:
@@ -184,17 +197,6 @@ workstation:
   prompt with;
 - when `APP_ENV=production`, `php artisan optimize` runs after the caches are
   cleared, so the site does not stay uncached (see the note after step 6);
-- `./updcab --no-build` skips `npm install && npm run build` for a deploy
-  whose assets are built elsewhere; without the flag a missing `npm` stops the
-  update instead of silently leaving stale assets;
-- `./updcab --ssr` (also `updcab.bat --ssr`) runs `npm run buildssr` instead
-  of `npm run build`, for a site rendered on the server. A plain build leaves
-  the SSR process (pm2 and the like) serving the old bundle, and its markup
-  stops matching the new client assets. The host defines `buildssr` in
-  `package.json` — it builds both bundles and restarts the process, whose name
-  and supervisor only the host knows, e.g.
-  `pm2 stop app-ssr ; vite build && vite build --ssr && (pm2 start app-ssr || pm2 start bootstrap/ssr/ssr.js --name app-ssr)`.
-  It cannot be combined with `--no-build`;
 - the PHP is checked before anything runs. Shared hosting serves the site on the
   version its panel selected while the shell of the same account still starts an
   old default, and on that one step 1 fails with a wall of `your php version
@@ -231,23 +233,24 @@ the next deploy. `sh updcab` works regardless.
 
 A `posio/*` package whose folder in `vendor/` is a junction or symlink — a
 developer's working copy of the package repository linked in for live editing —
-is left out of step 1: Composer would replace the link with a downloaded copy,
-and edits to the package would silently stop reaching the site. The launcher
-names such packages and updates the rest by name; with every package linked,
-step 1 is skipped. The build in step 5 then uses the working copy as it is.
+is updated like any other, so `composer.lock` records the new release that the
+servers then install. Its link is lifted for step 1, Composer installs the
+release in its place, and the link is put back right after it, even when
+Composer fails: the site keeps running on the working copy, and Composer never
+writes into it. Updating the lock alone (`--no-install`) would not do: the list
+of installed packages would keep the old version, and the next `composer
+install` or `update` would replace the link with a download to "repair" it.
+Step 2 then re-applies the wiring from the working copy — the Composer hook ran
+it on the downloaded release.
 
 A module listed in `require` of `composer.json` but not yet in `vendor/posio/`
 (just added with `composer require … --no-update`, or pulled in by another
-developer's commit) changes that: it is released against the current kit, and
-Composer moves only what it may update. Step 1 then runs `composer update
-"posio/*"` for every package, the linked ones too — each link is lifted for the
-run, so Composer never touches a working copy, and put back after it even when
-Composer fails. The module's version constraint on `posio/cabinet-kit` must fit
-the one in the project's `composer.json`; raise it there first if it does not.
+developer's commit) is installed by the same `composer update "posio/*"`. The
+module's version constraint on `posio/cabinet-kit` must fit the one in the
+project's `composer.json`; raise it there first if it does not.
 
 `--full` also updates the packages' own Composer dependencies
-(`--with-all-dependencies`) and runs `npm install`; without it both are kept, and
-`npm install` runs only when `node_modules/` is missing.
+(`--with-all-dependencies`); without it they are kept.
 
 Full procedure, in order:
 

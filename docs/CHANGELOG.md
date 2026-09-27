@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased — one launcher for every project, refreshed from the package
+
+**Changed**
+- `updcab` / `updcab.bat` update linked `posio/*` packages too, so
+  `composer.lock` records the new release. The junction or symlink to the
+  working copy is lifted for `composer update`, the release is installed in its
+  place and the link is put back, even when Composer fails. Before, a linked
+  package was left out, and its version in the lock had to be moved by hand.
+- The launchers no longer build the assets: the project builds them its own
+  way afterwards (`build.bat` / `./build`, or `npm run build`). `--ssr` and
+  `--no-build` are accepted and only print that reminder; `--local` is accepted
+  and does nothing, since every run now updates the lock of linked packages.
+- A launcher with the `managed-by: posio/cabinet-kit` line is replaced by
+  `cabinet-kit:sync-config` with the package's version on every update.
+  Delete the line to keep an adapted launcher. A running `updcab.bat` gets the
+  new version as `updcab.bat.new` and swaps itself on its last line.
+
+**Upgrading**
+- Existing launchers have no such line and stay as they are. To switch to the
+  managed ones, delete `updcab` and `updcab.bat` in the project root and run
+  `php artisan cabinet-kit:sync-config`.
+
 ## Unreleased — Table can highlight the opened group
 
 **Added**
