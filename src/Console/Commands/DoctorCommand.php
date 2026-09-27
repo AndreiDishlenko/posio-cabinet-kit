@@ -16,6 +16,8 @@ use Posio\CabinetKit\Support\HostDocs;
 use Posio\CabinetKit\Support\HostScripts;
 use Posio\CabinetKit\Support\HostTailwindConfig;
 use Posio\CabinetKit\Support\HostViteConfig;
+use Posio\CabinetKit\Traits\IsCabinetKitUser;
+use ReflectionClass;
 
 class DoctorCommand extends Command
 {
@@ -24,9 +26,12 @@ class DoctorCommand extends Command
 
     protected int $failures = 0;
 
+    protected int $warnings = 0;
+
     public function handle(): int
     {
         $this->failures = 0;
+        $this->warnings = 0;
 
         $entry = config('cabinet-kit.vite_entry', 'resources/_admin/js/cabinet.ts');
 
@@ -35,28 +40,39 @@ class DoctorCommand extends Command
         $this->check(File::exists(config_path('cabinet-kit-redirects.php')), 'config/cabinet-kit-redirects.php is published', 'Run php artisan cabinet-kit:sync-config.');
         $this->check(HostConfigDrift::obsoleteKeys() === [], 'config/cabinet-kit.php has no keys the package dropped', $this->obsoleteConfigKeysHint());
         $this->check(CabinetRedirects::unresolvable() === [], 'Auth flow landing pages resolve to registered routes', $this->unresolvableRedirectsHint());
-        $this->check($this->unresolvableMenuRoutes() === [], 'Menu items point at registered routes', 'These items are hidden until their route exists: '.implode(', ', $this->unresolvableMenuRoutes()).'.');
+        $menuRoutes = $this->unresolvableMenuRoutes();
+        $this->check($menuRoutes === [], 'Menu items point at registered routes', 'These items are hidden until their route exists: '.implode(', ', $menuRoutes).'.'
+            .($this->integrates('load_routes') ? '' : ' The project serves the cabinet routes itself: map these names in frontend.routes if the bundled menu shows them.'), ! $this->integrates('load_routes'));
         $this->check(File::exists(base_path($entry)), "Vite entry exists: {$entry}", "Create {$entry} or update config/cabinet-kit.php.");
-        $this->check($this->entryUsesFactory($entry), 'Vite entry uses createCabinetKitApp()', 'Replace the entry with the CabinetKit stub or import createCabinetKitApp().');
+        $ownBoot = $this->entryBootsInertiaItself($entry);
+        $this->check($this->entryUsesFactory($entry), 'Vite entry uses createCabinetKitApp()', $ownBoot
+            ? 'The entry boots Inertia itself: package pages open only if its page resolver also looks in vendor/posio/cabinet-kit/resources/_admin/js/pages.'
+            : 'Replace the entry with the CabinetKit stub or import createCabinetKitApp().', $ownBoot);
         $this->check($this->viteConfigLooksReady($entry), 'vite.config contains CabinetKit plugin and entry', "Run php artisan cabinet-kit:sync-config, or add ".HostViteConfig::PLUGIN_CALL." and '{$entry}' to laravel-vite-plugin input by hand — without the plugin the package resolves its imports against your own resources/ and renders unstyled.");
-        $this->check($this->tailwindConfigLooksReady(), 'tailwind.config contains CabinetKit preset', 'Add vendor/posio/cabinet-kit/tailwind-preset.cjs.');
-        $this->check($this->tailwindContentLooksReady(), 'tailwind.config scans CabinetKit templates', "Add '".HostTailwindConfig::CONTENT_GLOB."' to the content array, or run php artisan cabinet-kit:sync-config.");
-        $this->check($this->userModelLooksReady(), 'User model uses IsCabinetKitUser', 'Add Posio\\CabinetKit\\Traits\\IsCabinetKitUser to app/Models/User.php.');
+        $scansPackage = $this->tailwindContentLooksReady();
+        $this->check($this->tailwindConfigLooksReady(), 'tailwind.config contains CabinetKit preset', $scansPackage
+            ? 'Package templates are scanned, but the theme is your own: the colors, fonts and screens the preset adds must exist in your config too, or add vendor/posio/cabinet-kit/tailwind-preset.cjs.'
+            : 'Add vendor/posio/cabinet-kit/tailwind-preset.cjs.', $scansPackage);
+        $this->check($scansPackage, 'tailwind.config scans CabinetKit templates', "Add '".HostTailwindConfig::CONTENT_GLOB."' to the content array, or run php artisan cabinet-kit:sync-config.");
+        $missingUserMethods = $this->missingUserMethods();
+        $this->check($missingUserMethods === [], 'User model provides the IsCabinetKitUser API', $missingUserMethods === null
+            ? 'User model '.$this->userModel().' was not found — set user_model in config/cabinet-kit.php.'
+            : 'Missing: '.implode(', ', $missingUserMethods).'. Add Posio\\CabinetKit\\Traits\\IsCabinetKitUser to the model, or implement these methods: the cabinet route stack and module pages call them.');
         $this->check(File::exists(config_path('permission.php')), 'config/permission.php is published', 'Publish Spatie Permission config before running migrations.');
         $this->check((bool) config('permission.teams'), "Spatie Permission 'teams' is true", "Set 'teams' => true in config/permission.php before migrating.");
         $this->check($this->permissionConfigLooksReady(), 'Spatie Permission table config matches CabinetKit', 'Set model_has_roles=user_has_roles, model_has_permissions=user_has_permissions and model_morph_key=user_id.');
         $this->check($this->permissionTablesLookReady(), 'Permission role tables exist and include team_id when present', $this->permissionTablesHint());
         $this->check(CabinetKitRoles::drift() === [], 'System roles and permissions match the package reference', $this->rolesDriftHint());
         $this->check(Schema::hasTable('accounts') && Schema::hasTable('user_has_accounts'), 'CabinetKit account tables exist', 'Run php artisan migrate.');
-        $this->check(Schema::hasTable('admin_links'), 'CabinetKit admin_links table exists', 'Run php artisan migrate.');
+        $this->check(Schema::hasTable('admin_links'), 'CabinetKit admin_links table exists', $this->integrates('load_migrations')
+            ? 'Run php artisan migrate.'
+            : 'Package migrations are off (host_integration.load_migrations): the bundled menu is built from the menu key of config/cabinet-kit.php.', ! $this->integrates('load_migrations'));
         $this->check($this->routeNamesDoNotCollide(), 'Route names can be cached', "Set 'auth_routes' => false or remove duplicate auth route names.");
         $this->check($this->socialAuthLooksReady(), 'Configured social sign-in providers have their driver installed', 'Run composer require laravel/socialite (and socialiteproviders/apple for Apple), or clear the credentials in config/cabinet-kit.php.');
         $this->check($this->logViewerLooksReady(), 'Log viewer is mounted where the Logs menu item points', 'Align log-viewer route_path with cabinet-kit.log_viewer.route_path, or drop the Logs menu item.');
         foreach (FrontendDependencies::PACKAGES as $package => $version) {
             $this->check($this->packageJsonHas($package), "package.json contains {$package}", "Run npm install {$package}@\"{$version}\".");
         }
-
-        $this->check(File::exists(public_path('cabinet-assets/images/cabinet_logo_dark_theme.svg')), 'CabinetKit original menu assets are published', 'Run php artisan vendor:publish --tag=cabinet-kit-assets --force.');
 
         $this->check(Schema::hasTable('site_settings'), 'Site settings table exists', 'Run php artisan migrate.');
         $this->check(Schema::hasTable('seo_meta'), 'SEO table exists', 'Run php artisan migrate.');
@@ -78,7 +94,7 @@ class DoctorCommand extends Command
         }
 
         $this->newLine();
-        $this->info('CabinetKit doctor is green.');
+        $this->info('CabinetKit doctor is green.'.($this->warnings > 0 ? " {$this->warnings} warning(s) above are the project's own choices — review them once." : ''));
 
         return self::SUCCESS;
     }
@@ -173,10 +189,19 @@ class DoctorCommand extends Command
         return implode('; ', CabinetKitRoles::drift()).'. Run php artisan migrate — it brings roles and permissions up to the reference.';
     }
 
-    protected function check(bool $ok, string $label, string $hint): void
+    // Мягкая проверка — там, где проект сознательно держит это сам: расхождение
+    // видно, но проверку перед релизом оно не валит.
+    protected function check(bool $ok, string $label, string $hint, bool $soft = false): void
     {
         if ($ok) {
             $this->line("<fg=green>OK</>   {$label}");
+            return;
+        }
+
+        if ($soft) {
+            $this->warnings++;
+            $this->line("<fg=yellow>WARN</> {$label}");
+            $this->line("      {$hint}");
             return;
         }
 
@@ -229,8 +254,9 @@ class DoctorCommand extends Command
         foreach ([...config('cabinet-kit.menu', []), ...app(CabinetKit::class)->menuGroups()] as $group) {
             foreach ($group['children'] ?? [] as $item) {
                 $route = $item['route'] ?? null;
+                $target = config('cabinet-kit.frontend.routes', [])[$route] ?? $route;
 
-                if (! empty($route) && ! Route::has($route)) {
+                if (! empty($route) && ! Route::has($target)) {
                     $broken[] = $route;
                 }
             }
@@ -284,11 +310,43 @@ class DoctorCommand extends Command
         return $path === null ? null : File::get($path);
     }
 
-    protected function userModelLooksReady(): bool
+    protected function userModel(): string
     {
-        $path = app_path('Models/User.php');
+        return (string) config('cabinet-kit.user_model', 'App\\Models\\User');
+    }
 
-        return File::exists($path) && str_contains(File::get($path), 'IsCabinetKitUser');
+    // Проект со своим набором трейтов проходит, если у модели есть всё, что
+    // пакет на ней вызывает: имя трейта в файле этого не доказывает.
+    protected function missingUserMethods(): ?array
+    {
+        $model = $this->userModel();
+
+        if (! class_exists($model)) {
+            return null;
+        }
+
+        $missing = [];
+
+        foreach ((new ReflectionClass(IsCabinetKitUser::class))->getMethods() as $method) {
+            if (! method_exists($model, $method->getName())) {
+                $missing[] = $method->getName();
+            }
+        }
+
+        return $missing;
+    }
+
+    protected function entryBootsInertiaItself(string $entry): bool
+    {
+        $path = base_path($entry);
+
+        return File::exists($path) && str_contains(File::get($path), 'createInertiaApp');
+    }
+
+    // Хост с кабинетом старше пакета выключает то, что пакет иначе делает со всем приложением.
+    protected function integrates(string $switch): bool
+    {
+        return (bool) config("cabinet-kit.host_integration.{$switch}", true);
     }
 
     protected function permissionTablesLookReady(): bool

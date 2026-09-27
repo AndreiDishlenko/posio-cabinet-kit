@@ -126,8 +126,6 @@ class DictionariesClass extends PropObjectClass {
 
     async update(dict_name) {
         // console.log('[DictionariesClass.update]', dict_name);
-        let result = JSON.parse(localStorage.getItem(this.storage_name)) ?? {}
-
 		let headers = dict_name ? {'X-only': dict_name} : {};
 
 		const started = Date.now();
@@ -154,8 +152,9 @@ class DictionariesClass extends PropObjectClass {
         // Состав словарей задаётся заново только успешным полным ответом: до него
         // сохранённые данные не трогаем — в офлайне это единственный источник
         // списка кассиров, и потеря его превращает кассу в нерабочую.
-        if ( !dict_name )
-            result = {};
+        // Сохранённая копия читается только после ответа: параллельные точечные
+        // обновления иначе затирают друг друга копией, взятой до чужого ответа.
+        let result = dict_name ? (JSON.parse(localStorage.getItem(this.storage_name)) ?? {}) : {};
 
         Object.keys(response.data).forEach((key) => {
             if (!dict_name || key==dict_name) {

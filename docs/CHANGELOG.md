@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased — doctor tells a project's own wiring from a broken install
+
+**Changed**
+- A project that switched package routes or migrations off in
+  `host_integration`, boots Inertia from its own entry, or scans the package
+  templates without the Tailwind preset now gets `WARN` lines for those checks
+  instead of `FAIL`: they are its own choices, and the doctor no longer fails a
+  release check on them. Warnings are counted in the closing line.
+- Menu routes resolve through `frontend.routes` before they are reported
+  missing.
+- The User model check looks for every method of `IsCabinetKitUser` on the
+  configured `user_model` instead of the trait name in `app/Models/User.php`,
+  and lists the missing ones — a model with its own equivalent traits passes.
+
+**Removed**
+- The "original menu assets are published" check: nothing in the package reads
+  those logos since the cabinet logos moved to site settings.
+
 ## Unreleased — sync-config no longer breaks a vite.config ending in a comment
 
 **Fixed**
