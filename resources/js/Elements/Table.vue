@@ -527,6 +527,12 @@
 				type: Boolean,
 				default: false
 			},
+			// Стрелка раскрытой группы выделяется цветом: видно, в какую группу
+			// попадёт добавленная запись.
+			highlight_opened_group: {
+				type: Boolean,
+				default: false
+			},
 			h_dividers: {
 				type: Boolean,
 				default: true
@@ -2724,6 +2730,9 @@
 				if ( this.draggable_groups )
 					result += ' draggable-group';
 
+				if ( this.highlight_opened_group && this.openedGroups.has(String(group_name)) )
+					result += ' is-opened-group';
+
 				// Рядок зависає над шапкою чужої групи — підсвічуємо її як приймач
 				// (над своєю ж групою переносити нікуди).
 				if ( this.drag.active
@@ -2945,6 +2954,12 @@
 		opacity: 0.35;
 	}
 
+	// Розкриту групу видно лише за кольором стрілки: фон шапки лишається за
+	// підсвіченням приймача, текст — звичайним.
+	::v-deep(.is-opened-group .acc-arrow) {
+		color: var(--yellow-color);
+	}
+
 	// Шапка-приймач: сигнал «рядок перейде в цю групу» — тому підсвічується вся шапка,
 	// а не лінія між групами.
 	::v-deep(.table-group-header.drop-into-group) {
@@ -2997,8 +3012,11 @@
 			2xl:ps-6;
 	}
 
+	// Суцільна шапка групи тримає крайове поле в обох станах: у згорнутої вона
+	// остання в обгортці, у розгорнутої — ні, і стрілка з'їжджала б убік.
 	#table:not(.has-slaves) ::v-deep(.header-cell:last-child),
-	#table:not(.has-slaves) ::v-deep(.table-cell:last-child) {
+	#table:not(.has-slaves) ::v-deep(.table-cell:last-child),
+	#table:not(.has-slaves) ::v-deep(.acc-header.table-group-header.table-cell) {
 		// border: 1px solid green;
 		@apply
 			pe-4

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — Table can highlight the opened group
+
+**Added**
+- `Table` prop `highlight_opened_group`: the expand arrow of an opened group
+  turns yellow, so a page that adds records to "the opened group" shows which one
+  that is. Off by default.
+
 ## Unreleased — doctor tells a project's own wiring from a broken install
 
 **Changed**
