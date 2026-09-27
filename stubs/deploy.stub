@@ -10,7 +10,7 @@
 #
 # Деплой прода и препрода из git.
 #
-# Прод: обновление кода, миграции, пересборка кэшей, мягкий перезапуск очереди,
+# Прод: обновление кода, composer install по lock, миграции, пересборка кэшей, мягкий перезапуск очереди,
 # карта сайта, сборка фронта (./build), проверка живости сайта.
 #   ./deploy             — обновить до свежей ветки
 #   ./deploy --rollback  — вернуть код предыдущего деплоя (миграции не откатываются)
@@ -22,7 +22,9 @@
 #   ./deploy --preprod --build      — собрать фронт в любом случае
 #   ./deploy --preprod --no-build   — фронт не собирать
 #
-# Обновление пакета кабинета сюда не входит — для него ./updcab.
+# Версия пакета кабинета приходит из composer.lock ветки: её поднимают ./updcab на
+# машине разработчика и коммит lock. На сервере ./updcab не запускать — он меняет
+# отслеживаемые файлы, и следующий деплой их откатит или остановится на них.
 #
 # Переопределяемое окружение:
 #   PHP_BIN=/path/to/php8.3 ./deploy          — интерпретатор, если автоподбор не подходит
@@ -108,8 +110,9 @@ deploy_production() {
 	# Точка отката — код, который работал до этого запуска; пустой деплой её не сдвигает.
 	[ "$from_head" != "$to_head" ] && echo "$from_head" > "$STATE_DIR/previous-head"
 
-	warn_changed_dependencies "$from_head" "$to_head"
-
+	# И при откате: старому коду нужны пакеты из его же lock.
+	stage "Зависимости"
+	install_composer_dependencies || { failure "composer install упал — миграции, кэши и фронт не тронуты. Вернуть прежний код: ./deploy --rollback"; return 1; }
 	run_after_code_hook || return 1
 
 	stage "База и кэши Laravel"
@@ -194,13 +197,6 @@ rollback_code() {
 	fi
 
 	run_step "Откат кода на ${prev_head:0:8}" git reset --hard "$prev_head"
-}
-
-# Composer-зависимости прод-деплой не ставит — только предупреждает; npm-зависимости ставит сборка.
-warn_changed_dependencies() {
-	if ! git diff --quiet "$1" "$2" -- composer.lock; then
-		warn_line "Изменился composer.lock — нужен composer install --no-dev (или ./updcab)."
-	fi
 }
 
 # Прод отдаётся из кэшированных конфига, маршрутов и шаблонов: после сброса их нужно
@@ -389,7 +385,7 @@ install_composer_dependencies() {
 	fi
 
 	if [ -z "$composer" ]; then
-		fail_line "composer не найден. Укажите путь: COMPOSER_BIN=/path/to/composer ./deploy --preprod"
+		fail_line "composer не найден. Укажите путь: COMPOSER_BIN=/path/to/composer ./deploy"
 		return 1
 	fi
 

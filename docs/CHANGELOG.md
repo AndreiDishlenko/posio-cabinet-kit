@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased — production deploy installs the package version from the lock
+
+**Changed**
+- `./deploy` on production runs `composer install --no-dev` from the branch's
+  `composer.lock` right after the code update, before migrations and the build
+  (`./deploy --rollback` too, so the old code gets its own packages back).
+  Earlier it only warned that the lock changed and suggested `./updcab` — a
+  developer-machine tool that rewrites tracked files on the server.
+- The package version reaches servers one way: `./updcab` locally, commit
+  `composer.lock` with the files `sync-config` patched, then `./deploy`.
+
+**Upgrading**
+- A project that updated the package on the server with `./updcab` must commit
+  the lock first: the deploy now installs what git holds.
+
 ## Unreleased — project scripts belong to the package
 
 **Changed**
