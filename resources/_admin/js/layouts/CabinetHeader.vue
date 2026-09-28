@@ -164,14 +164,6 @@
 		color: inherit;
 	}
 
-	// Кольцо клавиатурного фокуса — только для клавиатуры: от клика мышью оно
-	// не появляется, а на планке старых браузеров правило отбрасывается целиком.
-	.shell-icon-button:focus-visible {
-		outline: 2px solid var(--focus-ring-color);
-		outline-offset: 2px;
-		border-radius: 4px;
-	}
-
 	.webchat-item .icon {
 		color: var(--header-icon-accent-color);
 	}

@@ -782,17 +782,10 @@
                     color            var(--gm-ease-dur) var(--gm-ease);
     }
 
-    // Клавиатурный фокус в меню обязан быть виден: у собственных кнопок панели
-    // системный контур снят, а пункты — ссылки без своего оформления фокуса.
-    // Отдельным правилом на :focus-visible, чтобы кольцо не появлялось от клика
-    // мышью; на планке старых браузеров правило просто отбрасывается.
-    .gm-brand:focus-visible,
-    .gm-toggle:focus-visible,
-    .gm-group-label:focus-visible,
-    .gm-link:focus-visible,
-    .gm-footer-settings-trigger:focus-visible {
-        outline: 2px solid var(--focus-ring-color);
-        outline-offset: -2px;
+    // Пункты меню — ссылки, но нажимаются как кнопки: кольца фокуса у них нет, как у всех кнопок.
+    .gm-brand:focus,
+    .gm-link:focus {
+        outline: none;
     }
 
     .gm-icon {

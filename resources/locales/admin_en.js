@@ -167,7 +167,13 @@ export default {
     // Cashbox journal notice: the selected cashbox is about to be or already switched off
     "cashbox-license-notice-expired"      : "License {number} expired on {expire}. On {deactivate}, early in the morning before the shift opens, this cashbox will be switched off.",
     "cashbox-license-notice-deactivated"  : "This cashbox was switched off over lapsed license {number}, which expired on {expire}. Your documents are intact — once the license is renewed, the cashbox can be activated again.",
-    "license-request-note"                : "A manager will contact you to agree on the number of cash registers, the term and the price.",
+    // License in the cashbox card
+    "cashbox-license-state-active"        : "The cashbox runs under this license.",
+    "cashbox-license-state-expiring"      : "Unless it is renewed, this cashbox will be switched off on {deactivate}.",
+    "cashbox-license-state-uncovered"     : "The cashbox runs beyond the licensed number of seats — it will be switched off first.",
+    "cashbox-license-state-can-activate"  : "The cashbox is switched off. The license has a free seat — the cashbox can be activated.",
+    "cashbox-license-state-no-seat"       : "The cashbox is switched off. Active licenses have no free seats — renew the license or add a new one to activate the cashbox.",
+    "license-request-note"              : "A manager will contact you to agree on the number of cash registers, the term and the price.",
     "chosen-plan-note"                    : "You have chosen the «{plan}» plan, a manager will contact you after registration.",
     "license-request-sent"                : "Request sent — a manager will contact you shortly.",
     "plan-name-start"                     : "Start",

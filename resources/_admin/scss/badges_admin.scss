@@ -32,6 +32,19 @@
 		}
 	}
 
+	.badge-warning {
+		background-color: var(--warning-tint-25) !important;
+		background-color: color-mix(in srgb, var(--warning-color) 25%, transparent) !important;
+		color: var(--warning-color) !important;
+		border-color: var(--warning-tint-40) !important;
+		border-color: color-mix(in srgb, var(--warning-color) 40%, transparent) !important;
+
+		&:not(:disabled):hover {
+			background-color: var(--warning-tint-40) !important;
+			background-color: color-mix(in srgb, var(--warning-color) 40%, transparent) !important;
+		}
+	}
+
 	.badge-error {
 		background-color: var(--error-tint-25) !important;
 		background-color: color-mix(in srgb, var(--error-color) 25%, transparent) !important;

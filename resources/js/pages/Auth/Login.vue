@@ -16,7 +16,7 @@
 
 				<div class="label-group">
 					<label class="form-label" for="login-email">{{ $t('Your email')}}</label>
-					<input id="login-email" ref="email" type="email" autocomplete="email" v-model="form_data.email" class="form-control md:form-control-lg" @change.stop.prevent="nextField('email', 'password')"/>
+					<input id="login-email" ref="email" type="email" autocomplete="email" v-model="form_data.email" class="form-control md:form-control-lg" @keydown.enter.prevent="nextField('email', 'password')"/>
 					<p v-if="form_data_errors.email" class="form-error" >{{ $t(form_data_errors.email) }}</p>
 				</div>
 

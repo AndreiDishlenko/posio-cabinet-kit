@@ -5,6 +5,15 @@ div.swal2-container {
     z-index: 10003;
 }
 
+// Кнопки диалогов — без кольца фокуса, как все кнопки сервиса; библиотека рисует его тенью.
+div.swal2-container button.swal2-styled:focus-visible {
+    box-shadow: none !important;
+}
+
+div.swal2-container button.swal2-close:focus-visible {
+    box-shadow: none !important;
+}
+
 .popup {
 
     background-color: var(--background-light-color)!important;

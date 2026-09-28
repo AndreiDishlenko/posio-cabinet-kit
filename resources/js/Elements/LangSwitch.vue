@@ -122,10 +122,5 @@
 			color: var(--lang-switch-active-color, inherit);
 			background: var(--lang-switch-active-bg, transparent);
 		}
-
-		&:focus-visible {
-			outline: 1px solid currentColor;
-			outline-offset: 1px;
-		}
 	}
 </style>
