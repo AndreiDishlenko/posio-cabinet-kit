@@ -11,7 +11,7 @@
 				'fit-container': fit_container,
 				// Horizontal scroll mode: own scroll box (x + y) so wide tables
 				// compact and scroll instead of truncating their cells.
-				'overflow-x-auto x-scroll': x_scroll,
+				'overflow-x-auto x-scroll scrollbar-thin': x_scroll,
 				// Vertical-only scroll box: the body scrolls inside the table's own
 				// height and the header sticks to it (x_scroll already covers both axes).
 				'overflow-y-auto y-scroll scrollbar-thin': y_scroll && !x_scroll
@@ -91,6 +91,7 @@
 			// Horizontal-scroll mode: columns size to their content (min-content floor)
 			// so the table stays as compact as possible without truncating; the wrapper
 			// scrolls left/right once the total width exceeds the available space.
+			// A column's `min_width` ('90px') replaces the min-content floor.
 			x_scroll: {
 				type: Boolean,
 				default: false
@@ -249,6 +250,14 @@
                 this.scrollContainer?.scrollTo({ top: 0, behavior: 'smooth' });
             },
             colWidth(column) {
+                // Прокрутка замінює адаптивне приховування: які колонки показувати,
+                // вже вирішила таблиця-господар.
+                if (!this.x_scroll)
+                    return this.responsiveColWidth(column);
+
+                return this.trackWidth(column);
+            },
+            responsiveColWidth(column) {
                 if (column.show=='xs' && (window.matchMedia('(max-width: 480px)')).matches)
                     return '0px'
                 if (column.show=='sm' && (window.matchMedia('(max-width: 640px)')).matches)
@@ -262,6 +271,9 @@
                 if (column.show=='xxl' && (window.matchMedia('(max-width: 1536px)')).matches)
                     return '0px'
 
+                return this.trackWidth(column);
+            },
+            trackWidth(column) {
                 // Ширина від заданого px-значення (мінімум) до 1fr (максимум):
                 // width: '300px-1fr' → minmax(300px, 1fr). Підтримує px/rem/em/%.
                 // Обробляємо до обгортки fit_container нижче, інакше вийде
@@ -274,14 +286,20 @@
                 // (compact, never truncated) that still stretch to fill via 1fr when
                 // there's room. Once the sum exceeds the wrapper, it scrolls instead.
                 if (this.x_scroll) {
+                    // Явный минимум колонки: поле ввода не имеет своей ширины по
+                    // содержимому, и без него колонка сжимается до ширины заголовка.
+                    const floor = column.min_width || 'min-content';
+
                     if (column.width=='min')
-                        return 'min-content';
+                        return `minmax(${floor}, min-content)`;
                     if (column.width=='auto-1/2')
-                        return 'minmax(min-content, 0.5fr)';
+                        return `minmax(${floor}, 0.5fr)`;
                     if (column.width=='auto' || !column.width)
-                        return 'minmax(min-content, 1fr)';
+                        return `minmax(${floor}, 1fr)`;
                     if (String(column.width).endsWith('fr'))
-                        return `minmax(min-content, ${column.width})`;
+                        return `minmax(${floor}, ${column.width})`;
+                    if (column.min_width)
+                        return `minmax(${floor}, ${column.width})`;
                     return column.width;
                 }
 

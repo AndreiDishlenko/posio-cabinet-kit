@@ -12,8 +12,8 @@
 			{
 				'disabled': disabled,
 				'select-none': noSelect,
-				'min-w-0': fit_container || x_scroll,
-				'y-scroll': y_scroll || x_scroll,
+				'min-w-0': fit_container || x_scroll_active,
+				'y-scroll': y_scroll || x_scroll_active,
 				'has-slaves': has_slaves,
 				'is-grouped': is_grouped,
 				'no-slave-marker': has_slaves && !slave_marker,
@@ -86,7 +86,7 @@
 			:scrolled="false"
 			:sticky_header="sticky_header"
 			:fit_container="fit_container"
-			:x_scroll="x_scroll"
+			:x_scroll="x_scroll_active"
 			:y_scroll="y_scroll"
 			:slave_key="slave_key"
 			:show_rowbar="show_rowbar"
@@ -592,8 +592,12 @@
 			// Включає горизонтальну прокрутку: коли ширина таблиці перевищує доступну,
 			// колонки максимально ущільнюються (без обрізання даних), а таблиця
 			// прокручується вліво-вправо замість того, щоб обрізати клітинки.
+			// true — завжди, 'lt-md' (і т.п.) — лише на екранах, вужчих за брейкпоінт.
+			// Поки прокрутка діє, адаптивне приховування колонок (`show`) не працює:
+			// прокрутка й замінює собою скорочення колонок. Колонка з `scroll_hide`
+			// у цьому режимі не показується зовсім.
 			x_scroll: {
-				type: Boolean,
+				type: [Boolean, String],
 				default: false
 			},
 			// Власна вертикальна прокрутка тіла: таблиця лишається в межах відведеної
@@ -847,6 +851,13 @@
 			},
 			hasContextMenu() {
 				return this.showContextDelete || this.contextActions.length > 0;
+			},
+			x_scroll_active() {
+				if ( typeof this.x_scroll === 'boolean' )
+					return this.x_scroll;
+
+				const limit = this.breakpointMinWidth(String(this.x_scroll).replace(/^lt-/, ''));
+				return !!limit && this.windowWidth < limit;
 			},
 			// Mobile viewport (≤ md). Mirrors the `show:'md'` column-hide breakpoint.
 			is_mobile() {
@@ -1347,6 +1358,9 @@
                 return map[breakpoint] ?? 0;
             },
 			colWidth(column) {
+                if (this.x_scroll_active)
+                    return column.scroll_hide ? '0px' : this.trackWidth(column);
+
                 if (column.show=='xs'    && this.windowWidth <= 480)
                     return '0px'
                 if (column.show=='sm'    && this.windowWidth <= 640)
@@ -1371,7 +1385,10 @@
                     return '0px'
                 if (column.show=='lt-2xl' && this.windowWidth >= 1536)
                     return '0px'
-                
+
+                return this.trackWidth(column);
+            },
+			trackWidth(column) {
                 if (column.width=='auto-1/2')
                     return 'minmax(min-content, 0.5fr)';
 

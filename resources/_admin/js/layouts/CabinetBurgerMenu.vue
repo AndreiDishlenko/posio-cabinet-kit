@@ -178,12 +178,12 @@
 						// console.warn('errors', errors);
 						// Переключения не произошло — поле возвращается к активному аккаунту.
 						this.selected_account = '';
-						this.$toast.error( 'Can\'t change account' );
+						this.$toast.error( this.$t('Can\'t change account') );
 						// this.outputErrors(errors);
 					},
 					onSuccess: (response) => {
 						// console.log('response', response);
-						this.$toast.success( this.$t(`Welcome to ${account_name} account`) )
+						this.$toast.success( this.$t('Welcome to {name} account', { name: account_name }) )
 						if (this.$refs.mobilePanel)
 							this.$refs.mobilePanel.close();
 

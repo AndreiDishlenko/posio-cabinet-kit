@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased — horizontal scroll instead of hiding columns on narrow screens
+
+**Added**
+- `Table` `x_scroll` accepts a breakpoint (`'lt-md'`, `'lt-lg'`, …): the table
+  scrolls sideways only below it. `true` / `false` work as before.
+- While horizontal scroll is active, responsive column hiding (`show`) is off —
+  every column is rendered and the table scrolls instead. A column with
+  `scroll_hide: true` is left out in that mode.
+
+## Unreleased — minimum column width in horizontal-scroll tables
+
+**Added**
+- `TableWrapper` with `x_scroll`: a column's `min_width` (`'90px'`) replaces the
+  `min-content` floor of its track. Needed for columns of inputs, which have no
+  content width of their own and otherwise collapse to the header text.
+
 ## Unreleased — cabinet-kit:test prints which tests failed, not their traces
 
 **Changed**
