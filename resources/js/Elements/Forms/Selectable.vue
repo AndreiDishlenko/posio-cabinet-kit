@@ -23,6 +23,7 @@
                 :items_class="[items_class, sizeItemsClass].filter(Boolean).join(' ')"
                 :size="size"
                 :bg_color="bg_color"
+                :hover_color="hover_color"
                 :direction="direction"
                 @selectItem="(e, item)=>{selected_id = item.id; $refs.parentelement.close();}"
                 />
@@ -109,6 +110,12 @@
             'bg_color': {
                 type: String,
                 default: 'var(--selectable-background-color)'
+            },
+            // Подсветка строки под курсором — тоже значением: когда фон списка
+            // переопределён, общий цвет подсветки может с ним совпасть и стать невидимым.
+            'hover_color': {
+                type: String,
+                default: ''
             }
 		},
 		// emits: [

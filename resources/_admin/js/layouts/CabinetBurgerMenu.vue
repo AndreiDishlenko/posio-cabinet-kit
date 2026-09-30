@@ -30,6 +30,7 @@
 						:isChild="true"
 						:isFloating="false"
 						bg_color="var(--account-selector-bg)"
+						hover_color="var(--account-selector-hover, var(--selectable-hover-items))"
 						:placeholder="current_account_name"
 						@onChange="(val, old_val) => selectAccount(val, old_val)"
 					/>

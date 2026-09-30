@@ -97,6 +97,11 @@
                 type: String,
                 default: ''
             },
+            // Overridable hover/selected row colour. Empty -> current default token.
+            'hover_color': {
+                type: String,
+                default: ''
+            },
             // Ключ розмірного токена підпису пунктів ('sm', 'base', 'lg'…) — коли
             // підпис списку має бути іншого розміру, ніж дає розмір самого контрола
             // (напр. кнопка з укрупненим підписом). Порожній — розмір контрола.
@@ -130,6 +135,9 @@
             },
             bgColor() {
                 return this.bg_color || 'var(--selectable-background-color)';
+            },
+            hoverColor() {
+                return this.hover_color || 'var(--selectable-hover-items)';
             },
             paddingX() {
                 return this.padding_x || '12px';
@@ -294,7 +302,7 @@
     }
 
     .select-item:hover {
-        background-color: var(--selectable-hover-items)!important;
+        background-color: v-bind(hoverColor)!important;
     }
     // .select-item:first-child {
     //     border-top-left-radius: 8px;
@@ -310,7 +318,7 @@
 
 
     .selected {
-        background-color: var(--selectable-hover-items)!important;
+        background-color: v-bind(hoverColor)!important;
         // border: 1px solid yellow;
     }
 

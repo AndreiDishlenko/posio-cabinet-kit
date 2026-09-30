@@ -170,11 +170,13 @@ html.dark {
 	--action-widget-bg: #393939;
 
 	// Bottom sheets
-	--bottom-sheet-bg: #393939;
+	--bottom-sheet-bg: #242424;
 	--bottom-sheet-divider: #4a4a4a;
 
 	// Переключатель текущего аккаунта подсвечен: смена аккаунта меняет весь контекст кабинета.
 	--account-selector-bg: #2f2f2f;
+	// Общая подсветка строки списка здесь совпадает с фоном списка аккаунтов — нужен светлее.
+	--account-selector-hover: #3d3d3d;
 }
 
 html.dark {

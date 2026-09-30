@@ -1,27 +1,26 @@
 <template>
 
-	<div class="burger-body flex flex-col space-y-2">
+	<div class="burger-body flex flex-col space-y-2 pb-4">
 
 		<!-- Панель перекрывает кнопку вызова, поэтому закрывать её можно только изнутри -->
-		<div class="burger-body-head flex items-start justify-between">
+		<header class="burger-body-head flex items-start justify-between">
 
-			<div v-if="show_user_info" class="burger-profile flex items-center gap-4 py-[1.125rem] !px-7 min-w-0">
+			<div v-if="show_user_info" class="burger-profile flex items-center gap-4 py-[1.125rem] !px-7 min-w-0 flex-1">
 				<Avatar
 					:src="$page.props.user.avatar"
 					:user_name="$page.props.user.name || 'Guest'"
 					:size="'lg'"/>
-				<div class="burger-profile__info flex flex-col min-w-0">
-					<span class="burger-profile__name text-base font-bold truncate">{{ $page.props.user.name || $t('Guest') }}</span>
-					<span class="burger-profile__email text-[0.8rem] opacity-[0.55] truncate">{{ $page.props.user.email || 'Please sign in' }}</span>
+				<div class="burger-profile__info flex flex-col min-w-0 leading-tight">
+					<p class="burger-profile__name text-lg font-bold truncate">{{ $page.props.user.name || $t('Guest') }}</p>
+					<p class="burger-profile__email text-sm text-secondary truncate">{{ $page.props.user.email || $t('Please sign in') }}</p>
 				</div>
 			</div>
-			<span v-else></span>
 
-			<button type="button" class="burger-close" :title="$t('Close')" @click="$emit('close')">
-				<Icon icon="material-symbols:close" class="icon icon-lg"/>
+			<button type="button" class="burger-close ml-auto" :title="$t('Close')" :aria-label="$t('Close')" @click="$emit('close')">
+				<Icon icon="material-symbols:close" class="icon icon-lg" aria-hidden="true"/>
 			</button>
 
-		</div>
+		</header>
 
 		<BurgerMenuDivider v-if="show_user_info && show_profile_divider"/>
 
@@ -46,12 +45,12 @@
 			/>
 		</template>
 
-		<BurgerMenuDivider/>
+		<!-- <BurgerMenuDivider/> -->
 
 		<!-- App version -->
-		<div v-if="$page.props.version" class="px-5 pt-1 text-center text-xs opacity-50">
+		<!-- <div v-if="$page.props.version" class="px-5 pt-1 text-center text-xs opacity-50">
 			Posio {{ $page.props.version }}
-		</div>
+		</div> -->
 
 	</div>
 

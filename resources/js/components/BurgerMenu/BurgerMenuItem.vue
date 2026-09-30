@@ -8,7 +8,8 @@
 			transition-[background] 
 			duration-150 hover:bg-[rgba(255,255,255,0.06)] 
 			active:bg-[rgba(255,255,255,0.06)] 
-			p-4 lt-sm:px-6 sm:mx-4"
+			rounded-lg
+			p-4 lt-sm:px-6 mx-5"
 		:class="{ 'opacity-40 pointer-events-none cursor-default hover:!bg-transparent active:!bg-transparent': disabled }"
 		v-bind="element_attrs"
 		@click="$emit('click', $event)"

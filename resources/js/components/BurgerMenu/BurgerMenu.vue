@@ -170,11 +170,11 @@
 		}
 
 		.burger-profile__name {
-			font-size: 0.9rem;
+			font-size: 1.05rem;
 		}
 
 		.burger-profile__email {
-			font-size: 0.75rem;
+			font-size: 0.85rem;
 		}
 
 		.bdm-nav {
